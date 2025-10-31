@@ -1,0 +1,353 @@
+"use client"
+
+import type React from "react"
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+interface AddCattleDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}
+
+export function AddCattleDialog({ open, onOpenChange }: AddCattleDialogProps) {
+  const [formData, setFormData] = useState({
+    // Basic Info
+    tagNumber: "",
+    name: "",
+    breed: "",
+    sex: "",
+    birthDate: "",
+
+    // Identification
+    earTag: "",
+    brand: "",
+    electronicId: "",
+    tattoo: "",
+
+    // Purchase Info
+    purchaseDate: "",
+    purchaseWeight: "",
+    purchasePrice: "",
+    lotNumber: "",
+
+    // Breeding Info
+    dam: "",
+    sire: "",
+    conceptionMethod: "",
+
+    // Additional
+    colorMarkings: "",
+    hornStatus: "",
+    notes: "",
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    console.log("[v0] Adding cattle:", formData)
+    onOpenChange(false)
+    // Reset form
+    setFormData({
+      tagNumber: "",
+      name: "",
+      breed: "",
+      sex: "",
+      birthDate: "",
+      earTag: "",
+      brand: "",
+      electronicId: "",
+      tattoo: "",
+      purchaseDate: "",
+      purchaseWeight: "",
+      purchasePrice: "",
+      lotNumber: "",
+      dam: "",
+      sire: "",
+      conceptionMethod: "",
+      colorMarkings: "",
+      hornStatus: "",
+      notes: "",
+    })
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Add New Cattle</DialogTitle>
+          <DialogDescription>Enter comprehensive details for the new cattle record.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <Tabs defaultValue="basic" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="basic">Basic</TabsTrigger>
+              <TabsTrigger value="identification">ID</TabsTrigger>
+              <TabsTrigger value="purchase">Purchase</TabsTrigger>
+              <TabsTrigger value="breeding">Breeding</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="basic" className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="tagNumber">Tag Number *</Label>
+                  <Input
+                    id="tagNumber"
+                    placeholder="e.g., 1251"
+                    value={formData.tagNumber}
+                    onChange={(e) => setFormData({ ...formData, tagNumber: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    placeholder="e.g., Big Red"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="breed">Breed *</Label>
+                  <Select value={formData.breed} onValueChange={(value) => setFormData({ ...formData, breed: value })}>
+                    <SelectTrigger id="breed">
+                      <SelectValue placeholder="Select breed" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="angus">Angus</SelectItem>
+                      <SelectItem value="hereford">Hereford</SelectItem>
+                      <SelectItem value="charolais">Charolais</SelectItem>
+                      <SelectItem value="simmental">Simmental</SelectItem>
+                      <SelectItem value="limousin">Limousin</SelectItem>
+                      <SelectItem value="brahman">Brahman</SelectItem>
+                      <SelectItem value="crossbred">Crossbred</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sex">Sex *</Label>
+                  <Select value={formData.sex} onValueChange={(value) => setFormData({ ...formData, sex: value })}>
+                    <SelectTrigger id="sex">
+                      <SelectValue placeholder="Select sex" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="bull">Bull</SelectItem>
+                      <SelectItem value="steer">Steer</SelectItem>
+                      <SelectItem value="heifer">Heifer</SelectItem>
+                      <SelectItem value="cow">Cow</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="birthDate">Birth Date</Label>
+                  <Input
+                    id="birthDate"
+                    type="date"
+                    value={formData.birthDate}
+                    onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="colorMarkings">Color/Markings</Label>
+                  <Input
+                    id="colorMarkings"
+                    placeholder="e.g., Black with white face"
+                    value={formData.colorMarkings}
+                    onChange={(e) => setFormData({ ...formData, colorMarkings: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="hornStatus">Horn Status</Label>
+                <Select
+                  value={formData.hornStatus}
+                  onValueChange={(value) => setFormData({ ...formData, hornStatus: value })}
+                >
+                  <SelectTrigger id="hornStatus">
+                    <SelectValue placeholder="Select horn status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="polled">Polled (Naturally Hornless)</SelectItem>
+                    <SelectItem value="horned">Horned</SelectItem>
+                    <SelectItem value="dehorned">Dehorned</SelectItem>
+                    <SelectItem value="disbudded">Disbudded</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="identification" className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="earTag">Ear Tag</Label>
+                  <Input
+                    id="earTag"
+                    placeholder="e.g., 1251"
+                    value={formData.earTag}
+                    onChange={(e) => setFormData({ ...formData, earTag: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="brand">Brand</Label>
+                  <Input
+                    id="brand"
+                    placeholder="e.g., BR"
+                    value={formData.brand}
+                    onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="electronicId">Electronic ID (RFID)</Label>
+                  <Input
+                    id="electronicId"
+                    placeholder="e.g., 840003123456789"
+                    value={formData.electronicId}
+                    onChange={(e) => setFormData({ ...formData, electronicId: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tattoo">Tattoo</Label>
+                  <Input
+                    id="tattoo"
+                    placeholder="e.g., A123"
+                    value={formData.tattoo}
+                    onChange={(e) => setFormData({ ...formData, tattoo: e.target.value })}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="purchase" className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="purchaseDate">Purchase Date *</Label>
+                  <Input
+                    id="purchaseDate"
+                    type="date"
+                    value={formData.purchaseDate}
+                    onChange={(e) => setFormData({ ...formData, purchaseDate: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lotNumber">Lot Number *</Label>
+                  <Input
+                    id="lotNumber"
+                    placeholder="e.g., LOT-A"
+                    value={formData.lotNumber}
+                    onChange={(e) => setFormData({ ...formData, lotNumber: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="purchaseWeight">Purchase Weight (lbs) *</Label>
+                  <Input
+                    id="purchaseWeight"
+                    type="number"
+                    placeholder="e.g., 785"
+                    value={formData.purchaseWeight}
+                    onChange={(e) => setFormData({ ...formData, purchaseWeight: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="purchasePrice">Purchase Price ($) *</Label>
+                  <Input
+                    id="purchasePrice"
+                    type="number"
+                    placeholder="e.g., 1650"
+                    value={formData.purchasePrice}
+                    onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="breeding" className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dam">Dam (Mother)</Label>
+                  <Input
+                    id="dam"
+                    placeholder="e.g., Tag #1100"
+                    value={formData.dam}
+                    onChange={(e) => setFormData({ ...formData, dam: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sire">Sire (Father)</Label>
+                  <Input
+                    id="sire"
+                    placeholder="e.g., Tag #2050"
+                    value={formData.sire}
+                    onChange={(e) => setFormData({ ...formData, sire: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="conceptionMethod">Conception Method</Label>
+                <Select
+                  value={formData.conceptionMethod}
+                  onValueChange={(value) => setFormData({ ...formData, conceptionMethod: value })}
+                >
+                  <SelectTrigger id="conceptionMethod">
+                    <SelectValue placeholder="Select method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="natural">Natural Breeding</SelectItem>
+                    <SelectItem value="ai">Artificial Insemination (AI)</SelectItem>
+                    <SelectItem value="et">Embryo Transfer (ET)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notes</Label>
+                <Input
+                  id="notes"
+                  placeholder="Additional notes..."
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          <DialogFooter className="mt-6">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit">Add Cattle</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
