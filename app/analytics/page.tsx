@@ -81,51 +81,108 @@ export default function AnalyticsPage() {
 
   const COLORS = ["#16a34a", "#d97706", "#dc2626", "#2563eb", "#7c3aed"]
 
+  const analytics = dataStore.getAnalytics()
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card sticky top-0 z-10">
         <div className="container mx-auto px-6 py-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Analytics Dashboard</h1>
-            <p className="text-sm text-muted-foreground">Visual insights and trends</p>
+            <p className="text-sm text-muted-foreground">Visual insights and performance trends</p>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-6 py-6 space-y-6">
+        {/* Key Performance Indicators */}
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <CardContent className="p-6">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-green-800">Total Cattle</p>
+                <p className="text-3xl font-bold text-green-900">{analytics.totalCattle}</p>
+                <p className="text-xs text-green-700">Active in herd</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+            <CardContent className="p-6">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-blue-800">Avg Daily Gain</p>
+                <p className="text-3xl font-bold text-blue-900">{analytics.avgDailyGain.toFixed(2)} lbs</p>
+                <p className="text-xs text-blue-700">30-day average</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+            <CardContent className="p-6">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-amber-800">Cost Per Head</p>
+                <p className="text-3xl font-bold text-amber-900">${analytics.costPerHead.toFixed(0)}</p>
+                <p className="text-xs text-amber-700">Total investment</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+            <CardContent className="p-6">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-purple-800">Herd Value</p>
+                <p className="text-3xl font-bold text-purple-900">${analytics.totalInventoryValue.toLocaleString()}</p>
+                <p className="text-xs text-purple-700">Current market value</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts */}
         <div className="grid gap-6 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Weight Trend (Last 30 Records)</CardTitle>
+          <Card className="shadow-md">
+            <CardHeader className="bg-muted/30">
+              <CardTitle className="text-lg">Weight Trend (Last 30 Records)</CardTitle>
+              <p className="text-xs text-muted-foreground">Average weight progression over time</p>
             </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
+            <CardContent className="pt-6">
+              <ResponsiveContainer width="100%" height={320}>
                 <LineChart data={data.weightTrend}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="#6b7280" />
+                  <YAxis tick={{ fontSize: 12 }} stroke="#6b7280" />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "6px" }}
+                  />
                   <Legend />
-                  <Line type="monotone" dataKey="weight" stroke="#16a34a" strokeWidth={2} />
+                  <Line
+                    type="monotone"
+                    dataKey="weight"
+                    stroke="#16a34a"
+                    strokeWidth={3}
+                    dot={{ fill: "#16a34a", r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Cattle by Stage</CardTitle>
+          <Card className="shadow-md">
+            <CardHeader className="bg-muted/30">
+              <CardTitle className="text-lg">Cattle by Life Stage</CardTitle>
+              <p className="text-xs text-muted-foreground">Distribution across production stages</p>
             </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
+            <CardContent className="pt-6">
+              <ResponsiveContainer width="100%" height={320}>
                 <PieChart>
                   <Pie
                     data={data.stageData}
                     cx="50%"
                     cy="50%"
-                    labelLine={false}
-                    label={({ name, value }) => `${name}: ${value}`}
-                    outerRadius={100}
+                    labelLine={true}
+                    label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
+                    outerRadius={110}
                     fill="#8884d8"
                     dataKey="value"
                   >
@@ -139,37 +196,43 @@ export default function AnalyticsPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Monthly Expenses</CardTitle>
+          <Card className="shadow-md">
+            <CardHeader className="bg-muted/30">
+              <CardTitle className="text-lg">Monthly Expenses</CardTitle>
+              <p className="text-xs text-muted-foreground">Operating costs by month</p>
             </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
+            <CardContent className="pt-6">
+              <ResponsiveContainer width="100%" height={320}>
                 <BarChart data={data.expenseData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#6b7280" />
+                  <YAxis tick={{ fontSize: 12 }} stroke="#6b7280" />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "6px" }}
+                  />
                   <Legend />
-                  <Bar dataKey="amount" fill="#dc2626" />
+                  <Bar dataKey="amount" fill="#dc2626" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Feed Inventory (Days Remaining)</CardTitle>
+          <Card className="shadow-md">
+            <CardHeader className="bg-muted/30">
+              <CardTitle className="text-lg">Feed Inventory Status</CardTitle>
+              <p className="text-xs text-muted-foreground">Days of feed remaining by type</p>
             </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
+            <CardContent className="pt-6">
+              <ResponsiveContainer width="100%" height={320}>
                 <BarChart data={data.feedData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="#6b7280" />
+                  <YAxis tick={{ fontSize: 12 }} stroke="#6b7280" />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "6px" }}
+                  />
                   <Legend />
-                  <Bar dataKey="daysRemaining" fill="#16a34a" />
+                  <Bar dataKey="daysRemaining" fill="#16a34a" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>

@@ -1,74 +1,81 @@
 "use client"
 
-import { useState } from "react"
-import { Plus, Package, TrendingDown, Edit } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Plus, Package, TrendingDown, AlertTriangle, CheckCircle2, Minus, Grid3x3, List } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { FeedInventoryCard } from "@/components/feed-inventory-card"
+import { Badge } from "@/components/ui/badge"
 import { AddFeedDialog } from "@/components/add-feed-dialog"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
+import { dataStore, type FeedInventory } from "@/lib/data-store"
+import { FeedList } from "@/components/feed-list"
 
 export default function FeedPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [selectedFeed, setSelectedFeed] = useState<number | null>(null)
-  const [isUpdateUsageOpen, setIsUpdateUsageOpen] = useState(false)
+  const [selectedFeed, setSelectedFeed] = useState<FeedInventory | null>(null)
+  const [isRecordUsageOpen, setIsRecordUsageOpen] = useState(false)
+  const [isAddStockOpen, setIsAddStockOpen] = useState(false)
+  const [usageAmount, setUsageAmount] = useState("")
+  const [addAmount, setAddAmount] = useState("")
+  const [feedInventory, setFeedInventory] = useState<FeedInventory[]>([])
+  const [viewMode, setViewMode] = useState<"cards" | "list">("cards")
 
-  // Mock data - will be replaced with real data
-  const feedInventory = [
-    {
-      id: 1,
-      name: "Corn",
-      quantity: 12500,
-      unit: "lbs",
-      daysRemaining: 4.2,
-      costPerUnit: 0.18,
-      totalValue: 2250,
-      status: "low" as const,
-      dailyUsage: 2976,
-      lastUpdated: "2024-06-28",
-    },
-    {
-      id: 2,
-      name: "Hay",
-      quantity: 8400,
-      unit: "lbs",
-      daysRemaining: 12,
-      costPerUnit: 0.12,
-      totalValue: 1008,
-      status: "good" as const,
-      dailyUsage: 700,
-      lastUpdated: "2024-06-28",
-    },
-    {
-      id: 3,
-      name: "Protein Supplement",
-      quantity: 450,
-      unit: "lbs",
-      daysRemaining: 6,
-      costPerUnit: 0.85,
-      totalValue: 382.5,
-      status: "warning" as const,
-      dailyUsage: 75,
-      lastUpdated: "2024-06-27",
-    },
-    {
-      id: 4,
-      name: "Mineral Mix",
-      quantity: 280,
-      unit: "lbs",
-      daysRemaining: 18,
-      costPerUnit: 1.2,
-      totalValue: 336,
-      status: "good" as const,
-      dailyUsage: 15.5,
-      lastUpdated: "2024-06-28",
-    },
-  ]
+  useEffect(() => {
+    loadFeedData()
+  }, [])
 
-  const totalInventoryValue = feedInventory.reduce((sum, item) => sum + item.totalValue, 0)
+  const loadFeedData = () => {
+    setFeedInventory(dataStore.getFeedInventory())
+  }
+
+  const handleRecordUsage = () => {
+    if (!selectedFeed || !usageAmount) return
+
+    const amount = parseFloat(usageAmount)
+    if (amount > 0 && amount <= selectedFeed.quantity) {
+      dataStore.updateFeed(selectedFeed.id, {
+        quantity: selectedFeed.quantity - amount,
+      })
+      setIsRecordUsageOpen(false)
+      setUsageAmount("")
+      loadFeedData()
+    }
+  }
+
+  const handleAddStock = () => {
+    if (!selectedFeed || !addAmount) return
+
+    const amount = parseFloat(addAmount)
+    if (amount > 0) {
+      dataStore.updateFeed(selectedFeed.id, {
+        quantity: selectedFeed.quantity + amount,
+      })
+      setIsAddStockOpen(false)
+      setAddAmount("")
+      loadFeedData()
+    }
+  }
+
+  const getDaysRemaining = (feed: FeedInventory) => {
+    if (feed.dailyUsage === 0) return 999
+    return Math.floor(feed.quantity / feed.dailyUsage)
+  }
+
+  const getStatusInfo = (daysRemaining: number) => {
+    if (daysRemaining < 7) {
+      return { color: "bg-red-500", textColor: "text-red-700", bgColor: "bg-red-50", status: "Critical - Order Now!", icon: AlertTriangle }
+    } else if (daysRemaining < 14) {
+      return { color: "bg-amber-500", textColor: "text-amber-700", bgColor: "bg-amber-50", status: "Low - Order Soon", icon: AlertTriangle }
+    } else {
+      return { color: "bg-green-500", textColor: "text-green-700", bgColor: "bg-green-50", status: "Good Stock", icon: CheckCircle2 }
+    }
+  }
+
+  const totalInventoryValue = feedInventory.reduce((sum, item) => sum + item.quantity * item.costPerUnit, 0)
   const totalDailyUsage = feedInventory.reduce((sum, item) => sum + item.dailyUsage * item.costPerUnit, 0)
 
   return (
@@ -84,10 +91,22 @@ export default function FeedPage() {
               <h1 className="text-2xl font-bold text-foreground">Feed Inventory</h1>
               <p className="text-sm text-muted-foreground">Track feed supplies and costs</p>
             </div>
-            <Button onClick={() => setIsAddDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Feed
-            </Button>
+            <div className="flex gap-2">
+              <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "cards" | "list")}>
+                <TabsList>
+                  <TabsTrigger value="list">
+                    <List className="h-4 w-4" />
+                  </TabsTrigger>
+                  <TabsTrigger value="cards">
+                    <Grid3x3 className="h-4 w-4" />
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <Button onClick={() => setIsAddDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Feed
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -140,76 +159,215 @@ export default function FeedPage() {
           </Card>
         </div>
 
-        {/* Feed Inventory Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {feedInventory.map((feed) => (
-            <Card key={feed.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <CardTitle>{feed.name}</CardTitle>
-                  <Dialog
-                    open={isUpdateUsageOpen && selectedFeed === feed.id}
-                    onOpenChange={(open) => {
-                      setIsUpdateUsageOpen(open)
-                      if (open) setSelectedFeed(feed.id)
-                    }}
-                  >
-                    <DialogTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Update {feed.name} Usage</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="current-quantity">Current Quantity ({feed.unit})</Label>
-                          <Input id="current-quantity" type="number" defaultValue={feed.quantity} />
+        {/* Feed Inventory Views */}
+        {viewMode === "list" ? (
+          <FeedList
+            feedInventory={feedInventory}
+            onRecordUsage={(feed) => {
+              setSelectedFeed(feed)
+              setIsRecordUsageOpen(true)
+            }}
+            onAddStock={(feed) => {
+              setSelectedFeed(feed)
+              setIsAddStockOpen(true)
+            }}
+          />
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2">
+            {feedInventory.map((feed) => {
+              const daysRemaining = getDaysRemaining(feed)
+              const statusInfo = getStatusInfo(daysRemaining)
+              const StatusIcon = statusInfo.icon
+              const percentRemaining = Math.min((daysRemaining / 30) * 100, 100)
+
+              return (
+                <Card key={feed.id} className={`border-2 ${daysRemaining < 7 ? "border-red-300" : "border-border"}`}>
+                  <CardHeader className={`${statusInfo.bgColor} border-b`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`h-14 w-14 rounded-full ${statusInfo.color} flex items-center justify-center`}>
+                          <Package className="h-7 w-7 text-white" />
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="daily-usage">Daily Usage ({feed.unit})</Label>
-                          <Input id="daily-usage" type="number" defaultValue={feed.dailyUsage} />
+                        <div>
+                          <CardTitle className="text-2xl">{feed.name}</CardTitle>
+                          <div className="flex items-center gap-2 mt-1">
+                            <StatusIcon className={`h-4 w-4 ${statusInfo.textColor}`} />
+                            <span className={`text-sm font-semibold ${statusInfo.textColor}`}>{statusInfo.status}</span>
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="usage-date">Date</Label>
-                          <Input id="usage-date" type="date" defaultValue={feed.lastUpdated} />
-                        </div>
-                        <Button className="w-full">Update Feed Data</Button>
                       </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FeedInventoryCard {...feed} />
-                <div className="pt-4 border-t border-border space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Daily Usage:</span>
-                    <span className="font-medium text-foreground">
-                      {feed.dailyUsage} {feed.unit}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Usage Cost/Day:</span>
-                    <span className="font-medium text-foreground">
-                      ${(feed.dailyUsage * feed.costPerUnit).toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Last Updated:</span>
-                    <span className="font-medium text-foreground">{feed.lastUpdated}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                      <Badge variant="outline" className="text-lg px-3 py-1">
+                        {daysRemaining} days
+                      </Badge>
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="p-6 space-y-6">
+                    {/* Visual Stock Level */}
+                    <div>
+                      <div className="flex justify-between mb-2">
+                        <span className="text-sm font-medium">Current Stock</span>
+                        <span className="text-sm font-bold">
+                          {feed.quantity.toLocaleString()} {feed.unit}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-6 overflow-hidden">
+                        <div
+                          className={`h-full ${statusInfo.color} transition-all duration-500 flex items-center justify-end pr-2`}
+                          style={{ width: `${percentRemaining}%` }}
+                        >
+                          {percentRemaining > 15 && (
+                            <span className="text-white text-xs font-bold">{percentRemaining.toFixed(0)}%</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Key Info Grid */}
+                    <div className="grid grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg">
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Daily Use</p>
+                        <p className="text-lg font-bold">
+                          {feed.dailyUsage} {feed.unit}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Cost/Day</p>
+                        <p className="text-lg font-bold">${(feed.dailyUsage * feed.costPerUnit).toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Total Value</p>
+                        <p className="text-lg font-bold">${(feed.quantity * feed.costPerUnit).toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Cost/Unit</p>
+                        <p className="text-lg font-bold">${feed.costPerUnit.toFixed(2)}</p>
+                      </div>
+                    </div>
+
+                    {/* Quick Actions */}
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setSelectedFeed(feed)
+                          setIsRecordUsageOpen(true)
+                        }}
+                      >
+                        <Minus className="h-4 w-4 mr-2" />
+                        Record Usage
+                      </Button>
+                      <Button
+                        className="flex-1"
+                        onClick={() => {
+                          setSelectedFeed(feed)
+                          setIsAddStockOpen(true)
+                        }}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Stock
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        )}
       </main>
 
       {/* Add Feed Dialog */}
       <AddFeedDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} />
+
+      {/* Record Usage Dialog */}
+      <Dialog open={isRecordUsageOpen} onOpenChange={setIsRecordUsageOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Record Feed Usage - {selectedFeed?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-900">
+                <strong>Current Stock:</strong> {selectedFeed?.quantity.toLocaleString()} {selectedFeed?.unit}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="usage-amount">Amount Used ({selectedFeed?.unit})</Label>
+              <Input
+                id="usage-amount"
+                type="number"
+                placeholder={`e.g., ${selectedFeed?.dailyUsage}`}
+                value={usageAmount}
+                onChange={(e) => setUsageAmount(e.target.value)}
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground">
+                Typical daily usage: {selectedFeed?.dailyUsage} {selectedFeed?.unit}
+              </p>
+            </div>
+            {usageAmount && (
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <p className="text-sm text-green-900">
+                  <strong>New Stock:</strong> {((selectedFeed?.quantity || 0) - parseFloat(usageAmount || "0")).toLocaleString()}{" "}
+                  {selectedFeed?.unit}
+                </p>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => setIsRecordUsageOpen(false)}>
+                Cancel
+              </Button>
+              <Button className="flex-1" onClick={handleRecordUsage} disabled={!usageAmount}>
+                Record Usage
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Stock Dialog */}
+      <Dialog open={isAddStockOpen} onOpenChange={setIsAddStockOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Stock - {selectedFeed?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-900">
+                <strong>Current Stock:</strong> {selectedFeed?.quantity.toLocaleString()} {selectedFeed?.unit}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="add-amount">Amount to Add ({selectedFeed?.unit})</Label>
+              <Input
+                id="add-amount"
+                type="number"
+                placeholder="Enter amount"
+                value={addAmount}
+                onChange={(e) => setAddAmount(e.target.value)}
+                autoFocus
+              />
+            </div>
+            {addAmount && (
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <p className="text-sm text-green-900">
+                  <strong>New Stock:</strong> {((selectedFeed?.quantity || 0) + parseFloat(addAmount || "0")).toLocaleString()}{" "}
+                  {selectedFeed?.unit}
+                </p>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => setIsAddStockOpen(false)}>
+                Cancel
+              </Button>
+              <Button className="flex-1" onClick={handleAddStock} disabled={!addAmount}>
+                Add Stock
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -106,8 +106,8 @@ export function QuickEntryDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="lg" className="gap-2">
-          <Mic className="h-5 w-5" />
+        <Button className="gap-2">
+          <Mic className="h-4 w-4" />
           Quick Entry
         </Button>
       </DialogTrigger>

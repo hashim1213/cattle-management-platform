@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Search, Filter, Grid3x3, List } from "lucide-react"
+import { Plus, Search, Filter, Grid3x3, List, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { CattleTable } from "@/components/cattle-table"
@@ -11,6 +11,7 @@ import { CattleStats } from "@/components/cattle-stats"
 import { CattleFilters } from "@/components/cattle-filters"
 import Link from "next/link"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { dataStore } from "@/lib/data-store"
 
 export default function CattlePage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -23,6 +24,13 @@ export default function CattlePage() {
     stage: "all",
     lot: "all",
   })
+
+  const handleResetData = () => {
+    if (confirm("Are you sure you want to reset all data to sample data? This will delete all current records.")) {
+      dataStore.resetAllData()
+      window.location.reload()
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -37,10 +45,16 @@ export default function CattlePage() {
               <h1 className="text-2xl font-bold text-foreground">Cattle Inventory</h1>
               <p className="text-sm text-muted-foreground">Manage your complete cattle records</p>
             </div>
-            <Button onClick={() => setIsAddDialogOpen(true)} size="lg">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Cattle
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleResetData}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Reset Data
+              </Button>
+              <Button onClick={() => setIsAddDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Cattle
+              </Button>
+            </div>
           </div>
         </div>
       </header>

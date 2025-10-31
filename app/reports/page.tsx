@@ -153,7 +153,7 @@ export default function ReportsPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Financial Summary</CardTitle>
-                  <Button onClick={handleExportFinancial} size="sm">
+                  <Button onClick={handleExportFinancial} variant="outline">
                     <Download className="h-4 w-4 mr-2" />
                     Export
                   </Button>

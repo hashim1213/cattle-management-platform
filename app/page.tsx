@@ -118,13 +118,13 @@ export default function DashboardPage() {
               <p className="text-sm text-muted-foreground">Comprehensive herd overview</p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleExportCattle}>
+              <Button variant="outline" onClick={handleExportCattle}>
                 <Download className="h-4 w-4 mr-2" />
                 Export Data
               </Button>
               <QuickEntryDialog />
               <Link href="/cattle">
-                <Button size="sm">
+                <Button>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Cattle
                 </Button>
@@ -142,7 +142,7 @@ export default function DashboardPage() {
             <CardContent className="p-8">
               <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-center">
                 <div className="flex flex-col items-center text-center">
-                  <div className="relative w-24 h-24 mb-3">
+                  <div className="relative w-32 h-32 mb-3">
                     <Image src="/images/breeding.png" alt="Breeding" fill className="object-contain" />
                   </div>
                   <h3 className="font-semibold text-foreground">Breeding</h3>
@@ -156,7 +156,7 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="flex flex-col items-center text-center">
-                  <div className="relative w-24 h-24 mb-3">
+                  <div className="relative w-32 h-32 mb-3">
                     <Image src="/images/pregnancy.png" alt="Pregnancy" fill className="object-contain" />
                   </div>
                   <h3 className="font-semibold text-foreground">Pregnancy Check</h3>
@@ -170,7 +170,7 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="flex flex-col items-center text-center">
-                  <div className="relative w-24 h-24 mb-3">
+                  <div className="relative w-32 h-32 mb-3">
                     <Image src="/images/calf.png" alt="Calving" fill className="object-contain" />
                   </div>
                   <h3 className="font-semibold text-foreground">Calving</h3>
@@ -180,11 +180,11 @@ export default function DashboardPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center mt-8">
                 <div className="flex flex-col items-center text-center md:col-start-1">
-                  <div className="relative w-24 h-24 mb-3">
-                    <Image src="/images/weaning.png" alt="Weaning" fill className="object-contain" />
+                  <div className="relative w-32 h-32 mb-3">
+                    <Image src="/images/yearling.png" alt="Yearling" fill className="object-contain" />
                   </div>
-                  <h3 className="font-semibold text-foreground">Weaning</h3>
-                  <p className="text-sm text-muted-foreground">{analytics.calves.weaned} weaned</p>
+                  <h3 className="font-semibold text-foreground">Yearling</h3>
+                  <p className="text-sm text-muted-foreground">Growing</p>
                 </div>
 
                 <div className="flex justify-center md:col-start-2">
@@ -199,11 +199,11 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="flex flex-col items-center text-center md:col-start-3">
-                  <div className="relative w-24 h-24 mb-3">
-                    <Image src="/images/yearling.png" alt="Yearling" fill className="object-contain" />
+                  <div className="relative w-32 h-32 mb-3">
+                    <Image src="/images/weaning.png" alt="Weaning" fill className="object-contain" />
                   </div>
-                  <h3 className="font-semibold text-foreground">Yearling</h3>
-                  <p className="text-sm text-muted-foreground">Growing</p>
+                  <h3 className="font-semibold text-foreground">Weaning</h3>
+                  <p className="text-sm text-muted-foreground">{analytics.calves.weaned} weaned</p>
                 </div>
               </div>
             </CardContent>
