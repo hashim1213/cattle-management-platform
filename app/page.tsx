@@ -7,19 +7,133 @@ import { Card, CardContent } from "@/components/ui/card"
 import { AlertCard } from "@/components/alert-card"
 import { MetricCard } from "@/components/metric-card"
 import { QuickEntryDialog } from "@/components/quick-entry-dialog"
+import { LifecycleSettingsDialog } from "@/components/lifecycle-settings-dialog"
+import { useLifecycleConfig } from "@/hooks/use-lifecycle-config"
 import Link from "next/link"
 import Image from "next/image"
 import { dataStore } from "@/lib/data-store"
 import { exportToCSV, generateCattleReport } from "@/lib/export-utils"
+import { useRouter } from "next/navigation"
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core"
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  horizontalListSortingStrategy,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
+
+function SortableStage({
+  stage,
+  count,
+  onClick,
+}: {
+  stage: any
+  count: number
+  onClick: () => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: stage.id,
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-2 sm:gap-4">
+      <button
+        onClick={onClick}
+        className="flex flex-col items-center text-center p-3 sm:p-4 rounded-lg hover:bg-accent/50 transition-all hover:scale-105 cursor-pointer group min-w-[120px] sm:min-w-[160px]"
+      >
+        <div
+          {...attributes}
+          {...listeners}
+          className="relative w-20 h-20 sm:w-28 sm:h-28 mb-2 cursor-move touch-none"
+        >
+          {stage.image ? (
+            <Image
+              src={stage.image}
+              alt={stage.name}
+              fill
+              className="object-contain group-hover:scale-110 transition-transform"
+            />
+          ) : (
+            <div
+              className="w-full h-full rounded-full flex items-center justify-center"
+              style={{ backgroundColor: `${stage.color}20`, border: `2px solid ${stage.color}` }}
+            >
+              <div
+                className="w-12 h-12 sm:w-16 sm:h-16 rounded-full"
+                style={{ backgroundColor: stage.color }}
+              />
+            </div>
+          )}
+        </div>
+        <h3 className="font-semibold text-foreground text-sm sm:text-base">{stage.name}</h3>
+        <p className="text-xs sm:text-sm text-muted-foreground">{count} head</p>
+        {stage.description && (
+          <p className="text-xs text-muted-foreground mt-1 hidden sm:block line-clamp-1">
+            {stage.description}
+          </p>
+        )}
+      </button>
+    </div>
+  )
+}
 
 export default function DashboardPage() {
   const [analytics, setAnalytics] = useState<any>(null)
   const [alerts, setAlerts] = useState<any[]>([])
+  const [stageCounts, setStageCounts] = useState<Record<string, number>>({})
+  const { stages, reorderStages } = useLifecycleConfig()
+  const router = useRouter()
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (over && active.id !== over.id) {
+      const oldIndex = stages.findIndex((s) => s.id === active.id)
+      const newIndex = stages.findIndex((s) => s.id === over.id)
+
+      const newOrder = arrayMove(stages, oldIndex, newIndex)
+      reorderStages(newOrder.map((s) => s.id))
+    }
+  }
 
   useEffect(() => {
     // Load analytics
     const data = dataStore.getAnalytics()
     setAnalytics(data)
+
+    // Get all cattle data
+    const cattle = dataStore.getCattle()
+    const activeCattle = cattle.filter((c) => c.status === "Active")
+
+    // Calculate stage counts
+    const counts: Record<string, number> = {}
+    activeCattle.forEach((c) => {
+      counts[c.stage] = (counts[c.stage] || 0) + 1
+    })
+    setStageCounts(counts)
 
     // Generate alerts
     const feed = dataStore.getFeedInventory()
@@ -51,7 +165,6 @@ export default function DashboardPage() {
     }
 
     // Health status alert
-    const cattle = dataStore.getCattle()
     const healthyCattle = cattle.filter((c) => c.healthStatus === "Healthy" && c.status === "Active")
     if (healthyCattle.length === cattle.filter((c) => c.status === "Active").length) {
       newAlerts.push({
@@ -111,22 +224,23 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="container mx-auto px-3 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-              <p className="text-sm text-muted-foreground">Comprehensive herd overview</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground">Dashboard</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Comprehensive herd overview</p>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleExportCattle}>
+            <div className="flex gap-2 flex-wrap">
+              <Button variant="outline" size="sm" onClick={handleExportCattle} className="hidden sm:flex">
                 <Download className="h-4 w-4 mr-2" />
                 Export Data
               </Button>
               <QuickEntryDialog />
               <Link href="/cattle">
-                <Button>
+                <Button size="sm">
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Cattle
+                  <span className="hidden sm:inline">Add Cattle</span>
+                  <span className="sm:hidden">Add</span>
                 </Button>
               </Link>
             </div>
@@ -134,86 +248,65 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-6 space-y-6">
+      <main className="container mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* Production Lifecycle */}
         <section>
-          <h2 className="text-lg font-semibold mb-4 text-foreground">Production Lifecycle</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-foreground">Production Lifecycle</h2>
+            <LifecycleSettingsDialog />
+          </div>
           <Card>
-            <CardContent className="p-8">
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-center">
-                <div className="flex flex-col items-center text-center">
-                  <div className="relative w-32 h-32 mb-3">
-                    <Image src="/images/breeding.png" alt="Breeding" fill className="object-contain" />
-                  </div>
-                  <h3 className="font-semibold text-foreground">Breeding</h3>
-                  <p className="text-sm text-muted-foreground">{analytics.cows.exposed} exposed</p>
-                </div>
+            <CardContent className="p-4 sm:p-8">
+              {stages.length > 0 ? (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext items={stages.map((s) => s.id)} strategy={horizontalListSortingStrategy}>
+                    <div className="flex flex-wrap gap-3 sm:gap-4 justify-center items-center">
+                      {stages.map((stage, index) => (
+                        <div key={stage.id} className="flex items-center gap-2 sm:gap-4">
+                          <SortableStage
+                            stage={stage}
+                            count={stageCounts[stage.name] || 0}
+                            onClick={() => router.push(`/cattle?stage=${encodeURIComponent(stage.name)}`)}
+                          />
 
-                <div className="flex justify-center">
-                  <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                          {index < stages.length - 1 && (
+                            <svg
+                              className="w-4 h-4 sm:w-6 sm:h-6 text-muted-foreground flex-shrink-0 hidden sm:block"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 5l7 7-7 7"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground mb-4">No lifecycle stages configured</p>
+                  <LifecycleSettingsDialog />
                 </div>
-
-                <div className="flex flex-col items-center text-center">
-                  <div className="relative w-32 h-32 mb-3">
-                    <Image src="/images/pregnancy.png" alt="Pregnancy" fill className="object-contain" />
-                  </div>
-                  <h3 className="font-semibold text-foreground">Pregnancy Check</h3>
-                  <p className="text-sm text-muted-foreground">{analytics.cows.pregnant} pregnant</p>
-                </div>
-
-                <div className="flex justify-center">
-                  <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-
-                <div className="flex flex-col items-center text-center">
-                  <div className="relative w-32 h-32 mb-3">
-                    <Image src="/images/calf.png" alt="Calving" fill className="object-contain" />
-                  </div>
-                  <h3 className="font-semibold text-foreground">Calving</h3>
-                  <p className="text-sm text-muted-foreground">{analytics.calves.unweaned} calves</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center mt-8">
-                <div className="flex flex-col items-center text-center md:col-start-1">
-                  <div className="relative w-32 h-32 mb-3">
-                    <Image src="/images/yearling.png" alt="Yearling" fill className="object-contain" />
-                  </div>
-                  <h3 className="font-semibold text-foreground">Yearling</h3>
-                  <p className="text-sm text-muted-foreground">Growing</p>
-                </div>
-
-                <div className="flex justify-center md:col-start-2">
-                  <svg
-                    className="w-8 h-8 text-primary rotate-180"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-
-                <div className="flex flex-col items-center text-center md:col-start-3">
-                  <div className="relative w-32 h-32 mb-3">
-                    <Image src="/images/weaning.png" alt="Weaning" fill className="object-contain" />
-                  </div>
-                  <h3 className="font-semibold text-foreground">Weaning</h3>
-                  <p className="text-sm text-muted-foreground">{analytics.calves.weaned} weaned</p>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </section>
 
         {/* Herd Overview */}
         <section>
-          <h2 className="text-lg font-semibold mb-4 text-foreground">Herd Overview</h2>
-          <div className="grid gap-4 md:grid-cols-3">
+          <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-foreground">Herd Overview</h2>
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
@@ -275,8 +368,8 @@ export default function DashboardPage() {
         {/* Alerts */}
         {alerts.length > 0 && (
           <section>
-            <h2 className="text-lg font-semibold mb-4 text-foreground">Status Alerts</h2>
-            <div className="grid gap-4 md:grid-cols-3">
+            <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-foreground">Status Alerts</h2>
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {alerts.map((alert) => (
                 <AlertCard key={alert.id} {...alert} />
               ))}
@@ -286,8 +379,8 @@ export default function DashboardPage() {
 
         {/* Key Metrics */}
         <section>
-          <h2 className="text-lg font-semibold mb-4 text-foreground">Key Metrics</h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-foreground">Key Metrics</h2>
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             {metrics.map((metric, index) => (
               <MetricCard key={index} {...metric} />
             ))}
@@ -296,41 +389,41 @@ export default function DashboardPage() {
 
         {/* Quick Actions */}
         <section>
-          <h2 className="text-lg font-semibold mb-4 text-foreground">Quick Actions</h2>
-          <div className="grid gap-4 md:grid-cols-4">
+          <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-foreground">Quick Actions</h2>
+          <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
             <Link href="/cattle">
               <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
-                <CardContent className="p-6 text-center">
-                  <Package className="h-8 w-8 mx-auto mb-2 text-primary" />
-                  <h3 className="font-semibold">Manage Cattle</h3>
-                  <p className="text-sm text-muted-foreground">View & edit herd</p>
+                <CardContent className="p-4 sm:p-6 text-center">
+                  <Package className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-primary" />
+                  <h3 className="font-semibold text-sm sm:text-base">Manage Cattle</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">View & edit herd</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/feed">
               <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
-                <CardContent className="p-6 text-center">
-                  <Sprout className="h-8 w-8 mx-auto mb-2 text-primary" />
-                  <h3 className="font-semibold">Feed Inventory</h3>
-                  <p className="text-sm text-muted-foreground">Track feed levels</p>
+                <CardContent className="p-4 sm:p-6 text-center">
+                  <Sprout className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-primary" />
+                  <h3 className="font-semibold text-sm sm:text-base">Feed Inventory</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Track feed levels</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/pastures">
               <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
-                <CardContent className="p-6 text-center">
-                  <MapPin className="h-8 w-8 mx-auto mb-2 text-primary" />
-                  <h3 className="font-semibold">Pastures</h3>
-                  <p className="text-sm text-muted-foreground">Manage grazing</p>
+                <CardContent className="p-4 sm:p-6 text-center">
+                  <MapPin className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-primary" />
+                  <h3 className="font-semibold text-sm sm:text-base">Pastures</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Manage grazing</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/reports">
               <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
-                <CardContent className="p-6 text-center">
-                  <FileText className="h-8 w-8 mx-auto mb-2 text-primary" />
-                  <h3 className="font-semibold">Reports</h3>
-                  <p className="text-sm text-muted-foreground">Generate reports</p>
+                <CardContent className="p-4 sm:p-6 text-center">
+                  <FileText className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-primary" />
+                  <h3 className="font-semibold text-sm sm:text-base">Reports</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Generate reports</p>
                 </CardContent>
               </Card>
             </Link>

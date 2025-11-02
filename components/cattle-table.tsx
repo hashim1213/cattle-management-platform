@@ -8,6 +8,7 @@ import { MoreVertical, Edit, Trash2, Eye } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { dataStore, type Cattle } from "@/lib/data-store"
 
 interface CattleTableProps {
@@ -36,6 +37,7 @@ function getCattleIcon(sex: string) {
 
 export function CattleTable({ searchQuery, filters }: CattleTableProps) {
   const [cattle, setCattle] = useState<Cattle[]>([])
+  const router = useRouter()
 
   useEffect(() => {
     setCattle(dataStore.getCattle())
@@ -78,7 +80,11 @@ export function CattleTable({ searchQuery, filters }: CattleTableProps) {
             </thead>
             <tbody className="divide-y divide-border">
               {filteredCattle.map((animal) => (
-                <tr key={animal.id} className="hover:bg-muted/50 transition-colors">
+                <tr
+                  key={animal.id}
+                  onClick={() => router.push(`/cattle/${animal.id}`)}
+                  className="hover:bg-muted/50 transition-colors cursor-pointer"
+                >
                   <td className="p-4">
                     <div className="relative w-10 h-10">
                       <Image src={getCattleIcon(animal.sex)} alt={animal.sex} fill className="object-contain" />
@@ -118,7 +124,11 @@ export function CattleTable({ searchQuery, filters }: CattleTableProps) {
                   <td className="p-4">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { dataStore } from "@/lib/data-store"
+import { lifecycleConfig } from "@/lib/lifecycle-config"
 import {
   LineChart,
   Line,
@@ -27,6 +28,7 @@ export default function AnalyticsPage() {
     const weightRecords = dataStore.getWeightRecords()
     const transactions = dataStore.getTransactions()
     const feed = dataStore.getFeedInventory()
+    const stages = lifecycleConfig.getStages()
 
     // Weight trend data
     const weightTrend = weightRecords.slice(-30).map((r) => ({
@@ -34,14 +36,14 @@ export default function AnalyticsPage() {
       weight: r.weight,
     }))
 
-    // Cattle by stage
-    const stageData = [
-      { name: "Calf", value: cattle.filter((c) => c.stage === "Calf").length },
-      { name: "Weaner", value: cattle.filter((c) => c.stage === "Weaner").length },
-      { name: "Yearling", value: cattle.filter((c) => c.stage === "Yearling").length },
-      { name: "Breeding", value: cattle.filter((c) => c.stage === "Breeding").length },
-      { name: "Finishing", value: cattle.filter((c) => c.stage === "Finishing").length },
-    ].filter((d) => d.value > 0)
+    // Cattle by stage - using dynamic lifecycle stages
+    const stageData = stages
+      .map((stage) => ({
+        name: stage.name,
+        value: cattle.filter((c) => c.stage === stage.name).length,
+        color: stage.color,
+      }))
+      .filter((d) => d.value > 0)
 
     // Monthly expenses
     const monthlyExpenses = transactions
@@ -86,17 +88,17 @@ export default function AnalyticsPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="container mx-auto px-6 py-4">
+        <div className="container mx-auto px-3 sm:px-6 py-3 sm:py-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Analytics Dashboard</h1>
-            <p className="text-sm text-muted-foreground">Visual insights and performance trends</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Analytics Dashboard</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">Visual insights and performance trends</p>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-6 space-y-6">
+      <main className="container mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* Key Performance Indicators */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
           <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
             <CardContent className="p-6">
               <div className="space-y-2">
@@ -139,7 +141,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Charts */}
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
           <Card className="shadow-md">
             <CardHeader className="bg-muted/30">
               <CardTitle className="text-lg">Weight Trend (Last 30 Records)</CardTitle>
@@ -187,7 +189,7 @@ export default function AnalyticsPage() {
                     dataKey="value"
                   >
                     {data.stageData.map((entry: any, index: number) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell key={`cell-${index}`} fill={entry.color || "#8884d8"} />
                     ))}
                   </Pie>
                   <Tooltip />

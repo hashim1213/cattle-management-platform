@@ -3,6 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useLifecycleConfig } from "@/hooks/use-lifecycle-config"
 
 interface CattleFiltersProps {
   filters: {
@@ -15,6 +16,8 @@ interface CattleFiltersProps {
 }
 
 export function CattleFilters({ filters, onFiltersChange }: CattleFiltersProps) {
+  const { stages } = useLifecycleConfig()
+
   return (
     <Card className="mb-6">
       <CardContent className="p-4">
@@ -58,11 +61,11 @@ export function CattleFilters({ filters, onFiltersChange }: CattleFiltersProps) 
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Stages</SelectItem>
-                <SelectItem value="calf">Calf</SelectItem>
-                <SelectItem value="weaner">Weaner</SelectItem>
-                <SelectItem value="yearling">Yearling</SelectItem>
-                <SelectItem value="breeding">Breeding</SelectItem>
-                <SelectItem value="finishing">Finishing</SelectItem>
+                {stages.map((stage) => (
+                  <SelectItem key={stage.id} value={stage.name}>
+                    {stage.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

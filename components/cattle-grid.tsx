@@ -8,6 +8,7 @@ import { MoreVertical, Edit, Trash2, Eye } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { dataStore, type Cattle } from "@/lib/data-store"
 
 interface CattleGridProps {
@@ -36,6 +37,7 @@ function getCattleIcon(sex: string) {
 
 export function CattleGrid({ searchQuery, filters }: CattleGridProps) {
   const [cattle, setCattle] = useState<Cattle[]>([])
+  const router = useRouter()
 
   useEffect(() => {
     setCattle(dataStore.getCattle())
@@ -60,7 +62,11 @@ export function CattleGrid({ searchQuery, filters }: CattleGridProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {filteredCattle.map((animal) => (
-        <Card key={animal.id} className="hover:shadow-lg transition-shadow">
+        <Card
+          key={animal.id}
+          className="hover:shadow-lg transition-shadow cursor-pointer"
+          onClick={() => router.push(`/cattle/${animal.id}`)}
+        >
           <CardHeader className="pb-3">
             <div className="flex items-start gap-3">
               <div className="relative w-16 h-16 flex-shrink-0">
@@ -74,7 +80,12 @@ export function CattleGrid({ searchQuery, filters }: CattleGridProps) {
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="flex-shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex-shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>

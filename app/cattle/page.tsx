@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Plus, Search, Filter, Grid3x3, List, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,8 +12,10 @@ import { CattleFilters } from "@/components/cattle-filters"
 import Link from "next/link"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { dataStore } from "@/lib/data-store"
+import { useSearchParams } from "next/navigation"
 
 export default function CattlePage() {
+  const searchParams = useSearchParams()
   const [searchQuery, setSearchQuery] = useState("")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [viewMode, setViewMode] = useState<"table" | "grid">("table")
@@ -24,6 +26,15 @@ export default function CattlePage() {
     stage: "all",
     lot: "all",
   })
+
+  // Handle URL parameters
+  useEffect(() => {
+    const stageParam = searchParams.get("stage")
+    if (stageParam) {
+      setFilters((prev) => ({ ...prev, stage: stageParam }))
+      setShowFilters(true)
+    }
+  }, [searchParams])
 
   const handleResetData = () => {
     if (confirm("Are you sure you want to reset all data to sample data? This will delete all current records.")) {
@@ -36,30 +47,30 @@ export default function CattlePage() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
             <div>
-              <Link href="/" className="text-sm text-muted-foreground hover:text-foreground mb-1 block">
+              <Link href="/" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground mb-1 block">
                 ← Back to Dashboard
               </Link>
-              <h1 className="text-2xl font-bold text-foreground">Cattle Inventory</h1>
-              <p className="text-sm text-muted-foreground">Manage your complete cattle records</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground">Cattle Inventory</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Manage your complete cattle records</p>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleResetData}>
+            <div className="flex gap-2 flex-wrap">
+              <Button variant="outline" size="sm" onClick={handleResetData} className="hidden sm:flex">
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Reset Data
               </Button>
-              <Button onClick={() => setIsAddDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Cattle
+              <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
+                <Plus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Add Cattle</span>
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
         <CattleStats />
 
         {/* Search, Filter, and View Controls */}

@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useLifecycleConfig } from "@/hooks/use-lifecycle-config"
+import { usePenStore } from "@/hooks/use-pen-store"
 
 interface AddCattleDialogProps {
   open: boolean
@@ -22,6 +24,8 @@ interface AddCattleDialogProps {
 }
 
 export function AddCattleDialog({ open, onOpenChange }: AddCattleDialogProps) {
+  const { stages } = useLifecycleConfig()
+  const { barns, pens, getPen, updatePenCount } = usePenStore()
   const [formData, setFormData] = useState({
     // Basic Info
     tagNumber: "",
@@ -29,6 +33,9 @@ export function AddCattleDialog({ open, onOpenChange }: AddCattleDialogProps) {
     breed: "",
     sex: "",
     birthDate: "",
+    stage: "",
+    barnId: "",
+    penId: "",
 
     // Identification
     earTag: "",
@@ -64,6 +71,9 @@ export function AddCattleDialog({ open, onOpenChange }: AddCattleDialogProps) {
       breed: "",
       sex: "",
       birthDate: "",
+      stage: "",
+      barnId: "",
+      penId: "",
       earTag: "",
       brand: "",
       electronicId: "",
@@ -166,6 +176,71 @@ export function AddCattleDialog({ open, onOpenChange }: AddCattleDialogProps) {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="stage">Lifecycle Stage</Label>
+                  <Select value={formData.stage} onValueChange={(value) => setFormData({ ...formData, stage: value })}>
+                    <SelectTrigger id="stage">
+                      <SelectValue placeholder="Select stage" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {stages.map((stage) => (
+                        <SelectItem key={stage.id} value={stage.name}>
+                          {stage.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="barnId">Barn (Optional)</Label>
+                  <Select
+                    value={formData.barnId}
+                    onValueChange={(value) => {
+                      setFormData({ ...formData, barnId: value, penId: "" })
+                    }}
+                  >
+                    <SelectTrigger id="barnId">
+                      <SelectValue placeholder="Select barn" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {barns.map((barn) => (
+                        <SelectItem key={barn.id} value={barn.id}>
+                          {barn.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="penId">Pen (Optional)</Label>
+                  <Select
+                    value={formData.penId}
+                    onValueChange={(value) => setFormData({ ...formData, penId: value })}
+                    disabled={!formData.barnId}
+                  >
+                    <SelectTrigger id="penId">
+                      <SelectValue placeholder="Select pen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {pens
+                        .filter((pen) => pen.barnId === formData.barnId)
+                        .map((pen) => {
+                          const available = pen.capacity - pen.currentCount
+                          return (
+                            <SelectItem key={pen.id} value={pen.id}>
+                              {pen.name} ({available}/{pen.capacity} available)
+                            </SelectItem>
+                          )
+                        })}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <Label htmlFor="colorMarkings">Color/Markings</Label>
                   <Input
                     id="colorMarkings"
@@ -174,24 +249,23 @@ export function AddCattleDialog({ open, onOpenChange }: AddCattleDialogProps) {
                     onChange={(e) => setFormData({ ...formData, colorMarkings: e.target.value })}
                   />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="hornStatus">Horn Status</Label>
-                <Select
-                  value={formData.hornStatus}
-                  onValueChange={(value) => setFormData({ ...formData, hornStatus: value })}
-                >
-                  <SelectTrigger id="hornStatus">
-                    <SelectValue placeholder="Select horn status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="polled">Polled (Naturally Hornless)</SelectItem>
-                    <SelectItem value="horned">Horned</SelectItem>
-                    <SelectItem value="dehorned">Dehorned</SelectItem>
-                    <SelectItem value="disbudded">Disbudded</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="space-y-2">
+                  <Label htmlFor="hornStatus">Horn Status</Label>
+                  <Select
+                    value={formData.hornStatus}
+                    onValueChange={(value) => setFormData({ ...formData, hornStatus: value })}
+                  >
+                    <SelectTrigger id="hornStatus">
+                      <SelectValue placeholder="Select horn status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="polled">Polled (Naturally Hornless)</SelectItem>
+                      <SelectItem value="horned">Horned</SelectItem>
+                      <SelectItem value="dehorned">Dehorned</SelectItem>
+                      <SelectItem value="disbudded">Disbudded</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </TabsContent>
 

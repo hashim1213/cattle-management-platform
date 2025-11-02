@@ -14,6 +14,8 @@ export interface Cattle {
   sire?: string
   lot: string
   pasture?: string
+  penId?: string
+  barnId?: string
   status: "Active" | "Sold" | "Deceased" | "Culled"
   stage: "Calf" | "Weaner" | "Yearling" | "Breeding" | "Finishing"
   healthStatus: "Healthy" | "Sick" | "Treatment" | "Quarantine"

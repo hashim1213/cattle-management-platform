@@ -1,9 +1,9 @@
 "use client"
 
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { useState } from "react"
-import { ArrowLeft, Edit, Trash2, Activity, TrendingUp, Calendar, DollarSign, Plus } from "lucide-react"
+import { useState, useEffect } from "react"
+import { ArrowLeft, Edit, Trash2, Activity, TrendingUp, Calendar, DollarSign, Plus, Building2, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -12,17 +12,75 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { EditCattleDialog } from "@/components/edit-cattle-dialog"
+import { dataStore, type Cattle } from "@/lib/data-store"
+import { usePenStore } from "@/hooks/use-pen-store"
+import { useToast } from "@/hooks/use-toast"
 
 export default function CattleDetailPage() {
   const params = useParams()
+  const router = useRouter()
+  const { toast } = useToast()
+  const { barns, pens, getPen, updatePenCount } = usePenStore()
   const [isAddWeightOpen, setIsAddWeightOpen] = useState(false)
   const [isAddHealthOpen, setIsAddHealthOpen] = useState(false)
   const [isUpdatePriceOpen, setIsUpdatePriceOpen] = useState(false)
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [isAssignLocationOpen, setIsAssignLocationOpen] = useState(false)
+  const [cattle, setCattle] = useState<Cattle | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
+  const [selectedBarnId, setSelectedBarnId] = useState<string>("")
+  const [selectedPenId, setSelectedPenId] = useState<string>("")
 
-  // Mock data - would be fetched based on params.id
-  const cattle = {
-    id: params.id,
-    tagNumber: "1247",
+  useEffect(() => {
+    const foundCattle = dataStore.getCattle().find((c) => c.id === params.id)
+    if (foundCattle) {
+      setCattle(foundCattle)
+      setSelectedBarnId(foundCattle.barnId || "")
+      setSelectedPenId(foundCattle.penId || "")
+    }
+  }, [params.id, refreshKey])
+
+  const handleAssignLocation = () => {
+    if (!cattle) return
+
+    const oldPenId = cattle.penId
+    const newPenId = selectedPenId
+
+    // Update cattle with new location
+    dataStore.updateCattle(cattle.id, {
+      barnId: selectedBarnId,
+      penId: newPenId,
+    })
+
+    // Update pen counts
+    if (oldPenId && oldPenId !== newPenId) {
+      updatePenCount(oldPenId, -1) // Remove from old pen
+    }
+    if (newPenId && oldPenId !== newPenId) {
+      updatePenCount(newPenId, 1) // Add to new pen
+    }
+
+    setIsAssignLocationOpen(false)
+    setRefreshKey(prev => prev + 1)
+    toast({
+      title: "Location updated",
+      description: "Cattle has been assigned to the new location.",
+    })
+  }
+
+  if (!cattle) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    )
+  }
+
+  const mockCattle = {
+    id: cattle.id,
+    tagNumber: cattle.tagNumber,
     name: "Big Red",
     breed: "Angus",
     sex: "steer",
@@ -129,7 +187,7 @@ export default function CattleDetailPage() {
               </p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline">
+              <Button variant="outline" onClick={() => setIsEditOpen(true)}>
                 <Edit className="h-4 w-4 mr-2" />
                 Edit
               </Button>
@@ -199,6 +257,43 @@ export default function CattleDetailPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Location Assignment */}
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  Current Location
+                </h3>
+                <div className="flex items-center gap-4 text-sm">
+                  {cattle.barnId && cattle.penId ? (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">
+                          {barns.find(b => b.id === cattle.barnId)?.name || "Unknown Barn"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">
+                          {pens.find(p => p.id === cattle.penId)?.name || "Unknown Pen"}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <Badge variant="outline" className="text-amber-600">Unassigned</Badge>
+                  )}
+                </div>
+              </div>
+              <Button variant="outline" onClick={() => setIsAssignLocationOpen(true)}>
+                {cattle.barnId ? "Change Location" : "Assign Location"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {cattle.readyForSale && (
           <Card className="mb-6 border-blue-200 bg-blue-50">
@@ -633,6 +728,80 @@ export default function CattleDetailPage() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Edit Cattle Dialog */}
+      <EditCattleDialog
+        cattle={cattle}
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        onSave={() => setRefreshKey((prev) => prev + 1)}
+      />
+
+      {/* Assign Location Dialog */}
+      <Dialog open={isAssignLocationOpen} onOpenChange={setIsAssignLocationOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Barn & Pen Location</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="assign-barn">Barn</Label>
+              <Select
+                value={selectedBarnId}
+                onValueChange={(value) => {
+                  setSelectedBarnId(value)
+                  setSelectedPenId("") // Reset pen when barn changes
+                }}
+              >
+                <SelectTrigger id="assign-barn">
+                  <SelectValue placeholder="Select barn" />
+                </SelectTrigger>
+                <SelectContent>
+                  {barns.map((barn) => (
+                    <SelectItem key={barn.id} value={barn.id}>
+                      {barn.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="assign-pen">Pen</Label>
+              <Select
+                value={selectedPenId}
+                onValueChange={setSelectedPenId}
+                disabled={!selectedBarnId}
+              >
+                <SelectTrigger id="assign-pen">
+                  <SelectValue placeholder="Select pen" />
+                </SelectTrigger>
+                <SelectContent>
+                  {pens
+                    .filter((pen) => pen.barnId === selectedBarnId)
+                    .map((pen) => {
+                      const available = pen.capacity - pen.currentCount
+                      return (
+                        <SelectItem key={pen.id} value={pen.id}>
+                          {pen.name} ({available}/{pen.capacity} available)
+                        </SelectItem>
+                      )
+                    })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setIsAssignLocationOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleAssignLocation} disabled={!selectedPenId}>
+                Assign Location
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
