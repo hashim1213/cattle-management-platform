@@ -15,6 +15,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { dataStore, type Cattle } from "@/lib/data-store"
 import { usePenStore } from "@/hooks/use-pen-store"
 import { useActivityStore } from "@/hooks/use-activity-store"
+import { useCostCalculator } from "@/hooks/use-cost-calculator"
 import { Eye, DollarSign, TrendingUp, TrendingDown, Plus, Activity } from "lucide-react"
 import { ActivityLogItem } from "@/components/activity-log-item"
 
@@ -29,6 +30,7 @@ export function PenDetailsDialog({ penId, open, onOpenChange, onAssignCattle }: 
   const router = useRouter()
   const { getPen, barns } = usePenStore()
   const { getEntityActivities } = useActivityStore()
+  const { calculatePenCosts } = useCostCalculator()
 
   if (!penId) return null
 
@@ -38,27 +40,16 @@ export function PenDetailsDialog({ penId, open, onOpenChange, onAssignCattle }: 
   const barn = barns.find((b) => b.id === pen.barnId)
   const cattle = dataStore.getCattle().filter((c) => c.penId === penId && c.status === "Active")
 
-  // Calculate pen analytics
-  const totalPurchaseValue = cattle.reduce((sum, c) => sum + (Number(c.purchasePrice) || 0), 0)
-  const totalCurrentWeight = cattle.reduce((sum, c) => sum + (c.weights?.[c.weights.length - 1]?.weight || Number(c.purchaseWeight) || 0), 0)
-  const avgWeightPerHead = cattle.length > 0 ? totalCurrentWeight / cattle.length : 0
+  // Use automated cost calculation
+  const penCosts = calculatePenCosts(penId)
 
-  // Estimate feed cost (simplified - could be more complex)
-  const daysOnFeed = cattle.reduce((sum, c) => {
-    if (!c.purchaseDate) return sum
-    const days = Math.floor((Date.now() - new Date(c.purchaseDate).getTime()) / (1000 * 60 * 60 * 24))
-    return sum + days
-  }, 0)
-  const avgDaysOnFeed = cattle.length > 0 ? daysOnFeed / cattle.length : 0
-  const estimatedFeedCostPerDay = 3.50 // $3.50 per head per day (adjustable)
-  const totalFeedCost = cattle.length * avgDaysOnFeed * estimatedFeedCostPerDay
-
-  // Break-even calculation (simplified)
-  const totalInvestment = totalPurchaseValue + totalFeedCost
-  const costPerPound = totalCurrentWeight > 0 ? totalInvestment / totalCurrentWeight : 0
-  const marketPrice = 1.85 // Example market price per pound
-  const projectedValue = totalCurrentWeight * marketPrice
-  const currentProfitLoss = projectedValue - totalInvestment
+  // Extract calculated values or use defaults
+  const totalInvestment = penCosts?.totalInvestment || 0
+  const totalFeedCost = penCosts?.totalFeedCost || 0
+  const avgWeightPerHead = penCosts?.averageWeightPerHead || 0
+  const currentProfitLoss = penCosts?.totalEstimatedProfit || 0
+  const costPerPound = penCosts?.averageBreakEvenLivePrice || 0
+  const avgDaysOnFeed = penCosts?.averageDaysOnFeed || 0
 
   const handleCattleClick = (cattleId: string) => {
     onOpenChange(false)

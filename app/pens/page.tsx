@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Plus, Building2, Grid3x3, BarChart3, Edit, Trash2, Move, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,12 +18,41 @@ import { BarnAnalyticsDialog } from "@/components/barn-analytics-dialog"
 import { useToast } from "@/hooks/use-toast"
 import type { Barn, Pen } from "@/lib/pen-store"
 
+type DragState = {
+  penId: string
+  startX: number
+  startY: number
+  offsetX: number
+  offsetY: number
+  currentX: number
+  currentY: number
+}
+
+type ResizeState = {
+  penId: string
+  startX: number
+  startY: number
+  startWidth: number
+  startHeight: number
+  startPenX: number
+  startPenY: number
+  currentWidth: number
+  currentHeight: number
+  currentX: number
+  currentY: number
+  handle: "se" | "sw" | "ne" | "nw" // southeast, southwest, northeast, northwest
+}
+
 export default function PensPage() {
-  const { barns, pens, getPenAnalytics, addBarn, updateBarn, deleteBarn, addPen, updatePen, deletePen } = usePenStore()
+  const { barns, pens, getPenAnalytics, addBarn, updateBarn, deleteBarn, addPen, updatePen, deletePen, resetToDefault } = usePenStore()
   const { log } = useActivityStore()
   const { toast } = useToast()
   const [selectedBarn, setSelectedBarn] = useState<string | null>(barns[0]?.id || null)
   const [viewMode, setViewMode] = useState<"visual" | "list">("visual")
+  const [editMode, setEditMode] = useState(false)
+  const [dragState, setDragState] = useState<DragState | null>(null)
+  const [resizeState, setResizeState] = useState<ResizeState | null>(null)
+  const svgRef = useRef<SVGSVGElement>(null)
 
   // Dialog states
   const [barnDialogOpen, setBarnDialogOpen] = useState(false)
@@ -211,6 +240,196 @@ export default function PensPage() {
     setBarnAnalyticsDialogOpen(true)
   }
 
+  // Drag and drop handlers
+  const getMousePosition = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (!svgRef.current) return { x: 0, y: 0 }
+    const CTM = svgRef.current.getScreenCTM()
+    if (!CTM) return { x: 0, y: 0 }
+    return {
+      x: (e.clientX - CTM.e) / CTM.a,
+      y: (e.clientY - CTM.f) / CTM.d,
+    }
+  }
+
+  const handlePenMouseDown = (e: React.MouseEvent<SVGGElement>, penId: string) => {
+    if (!editMode) return // Only allow dragging in edit mode
+    e.stopPropagation()
+    const pen = pens.find((p) => p.id === penId)
+    if (!pen?.location) return
+
+    const mousePos = getMousePosition(e as any)
+    setDragState({
+      penId,
+      startX: mousePos.x,
+      startY: mousePos.y,
+      offsetX: mousePos.x - pen.location.x,
+      offsetY: mousePos.y - pen.location.y,
+      currentX: pen.location.x,
+      currentY: pen.location.y,
+    })
+  }
+
+  const handleResizeMouseDown = (
+    e: React.MouseEvent<SVGRectElement>,
+    penId: string,
+    handle: "se" | "sw" | "ne" | "nw",
+  ) => {
+    if (!editMode) return // Only allow resizing in edit mode
+    e.stopPropagation()
+    const pen = pens.find((p) => p.id === penId)
+    if (!pen?.location) return
+
+    const mousePos = getMousePosition(e as any)
+    setResizeState({
+      penId,
+      startX: mousePos.x,
+      startY: mousePos.y,
+      startWidth: pen.location.width,
+      startHeight: pen.location.height,
+      startPenX: pen.location.x,
+      startPenY: pen.location.y,
+      currentWidth: pen.location.width,
+      currentHeight: pen.location.height,
+      currentX: pen.location.x,
+      currentY: pen.location.y,
+      handle,
+    })
+  }
+
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const mousePos = getMousePosition(e)
+
+    if (dragState) {
+      const pen = pens.find((p) => p.id === dragState.penId)
+      if (!pen?.location) return
+
+      const newX = mousePos.x - dragState.offsetX
+      const newY = mousePos.y - dragState.offsetY
+
+      // Strict SVG bounds - keep entire pen within viewBox
+      const constrainedX = Math.max(0, Math.min(500 - pen.location.width, newX))
+      const constrainedY = Math.max(0, Math.min(400 - pen.location.height, newY))
+
+      // Update local drag state only
+      setDragState({
+        ...dragState,
+        currentX: constrainedX,
+        currentY: constrainedY,
+      })
+    }
+
+    if (resizeState) {
+      const deltaX = mousePos.x - resizeState.startX
+      const deltaY = mousePos.y - resizeState.startY
+
+      let newWidth = resizeState.startWidth
+      let newHeight = resizeState.startHeight
+      let newX = resizeState.startPenX
+      let newY = resizeState.startPenY
+
+      // Calculate new dimensions based on handle
+      if (resizeState.handle === "se") {
+        newWidth = Math.max(150, resizeState.startWidth + deltaX)
+        newHeight = Math.max(100, resizeState.startHeight + deltaY)
+      } else if (resizeState.handle === "sw") {
+        newWidth = Math.max(150, resizeState.startWidth - deltaX)
+        newHeight = Math.max(100, resizeState.startHeight + deltaY)
+        newX = resizeState.startPenX + (resizeState.startWidth - newWidth)
+      } else if (resizeState.handle === "ne") {
+        newWidth = Math.max(150, resizeState.startWidth + deltaX)
+        newHeight = Math.max(100, resizeState.startHeight - deltaY)
+        newY = resizeState.startPenY + (resizeState.startHeight - newHeight)
+      } else if (resizeState.handle === "nw") {
+        newWidth = Math.max(150, resizeState.startWidth - deltaX)
+        newHeight = Math.max(100, resizeState.startHeight - deltaY)
+        newX = resizeState.startPenX + (resizeState.startWidth - newWidth)
+        newY = resizeState.startPenY + (resizeState.startHeight - newHeight)
+      }
+
+      // Strict bounds - ensure pen stays within SVG viewBox
+      if (newX < 0) {
+        newWidth += newX
+        newX = 0
+      }
+      if (newY < 0) {
+        newHeight += newY
+        newY = 0
+      }
+      if (newX + newWidth > 500) {
+        newWidth = 500 - newX
+      }
+      if (newY + newHeight > 400) {
+        newHeight = 400 - newY
+      }
+
+      // Enforce minimum sizes
+      newWidth = Math.max(150, newWidth)
+      newHeight = Math.max(100, newHeight)
+
+      // Update local resize state only
+      setResizeState({
+        ...resizeState,
+        currentWidth: newWidth,
+        currentHeight: newHeight,
+        currentX: newX,
+        currentY: newY,
+      })
+    }
+  }
+
+  const handleMouseUp = () => {
+    if (dragState) {
+      const pen = pens.find((p) => p.id === dragState.penId)
+      if (pen?.location) {
+        // Save final position to store
+        updatePen(dragState.penId, {
+          location: {
+            ...pen.location,
+            x: dragState.currentX,
+            y: dragState.currentY,
+          },
+        })
+
+        log({
+          type: "pen-updated",
+          entityType: "pen",
+          entityId: pen.id,
+          entityName: pen.name,
+          title: `Moved pen: ${pen.name}`,
+          description: `Repositioned pen in barn layout`,
+          performedBy: "Owner",
+        })
+      }
+      setDragState(null)
+    }
+
+    if (resizeState) {
+      const pen = pens.find((p) => p.id === resizeState.penId)
+      if (pen?.location) {
+        // Save final size and position to store
+        updatePen(resizeState.penId, {
+          location: {
+            x: resizeState.currentX,
+            y: resizeState.currentY,
+            width: resizeState.currentWidth,
+            height: resizeState.currentHeight,
+          },
+        })
+
+        log({
+          type: "pen-updated",
+          entityType: "pen",
+          entityId: pen.id,
+          entityName: pen.name,
+          title: `Resized pen: ${pen.name}`,
+          description: `Adjusted pen dimensions`,
+          performedBy: "Owner",
+        })
+      }
+      setResizeState(null)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -291,6 +510,40 @@ export default function PensPage() {
               <div className="flex gap-2">
                 <Button
                   size="sm"
+                  variant={editMode ? "default" : "outline"}
+                  onClick={() => {
+                    setEditMode(!editMode)
+                    toast({
+                      title: editMode ? "View Mode" : "Edit Mode",
+                      description: editMode
+                        ? "Pen editing disabled"
+                        : "You can now drag and resize pens",
+                    })
+                  }}
+                  className={editMode ? "bg-primary" : ""}
+                >
+                  <Move className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">{editMode ? "Exit Edit" : "Edit Layout"}</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    if (confirm("Reset all pen positions and sizes to default? This cannot be undone.")) {
+                      resetToDefault()
+                      toast({
+                        title: "Layout Reset",
+                        description: "All pens have been reset to default positions and sizes",
+                      })
+                    }
+                  }}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Reset Layout</span>
+                </Button>
+                <Button
+                  size="sm"
                   variant={viewMode === "visual" ? "default" : "outline"}
                   onClick={() => setViewMode("visual")}
                 >
@@ -366,26 +619,70 @@ export default function PensPage() {
                   <CardContent>
                     {/* Visual Pen Layout */}
                     <div
-                      className="relative rounded-lg p-6 min-h-[500px] overflow-x-auto"
+                      className="relative rounded-xl p-6 min-h-[500px] overflow-x-auto"
                       style={{
-                        background: "linear-gradient(135deg, #b8925a 0%, #9d7d4a 50%, #8b6f3f 100%)",
+                        background: "linear-gradient(135deg, #1e3a2f 0%, #2d4a3e 50%, #3d5a4e 100%)",
                       }}
                     >
+                      {editMode && (
+                        <div className="absolute top-4 left-4 z-10 bg-primary/90 backdrop-blur-sm text-white px-4 py-2 rounded-lg shadow-lg border border-white/20 animate-pulse">
+                          <div className="flex items-center gap-2">
+                            <Move className="h-4 w-4" />
+                            <span className="text-sm font-semibold">Edit Mode Active</span>
+                          </div>
+                        </div>
+                      )}
                       <svg
+                        ref={svgRef}
                         width="100%"
                         height="500"
                         viewBox="0 0 500 400"
                         className="min-w-[500px]"
+                        onMouseMove={handleMouseMove}
+                        onMouseUp={handleMouseUp}
+                        onMouseLeave={handleMouseUp}
                       >
-                        {/* Background grass texture */}
+                        {/* Modern gradient definitions */}
                         <defs>
-                          <pattern id="grass" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-                            <rect width="20" height="20" fill="#7aa44e" />
-                            <circle cx="5" cy="5" r="1" fill="#6b9440" opacity="0.5" />
-                            <circle cx="15" cy="15" r="1" fill="#6b9440" opacity="0.5" />
+                          {/* Grass pattern */}
+                          <pattern id="grass" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+                            <rect width="40" height="40" fill="#4a7c59" />
+                            <circle cx="10" cy="10" r="2" fill="#5a8c69" opacity="0.6" />
+                            <circle cx="30" cy="20" r="2" fill="#3a6c49" opacity="0.6" />
+                            <circle cx="20" cy="30" r="2" fill="#5a8c69" opacity="0.6" />
                           </pattern>
+
+                          {/* Pen gradient backgrounds */}
+                          <linearGradient id="penGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style={{ stopColor: "#f5f5dc", stopOpacity: 0.95 }} />
+                            <stop offset="100%" style={{ stopColor: "#e8dcc0", stopOpacity: 0.95 }} />
+                          </linearGradient>
+
+                          {/* Shadow filter for depth */}
+                          <filter id="penShadow" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+                            <feOffset dx="2" dy="3" result="offsetblur"/>
+                            <feComponentTransfer>
+                              <feFuncA type="linear" slope="0.4"/>
+                            </feComponentTransfer>
+                            <feMerge>
+                              <feMergeNode/>
+                              <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                          </filter>
+
+                          {/* Glow effect for active pens */}
+                          <filter id="glow">
+                            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                            <feMerge>
+                              <feMergeNode in="coloredBlur"/>
+                              <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                          </filter>
                         </defs>
-                        <rect width="100%" height="100%" fill="url(#grass)" opacity="0.3" />
+
+                        {/* Background */}
+                        <rect width="100%" height="100%" fill="url(#grass)" opacity="0.4" />
 
                         {barnPens.map((pen) => {
                           const utilizationPercent = pen.capacity > 0 ? (pen.currentCount / pen.capacity) * 100 : 0
@@ -396,141 +693,273 @@ export default function PensPage() {
                                 ? "#ea580c"
                                 : "#059669"
 
+                          // Auto-calculate pen size based on cattle count for better representation
+                          const cattleCount = pen.currentCount
+                          const minWidth = 150
+                          const minHeight = 100
+                          // Calculate grid needed for cattle icons (4 per row)
+                          const cowsPerRow = 4
+                          const rows = Math.ceil(cattleCount / cowsPerRow)
+                          const cols = Math.min(cattleCount, cowsPerRow)
+                          // Calculate size needed (each cow needs ~35x25 space)
+                          const neededWidth = Math.max(minWidth, cols * 35 + 50)
+                          const neededHeight = Math.max(minHeight, rows * 25 + 80)
+
+                          const penWidth = pen.location?.width || neededWidth
+                          const penHeight = pen.location?.height || neededHeight
+
+                          // Use drag/resize state for real-time preview
+                          let penX = pen.location?.x || 0
+                          let penY = pen.location?.y || 0
+                          let displayWidth = penWidth
+                          let displayHeight = penHeight
+
+                          if (dragState?.penId === pen.id) {
+                            penX = dragState.currentX
+                            penY = dragState.currentY
+                          }
+
+                          if (resizeState?.penId === pen.id) {
+                            penX = resizeState.currentX
+                            penY = resizeState.currentY
+                            displayWidth = resizeState.currentWidth
+                            displayHeight = resizeState.currentHeight
+                          }
+
                           return (
-                            <g key={pen.id} onClick={() => handleViewPenDetails(pen.id)} className="cursor-pointer">
-                              {/* Fence Border - Top */}
+                            <g
+                              key={pen.id}
+                              onMouseDown={(e) => handlePenMouseDown(e, pen.id)}
+                              className="pen-group"
+                              style={{ transition: editMode ? 'none' : 'all 0.3s ease' }}
+                            >
+                              {/* Drop shadow for depth */}
                               <rect
-                                x={pen.location?.x || 0}
-                                y={pen.location?.y || 0}
-                                width={pen.location?.width || 100}
-                                height="3"
-                                fill="#654321"
-                              />
-                              {/* Fence Border - Bottom */}
-                              <rect
-                                x={pen.location?.x || 0}
-                                y={(pen.location?.y || 0) + (pen.location?.height || 80) - 3}
-                                width={pen.location?.width || 100}
-                                height="3"
-                                fill="#654321"
-                              />
-                              {/* Fence Border - Left */}
-                              <rect
-                                x={pen.location?.x || 0}
-                                y={pen.location?.y || 0}
-                                width="3"
-                                height={pen.location?.height || 80}
-                                fill="#654321"
-                              />
-                              {/* Fence Border - Right */}
-                              <rect
-                                x={(pen.location?.x || 0) + (pen.location?.width || 100) - 3}
-                                y={pen.location?.y || 0}
-                                width="3"
-                                height={pen.location?.height || 80}
-                                fill="#654321"
+                                x={penX + 2}
+                                y={penY + 3}
+                                width={displayWidth}
+                                height={displayHeight}
+                                fill="black"
+                                opacity="0.15"
+                                rx="8"
+                                className="pointer-events-none"
                               />
 
-                              {/* Fence Posts */}
-                              {Array.from({ length: 5 }).map((_, i) => (
-                                <rect
-                                  key={`post-${i}`}
-                                  x={(pen.location?.x || 0) + ((pen.location?.width || 100) / 4) * i - 2}
-                                  y={pen.location?.y || 0}
-                                  width="4"
-                                  height={pen.location?.height || 80}
-                                  fill="#4a2511"
-                                  opacity="0.6"
-                                />
-                              ))}
-
-                              {/* Pen Background */}
+                              {/* Main pen background with gradient */}
                               <rect
-                                x={(pen.location?.x || 0) + 3}
-                                y={(pen.location?.y || 0) + 3}
-                                width={(pen.location?.width || 100) - 6}
-                                height={(pen.location?.height || 80) - 6}
-                                fill="#9cb378"
-                                fillOpacity="0.4"
-                                className="cursor-pointer hover:fill-opacity-60 transition-all"
+                                x={penX}
+                                y={penY}
+                                width={displayWidth}
+                                height={displayHeight}
+                                fill="url(#penGradient)"
+                                stroke={strokeColor}
+                                strokeWidth="3"
+                                rx="8"
+                                className={editMode ? "cursor-move" : "cursor-pointer"}
+                                style={{
+                                  filter: editMode && (dragState?.penId === pen.id || resizeState?.penId === pen.id)
+                                    ? 'url(#glow)'
+                                    : 'url(#penShadow)',
+                                  transition: 'all 0.2s ease'
+                                }}
+                                onDoubleClick={() => !editMode && handleViewPenDetails(pen.id)}
                               />
 
-                              {/* Status Indicator Bar */}
+                              {/* Wooden fence rails */}
+                              <line
+                                x1={penX}
+                                y1={penY + 15}
+                                x2={penX + displayWidth}
+                                y2={penY + 15}
+                                stroke="#8B4513"
+                                strokeWidth="2"
+                                opacity="0.4"
+                                className="pointer-events-none"
+                              />
+                              <line
+                                x1={penX}
+                                y1={penY + displayHeight - 15}
+                                x2={penX + displayWidth}
+                                y2={penY + displayHeight - 15}
+                                stroke="#8B4513"
+                                strokeWidth="2"
+                                opacity="0.4"
+                                className="pointer-events-none"
+                              />
+
+                              {/* Status indicator - top bar */}
                               <rect
-                                x={(pen.location?.x || 0) + 5}
-                                y={(pen.location?.y || 0) + 5}
-                                width={(pen.location?.width || 100) - 10}
-                                height="4"
+                                x={penX}
+                                y={penY}
+                                width={displayWidth * (utilizationPercent / 100)}
+                                height="6"
                                 fill={strokeColor}
                                 opacity="0.8"
+                                rx="8"
+                                className="pointer-events-none"
+                                style={{ transition: 'width 0.3s ease' }}
                               />
 
-                              {/* Pen Name Badge */}
-                              <rect
-                                x={(pen.location?.x || 0) + (pen.location?.width || 100) / 2 - 35}
-                                y={(pen.location?.y || 0) + 15}
-                                width="70"
-                                height="20"
-                                fill="white"
-                                stroke={strokeColor}
-                                strokeWidth="2"
-                                rx="3"
-                                opacity="0.95"
-                              />
-                              <text
-                                x={(pen.location?.x || 0) + (pen.location?.width || 100) / 2}
-                                y={(pen.location?.y || 0) + 29}
-                                textAnchor="middle"
-                                className="font-bold"
-                                fontSize="12"
-                                fill="#1f2937"
-                              >
-                                {pen.name}
-                              </text>
+                              {/* Pen name badge with glassmorphism effect */}
+                              <g className="pointer-events-none">
+                                <rect
+                                  x={penX + displayWidth / 2 - 45}
+                                  y={penY + 25}
+                                  width="90"
+                                  height="28"
+                                  fill="white"
+                                  fillOpacity="0.95"
+                                  stroke={strokeColor}
+                                  strokeWidth="2"
+                                  rx="6"
+                                />
+                                <text
+                                  x={penX + displayWidth / 2}
+                                  y={penY + 42}
+                                  textAnchor="middle"
+                                  className="font-bold"
+                                  fontSize="13"
+                                  fill="#1f2937"
+                                >
+                                  {pen.name}
+                                </text>
+                              </g>
 
-                              {/* Cattle Count */}
-                              <text
-                                x={(pen.location?.x || 0) + (pen.location?.width || 100) / 2}
-                                y={(pen.location?.y || 0) + 48}
-                                textAnchor="middle"
-                                className="font-semibold"
-                                fontSize="11"
-                                fill="#374151"
-                              >
-                                {pen.currentCount}/{pen.capacity} head
-                              </text>
+                              {/* Cattle count badge */}
+                              <g className="pointer-events-none">
+                                <rect
+                                  x={penX + 8}
+                                  y={penY + displayHeight - 28}
+                                  width="80"
+                                  height="22"
+                                  fill={strokeColor}
+                                  fillOpacity="0.9"
+                                  rx="4"
+                                />
+                                <text
+                                  x={penX + 48}
+                                  y={penY + displayHeight - 13}
+                                  textAnchor="middle"
+                                  className="font-semibold"
+                                  fontSize="11"
+                                  fill="white"
+                                >
+                                  {pen.currentCount}/{pen.capacity} head
+                                </text>
+                              </g>
 
-                              {/* Cow Icons */}
-                              {Array.from({ length: Math.min(pen.currentCount, 8) }).map((_, idx) => {
+                              {/* Cow Icons with improved layout */}
+                              {Array.from({ length: Math.min(pen.currentCount, 16) }).map((_, idx) => {
                                 const cols = 4
                                 const row = Math.floor(idx / cols)
                                 const col = idx % cols
-                                const spacing = (pen.location?.width || 100) / (cols + 1)
-                                const startY = (pen.location?.y || 0) + 60
+                                const spacing = displayWidth / (cols + 1)
+                                const startY = penY + 65
 
                                 return (
-                                  <text
-                                    key={idx}
-                                    x={(pen.location?.x || 0) + spacing * (col + 1)}
-                                    y={startY + row * 18}
-                                    textAnchor="middle"
-                                    fontSize="16"
-                                  >
-                                    🐄
-                                  </text>
+                                  <g key={idx} className="cow-icon pointer-events-none">
+                                    {/* Cow shadow */}
+                                    <ellipse
+                                      cx={penX + spacing * (col + 1)}
+                                      cy={startY + row * 22 + 8}
+                                      rx="8"
+                                      ry="2"
+                                      fill="black"
+                                      opacity="0.2"
+                                    />
+                                    <text
+                                      x={penX + spacing * (col + 1)}
+                                      y={startY + row * 22}
+                                      textAnchor="middle"
+                                      fontSize="18"
+                                      style={{
+                                        filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))',
+                                      }}
+                                    >
+                                      🐄
+                                    </text>
+                                  </g>
                                 )
                               })}
-                              {pen.currentCount > 8 && (
-                                <text
-                                  x={(pen.location?.x || 0) + (pen.location?.width || 100) / 2}
-                                  y={(pen.location?.y || 0) + (pen.location?.height || 80) - 12}
-                                  textAnchor="middle"
-                                  fontSize="10"
-                                  fill="#1f2937"
-                                  className="font-semibold"
-                                >
-                                  +{pen.currentCount - 8} more
-                                </text>
+                              {pen.currentCount > 16 && (
+                                <g className="pointer-events-none">
+                                  <rect
+                                    x={penX + displayWidth / 2 - 25}
+                                    y={penY + displayHeight - 55}
+                                    width="50"
+                                    height="20"
+                                    fill="rgba(255,255,255,0.8)"
+                                    rx="10"
+                                  />
+                                  <text
+                                    x={penX + displayWidth / 2}
+                                    y={penY + displayHeight - 41}
+                                    textAnchor="middle"
+                                    fontSize="11"
+                                    fill="#1f2937"
+                                    className="font-bold"
+                                  >
+                                    +{pen.currentCount - 16}
+                                  </text>
+                                </g>
+                              )}
+
+                              {/* Resize Handles - only in edit mode */}
+                              {editMode && (
+                                <g>
+                                  {/* Southeast handle */}
+                                  <rect
+                                    x={penX + displayWidth - 10}
+                                    y={penY + displayHeight - 10}
+                                    width="10"
+                                    height="10"
+                                    fill="white"
+                                    stroke={strokeColor}
+                                    strokeWidth="2"
+                                    rx="2"
+                                    className="cursor-se-resize hover:scale-110 transition-transform"
+                                    onMouseDown={(e) => handleResizeMouseDown(e, pen.id, "se")}
+                                  />
+                                  {/* Southwest handle */}
+                                  <rect
+                                    x={penX}
+                                    y={penY + displayHeight - 10}
+                                    width="10"
+                                    height="10"
+                                    fill="white"
+                                    stroke={strokeColor}
+                                    strokeWidth="2"
+                                    rx="2"
+                                    className="cursor-sw-resize hover:scale-110 transition-transform"
+                                    onMouseDown={(e) => handleResizeMouseDown(e, pen.id, "sw")}
+                                  />
+                                  {/* Northeast handle */}
+                                  <rect
+                                    x={penX + displayWidth - 10}
+                                    y={penY}
+                                    width="10"
+                                    height="10"
+                                    fill="white"
+                                    stroke={strokeColor}
+                                    strokeWidth="2"
+                                    rx="2"
+                                    className="cursor-ne-resize hover:scale-110 transition-transform"
+                                    onMouseDown={(e) => handleResizeMouseDown(e, pen.id, "ne")}
+                                  />
+                                  {/* Northwest handle */}
+                                  <rect
+                                    x={penX}
+                                    y={penY}
+                                    width="10"
+                                    height="10"
+                                    fill="white"
+                                    stroke={strokeColor}
+                                    strokeWidth="2"
+                                    rx="2"
+                                    className="cursor-nw-resize hover:scale-110 transition-transform"
+                                    onMouseDown={(e) => handleResizeMouseDown(e, pen.id, "nw")}
+                                  />
+                                </g>
                               )}
                             </g>
                           )

@@ -1,4 +1,6 @@
 // Comprehensive data management system using localStorage
+import { generateUniqueId } from "./id-generator"
+
 export interface Cattle {
   id: string
   tagNumber: string
@@ -8,14 +10,17 @@ export interface Cattle {
   birthDate: string
   purchaseDate?: string
   purchasePrice?: number
+  purchaseWeight?: number
   currentValue?: number
   weight: number
+  weights?: { id: string; date: string; weight: number }[]
   dam?: string
   sire?: string
   lot: string
   pasture?: string
   penId?: string
   barnId?: string
+  batchId?: string // Purchase group/batch tracking
   status: "Active" | "Sold" | "Deceased" | "Culled"
   stage: "Calf" | "Weaner" | "Yearling" | "Breeding" | "Finishing"
   healthStatus: "Healthy" | "Sick" | "Treatment" | "Quarantine"
@@ -700,7 +705,7 @@ class DataStore {
   addCattle(cattle: Omit<Cattle, "id" | "createdAt" | "updatedAt">): Cattle {
     const newCattle: Cattle = {
       ...cattle,
-      id: Date.now().toString(),
+      id: generateUniqueId("cattle"),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
@@ -743,7 +748,7 @@ class DataStore {
   addWeightRecord(record: Omit<WeightRecord, "id">): WeightRecord {
     const newRecord: WeightRecord = {
       ...record,
-      id: Date.now().toString(),
+      id: generateUniqueId("weight"),
     }
     const allRecords = this.getWeightRecords()
     allRecords.push(newRecord)
@@ -766,7 +771,7 @@ class DataStore {
   addHealthRecord(record: Omit<HealthRecord, "id">): HealthRecord {
     const newRecord: HealthRecord = {
       ...record,
-      id: Date.now().toString(),
+      id: generateUniqueId("health"),
     }
     const allRecords = this.getHealthRecords()
     allRecords.push(newRecord)
@@ -792,7 +797,7 @@ class DataStore {
   addFeed(feed: Omit<FeedInventory, "id" | "createdAt" | "updatedAt">): FeedInventory {
     const newFeed: FeedInventory = {
       ...feed,
-      id: Date.now().toString(),
+      id: generateUniqueId("feed"),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
@@ -835,7 +840,7 @@ class DataStore {
   addFeedUsage(usage: Omit<FeedUsage, "id">): FeedUsage {
     const newUsage: FeedUsage = {
       ...usage,
-      id: Date.now().toString(),
+      id: generateUniqueId("feedusage"),
     }
     const allUsage = this.getFeedUsage()
     allUsage.push(newUsage)
@@ -866,7 +871,7 @@ class DataStore {
   addPasture(pasture: Omit<Pasture, "id" | "createdAt" | "updatedAt">): Pasture {
     const newPasture: Pasture = {
       ...pasture,
-      id: Date.now().toString(),
+      id: generateUniqueId("pasture"),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
@@ -908,7 +913,7 @@ class DataStore {
   addTransaction(transaction: Omit<Transaction, "id" | "createdAt">): Transaction {
     const newTransaction: Transaction = {
       ...transaction,
-      id: Date.now().toString(),
+      id: generateUniqueId("transaction"),
       createdAt: new Date().toISOString(),
     }
     const allTransactions = this.getTransactions()

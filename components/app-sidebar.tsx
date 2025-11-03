@@ -3,16 +3,20 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
-import { Home, Beef, Sprout, MapPin, DollarSign, FileText, Settings, TrendingUp, Menu, X, Building2, Calendar, Activity } from "lucide-react"
+import { Home, Beef, Sprout, MapPin, DollarSign, FileText, Settings, TrendingUp, Menu, X, Building2, Calendar, Activity, Package, Users, Clock, Calculator } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { UserSwitcher } from "@/components/user-switcher"
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
+  { name: "Simulate", href: "/simulate", icon: Calculator },
   { name: "Cattle", href: "/cattle", icon: Beef },
+  { name: "Batches", href: "/batches", icon: Package },
   { name: "Pens", href: "/pens", icon: Building2 },
+  { name: "Team", href: "/team", icon: Users },
   { name: "Tasks", href: "/tasks", icon: Calendar },
   { name: "Activities", href: "/activities", icon: Activity },
   { name: "Feed Inventory", href: "/feed", icon: Sprout },
@@ -22,6 +26,10 @@ const navigation = [
   { name: "Analytics", href: "/analytics", icon: TrendingUp },
 ]
 
+const adminNavigation = [
+  { name: "User Management", href: "/users", icon: Users },
+]
+
 function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   const pathname = usePathname()
 
@@ -29,8 +37,8 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
     <>
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6">
-        <div className="relative h-10 w-10 rounded-lg bg-sidebar-accent p-1.5">
-          <Image src="/images/cow.png" alt="CattleOS Logo" fill className="object-contain" />
+        <div className="relative h-10 w-10">
+          <Image src="/images/logo.png" alt="CattleOS Logo" fill className="object-contain" />
         </div>
         <div>
           <h1 className="text-xl font-bold text-sidebar-foreground">CattleOS</h1>
@@ -59,10 +67,37 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
             </Link>
           )
         })}
+
+        {/* Admin Section */}
+        <div className="pt-4 mt-4 border-t border-sidebar-border">
+          <p className="px-3 text-xs font-semibold text-sidebar-foreground/50 uppercase tracking-wider mb-2">
+            Admin
+          </p>
+          {adminNavigation.map((item) => {
+            const isActive = pathname === item.href
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={onLinkClick}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                  isActive
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                )}
+              >
+                <item.icon className="h-5 w-5" />
+                {item.name}
+              </Link>
+            )
+          })}
+        </div>
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-sidebar-border p-4">
+      <div className="border-t border-sidebar-border p-4 space-y-2">
+        <UserSwitcher />
         <Link
           href="/settings"
           onClick={onLinkClick}
@@ -96,8 +131,8 @@ export function AppSidebar() {
           </SheetContent>
         </Sheet>
         <div className="ml-3 flex items-center gap-2">
-          <div className="relative h-8 w-8 rounded-lg bg-sidebar-accent p-1">
-            <Image src="/images/cow.png" alt="CattleOS Logo" fill className="object-contain" />
+          <div className="relative h-8 w-8">
+            <Image src="/images/logo.png" alt="CattleOS Logo" fill className="object-contain" />
           </div>
           <h1 className="text-lg font-bold text-sidebar-foreground">CattleOS</h1>
         </div>

@@ -10,33 +10,33 @@
   --card-foreground: oklch(0.20 0.01 240);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.20 0.01 240);
-  --primary: oklch(0.35 0.03 240);
-  --primary-foreground: oklch(0.99 0.005 240);
-  --secondary: oklch(0.45 0.03 240);
-  --secondary-foreground: oklch(0.99 0.005 240);
+  --primary: oklch(0.42 0.08 50);
+  --primary-foreground: oklch(0.99 0.005 50);
+  --secondary: oklch(0.52 0.06 50);
+  --secondary-foreground: oklch(0.99 0.005 50);
   --muted: oklch(0.97 0.005 240);
   --muted-foreground: oklch(0.55 0.02 240);
-  --accent: oklch(0.50 0.04 140);
-  --accent-foreground: oklch(0.99 0.005 240);
+  --accent: oklch(0.55 0.06 45);
+  --accent-foreground: oklch(0.99 0.005 45);
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(0.99 0.005 240);
   --border: oklch(0.92 0.01 240);
   --input: oklch(0.92 0.01 240);
-  --ring: oklch(0.35 0.03 240);
+  --ring: oklch(0.42 0.08 50);
   --chart-1: oklch(0.50 0.08 140);
   --chart-2: oklch(0.60 0.08 200);
   --chart-3: oklch(0.45 0.06 240);
   --chart-4: oklch(0.65 0.06 180);
   --chart-5: oklch(0.55 0.07 160);
   --radius: 0.625rem;
-  --sidebar: oklch(0.30 0.02 240);
+  --sidebar: oklch(0.28 0.03 45);
   --sidebar-foreground: oklch(0.99 0.005 240);
-  --sidebar-primary: oklch(0.50 0.05 140);
-  --sidebar-primary-foreground: oklch(0.99 0.005 240);
-  --sidebar-accent: oklch(0.40 0.03 240);
-  --sidebar-accent-foreground: oklch(0.99 0.005 240);
-  --sidebar-border: oklch(0.25 0.02 240);
-  --sidebar-ring: oklch(0.50 0.05 140);
+  --sidebar-primary: oklch(0.50 0.08 45);
+  --sidebar-primary-foreground: oklch(0.99 0.005 45);
+  --sidebar-accent: oklch(0.38 0.05 45);
+  --sidebar-accent-foreground: oklch(0.99 0.005 45);
+  --sidebar-border: oklch(0.22 0.03 45);
+  --sidebar-ring: oklch(0.50 0.08 45);
 }
 
 .dark {
@@ -46,32 +46,32 @@
   --card-foreground: oklch(0.97 0.005 240);
   --popover: oklch(0.20 0.01 240);
   --popover-foreground: oklch(0.97 0.005 240);
-  --primary: oklch(0.70 0.05 200);
+  --primary: oklch(0.65 0.08 50);
   --primary-foreground: oklch(0.15 0.01 240);
-  --secondary: oklch(0.40 0.02 240);
+  --secondary: oklch(0.40 0.05 50);
   --secondary-foreground: oklch(0.97 0.005 240);
   --muted: oklch(0.25 0.01 240);
   --muted-foreground: oklch(0.70 0.02 240);
-  --accent: oklch(0.60 0.06 140);
+  --accent: oklch(0.60 0.08 45);
   --accent-foreground: oklch(0.97 0.005 240);
   --destructive: oklch(0.55 0.20 25);
   --destructive-foreground: oklch(0.97 0.005 240);
   --border: oklch(0.30 0.01 240);
   --input: oklch(0.30 0.01 240);
-  --ring: oklch(0.70 0.05 200);
+  --ring: oklch(0.65 0.08 50);
   --chart-1: oklch(0.60 0.08 140);
   --chart-2: oklch(0.65 0.08 200);
   --chart-3: oklch(0.55 0.06 240);
   --chart-4: oklch(0.70 0.06 180);
   --chart-5: oklch(0.62 0.07 160);
-  --sidebar: oklch(0.18 0.01 240);
+  --sidebar: oklch(0.18 0.02 45);
   --sidebar-foreground: oklch(0.97 0.005 240);
-  --sidebar-primary: oklch(0.60 0.06 140);
+  --sidebar-primary: oklch(0.62 0.08 45);
   --sidebar-primary-foreground: oklch(0.97 0.005 240);
-  --sidebar-accent: oklch(0.30 0.02 240);
+  --sidebar-accent: oklch(0.30 0.04 45);
   --sidebar-accent-foreground: oklch(0.97 0.005 240);
-  --sidebar-border: oklch(0.25 0.01 240);
-  --sidebar-ring: oklch(0.60 0.06 140);
+  --sidebar-border: oklch(0.25 0.02 45);
+  --sidebar-ring: oklch(0.62 0.08 45);
 }
 
 @theme inline {
@@ -81,19 +81,19 @@
   --color-foreground: #1a1a1a;
   --color-card: #ffffff;
   --color-card-foreground: #1a1a1a;
-  --color-primary: #2d3748;
+  --color-primary: #6b4423;
   --color-primary-foreground: #ffffff;
-  --color-secondary: #4a5568;
+  --color-secondary: #8b6f47;
   --color-secondary-foreground: #ffffff;
   --color-muted: #f7fafc;
   --color-muted-foreground: #718096;
-  --color-accent: #5a6c57;
+  --color-accent: #a67c52;
   --color-accent-foreground: #ffffff;
   --color-destructive: #dc2626;
   --color-destructive-foreground: #ffffff;
   --color-border: #e2e8f0;
   --color-input: #e2e8f0;
-  --color-ring: #2d3748;
+  --color-ring: #6b4423;
 
   /* Alert colors with cattle theme */
   --color-success: #16a34a;
@@ -147,5 +147,27 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Pen visualization animations */
+@layer components {
+  .pen-group:hover .cursor-pointer {
+    filter: brightness(1.05);
+  }
+
+  /* Smooth transitions for resize handles */
+  .cursor-se-resize,
+  .cursor-sw-resize,
+  .cursor-ne-resize,
+  .cursor-nw-resize {
+    transition: all 0.2s ease;
+  }
+
+  .cursor-se-resize:hover,
+  .cursor-sw-resize:hover,
+  .cursor-ne-resize:hover,
+  .cursor-nw-resize:hover {
+    transform: scale(1.2);
   }
 }

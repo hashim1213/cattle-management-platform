@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, Search, Filter, Grid3x3, List, RefreshCw } from "lucide-react"
+import { Plus, Search, Filter, Grid3x3, List, RefreshCw, ScanLine } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { CattleTable } from "@/components/cattle-table"
@@ -9,15 +9,18 @@ import { CattleGrid } from "@/components/cattle-grid"
 import { AddCattleDialog } from "@/components/add-cattle-dialog"
 import { CattleStats } from "@/components/cattle-stats"
 import { CattleFilters } from "@/components/cattle-filters"
+import { RFIDImageImportDialog } from "@/components/rfid-image-import-dialog"
 import Link from "next/link"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { dataStore } from "@/lib/data-store"
+import { generateComprehensiveSampleData } from "@/lib/sample-data-generator"
 import { useSearchParams } from "next/navigation"
 
 export default function CattlePage() {
   const searchParams = useSearchParams()
   const [searchQuery, setSearchQuery] = useState("")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [isRFIDImportOpen, setIsRFIDImportOpen] = useState(false)
   const [viewMode, setViewMode] = useState<"table" | "grid">("table")
   const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState({
@@ -37,8 +40,8 @@ export default function CattlePage() {
   }, [searchParams])
 
   const handleResetData = () => {
-    if (confirm("Are you sure you want to reset all data to sample data? This will delete all current records.")) {
-      dataStore.resetAllData()
+    if (confirm("Load comprehensive sample data? This will replace all current data with 100 cattle across 3 batches, complete with health records, tasks, and more.")) {
+      generateComprehensiveSampleData()
       window.location.reload()
     }
   }
@@ -59,7 +62,11 @@ export default function CattlePage() {
             <div className="flex gap-2 flex-wrap">
               <Button variant="outline" size="sm" onClick={handleResetData} className="hidden sm:flex">
                 <RefreshCw className="h-4 w-4 mr-2" />
-                Reset Data
+                Load Sample Data
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setIsRFIDImportOpen(true)}>
+                <ScanLine className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Import RFID</span>
               </Button>
               <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
                 <Plus className="h-4 w-4 sm:mr-2" />
@@ -113,6 +120,9 @@ export default function CattlePage() {
 
       {/* Add Cattle Dialog */}
       <AddCattleDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} />
+
+      {/* RFID Image Import Dialog */}
+      <RFIDImageImportDialog open={isRFIDImportOpen} onOpenChange={setIsRFIDImportOpen} />
     </div>
   )
 }

@@ -2,6 +2,7 @@
  * Task Management Store
  * Handles farm tasks, calendar events, vet visits, etc.
  */
+import { generateUniqueId } from "./id-generator"
 
 export type TaskType = "general" | "feeding" | "health" | "vet-visit" | "breeding" | "maintenance" | "other"
 export type TaskPriority = "low" | "medium" | "high" | "urgent"
@@ -141,7 +142,7 @@ class TaskStore {
   addTask(task: Omit<Task, "id" | "createdAt" | "updatedAt">): Task {
     const newTask: Task = {
       ...task,
-      id: `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: generateUniqueId("task"),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
@@ -195,7 +196,7 @@ class TaskStore {
   addUser(user: Omit<FarmUser, "id" | "createdAt">): FarmUser {
     const newUser: FarmUser = {
       ...user,
-      id: `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: generateUniqueId("user"),
       createdAt: new Date().toISOString(),
     }
 
