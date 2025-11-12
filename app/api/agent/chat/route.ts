@@ -6,43 +6,77 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
-const SYSTEM_PROMPT = `You are a helpful Farm Assistant for a cattle management platform. You help farmers manage their cattle operations through natural conversation.
+const SYSTEM_PROMPT = `You are a helpful Farm Assistant for a cattle management platform. You help farmers manage their ENTIRE cattle operation through natural conversation. You have FULL CONTROL over all aspects of the farm.
 
-You can help with:
-1. Adding medications/inventory items
-2. Updating pen information
-3. Logging activities for pens
-4. Recording health treatments
-5. Querying cattle, pen, and inventory information
-
-When users ask you to perform actions, you should:
-- Parse their request to understand the intent
-- Extract relevant parameters
-- Execute the appropriate action
-- Provide clear, friendly confirmation
+CAPABILITIES - You can manage everything:
+1. 🐄 CATTLE: Add, update, delete, search, weigh
+2. 🏠 BARNS & PENS: Create, update, delete, query
+3. 💊 INVENTORY: Add medications, track usage, check stock
+4. 📊 HEALTH: Record treatments, track health history
+5. 📈 ANALYTICS: Get summaries, statistics, reports
+6. 📝 ACTIVITIES: Log pen activities and operations
 
 Available Actions:
-- addMedication: Add medication to inventory (params: name, category, quantity, unit, costPerUnit, withdrawalPeriod, storageLocation, notes)
-- updatePen: Update pen information (params: penId, name, capacity, notes)
-- logActivity: Log an activity for a pen (params: penId, activityType, description, date, notes)
-- addHealthRecord: Record health treatment and deduct inventory (params: cattleId/tagNumber/penId, medicationName, quantity, date, notes)
-- getCattleInfo: Get information about cattle (params: tagNumber, penId, or cattleId)
-- getPenInfo: Get information about pens (params: penId optional)
-- getInventoryInfo: Get information about inventory (params: itemName optional)
 
-Medication categories: antibiotic, antiparasitic, vaccine, anti-inflammatory, hormone, vitamin-injectable, drug-other
-Common units: cc, ml, lbs, kg, tons, bales, bags, doses
+🐄 CATTLE MANAGEMENT:
+- addCattle: Add new cattle (params: tagNumber*, breed*, sex*, weight*, name, birthDate, purchaseDate, purchasePrice, purchaseWeight, penId, barnId, stage, notes)
+  * Sex options: "Bull", "Cow", "Steer", "Heifer", "Unknown"
+  * Stage options: "receiving", "Calf", "Weaned Calf", "Yearling", "Breeding", "Finishing"
+- updateCattle: Update cattle info (params: cattleId OR tagNumber, weight, penId, barnId, status, healthStatus, notes)
+  * Status: "Active", "Sold", "Deceased", "Culled"
+  * healthStatus: "Healthy", "Sick", "Treatment", "Quarantine"
+- deleteCattle: Remove cattle (params: cattleId OR tagNumber)
+- getCattleInfo: Search cattle (params: tagNumber, penId, or cattleId)
+- getAllCattle: Get all cattle with summary
+- addWeightRecord: Record weight (params: cattleId OR tagNumber, weight*, date, notes)
 
-When executing actions, you MUST respond with a JSON object containing:
+🏠 BARN & PEN MANAGEMENT:
+- addBarn: Create barn (params: name*, location*, notes)
+- deleteBarn: Remove barn (params: barnId*)
+- addPen: Create pen (params: name*, barnId*, capacity*, notes)
+- updatePen: Update pen (params: penId*, name, capacity, notes)
+- deletePen: Remove pen (params: penId*)
+- getPenInfo: Get pen details (params: penId - optional for all)
+- getCattleCountByPen: Get cattle distribution across pens
+
+💊 INVENTORY MANAGEMENT:
+- addMedication: Add inventory (params: name*, category*, quantity*, unit*, costPerUnit, withdrawalPeriod, storageLocation, notes)
+  * Categories: antibiotic, antiparasitic, vaccine, anti-inflammatory, hormone, vitamin-injectable, drug-other
+  * Units: cc, ml, lbs, kg, tons, bales, bags, doses
+- getInventoryInfo: Check inventory (params: itemName - optional for all)
+
+🏥 HEALTH & TREATMENT:
+- addHealthRecord: Record treatment & deduct inventory (params: cattleId/tagNumber/penId*, medicationName*, quantity*, date, notes)
+- logActivity: Log pen activity (params: penId*, activityType*, description*, date, notes)
+
+📊 REPORTS & ANALYTICS:
+- getFarmSummary: Comprehensive farm overview (cattle, pens, inventory, low stock alerts)
+
+RESPONSE FORMAT:
+You MUST respond with a JSON object:
 {
   "action": "actionName",
   "params": { ... },
-  "message": "A friendly message to the user"
+  "message": "A friendly message explaining what you did or found"
 }
 
-For informational queries (like "how many cattle in pen 3?"), execute the appropriate get action first, then provide a conversational response.
+IMPORTANT RULES:
+1. For queries, craft conversational, human-readable responses - NO raw JSON dumps
+2. Always confirm destructive actions (delete, sold, deceased)
+3. Use farmer-friendly language
+4. When adding cattle/pens, use the data from the user's request
+5. For updates, you can find by tagNumber OR cattleId
 
-Be conversational, friendly, and use farming terminology appropriately. Confirm actions before marking them complete.`
+EXAMPLES:
+- "Add a new cow tag 1234, Angus breed, 850 lbs" → addCattle with tagNumber:"1234", breed:"Angus", sex:"Cow", weight:850
+- "Move cow 1234 to pen 5" → updateCattle with tagNumber:"1234", penId:"pen_5"
+- "How many cattle?" → getAllCattle
+- "Create a new barn called North Barn" → addBarn with name:"North Barn", location:"North"
+- "Delete cattle 1234" → deleteCattle with tagNumber:"1234"
+- "Weigh cow 1234 at 920 lbs" → addWeightRecord with tagNumber:"1234", weight:920
+- "What's my farm status?" → getFarmSummary
+
+You control EVERYTHING. Be helpful, accurate, and thorough!`
 
 interface ChatMessage {
   role: "user" | "assistant" | "system"
@@ -53,6 +87,127 @@ interface ChatRequest {
   messages: ChatMessage[]
   conversationId?: string
   userId?: string
+}
+
+/**
+ * Format query response data into human-readable text
+ */
+async function formatQueryResponse(action: string, data: any, aiMessage?: string): Promise<string> {
+  let formatted = aiMessage || "Here's what I found:\n\n"
+
+  switch (action) {
+    case "getAllCattle":
+      if (data.totalCount === 0) {
+        formatted = "You don't have any cattle in your system yet."
+      } else {
+        formatted = `You have **${data.totalCount} cattle** total.\n\n`
+        if (data.penSummary && data.penSummary.length > 0) {
+          formatted += "**Distribution by pen:**\n"
+          data.penSummary.forEach((pen: any) => {
+            const penName = pen.penId === 'unassigned' ? 'Unassigned' : `Pen ${pen.penId}`
+            formatted += `- ${penName}: ${pen.count} cattle\n`
+          })
+        }
+      }
+      break
+
+    case "getFarmSummary":
+      formatted = "**Farm Overview:**\n\n"
+      formatted += `🐄 **Cattle:** ${data.cattle.total} total\n`
+      formatted += `🏠 **Pens:** ${data.pens.total} total\n`
+      formatted += `📦 **Inventory:** ${data.inventory.total} items (Total value: $${data.inventory.totalValue.toFixed(2)})\n`
+
+      if (data.inventory.lowStockCount > 0) {
+        formatted += `\n⚠️ **${data.inventory.lowStockCount} items are low in stock:**\n`
+        data.inventory.lowStockItems.slice(0, 5).forEach((item: any) => {
+          formatted += `- ${item.name}: ${item.quantity} ${item.unit}\n`
+        })
+      }
+
+      if (data.pens.penList && data.pens.penList.length > 0) {
+        formatted += `\n**Your pens:**\n`
+        data.pens.penList.slice(0, 5).forEach((pen: any) => {
+          formatted += `- ${pen.name} (Capacity: ${pen.capacity || 'Not set'})\n`
+        })
+      }
+      break
+
+    case "getCattleCountByPen":
+      if (data && data.length > 0) {
+        formatted = `**Cattle distribution across ${data.length} pens:**\n\n`
+        data.forEach((pen: any) => {
+          const utilization = pen.capacity ? ` (${Math.round((pen.count / pen.capacity) * 100)}% full)` : ''
+          formatted += `- **${pen.name}:** ${pen.count} cattle${utilization}\n`
+        })
+      } else {
+        formatted = "No pens found in your system."
+      }
+      break
+
+    case "getPenInfo":
+      if (Array.isArray(data)) {
+        if (data.length === 0) {
+          formatted = "No pens found."
+        } else if (data.length === 1) {
+          const pen = data[0]
+          formatted = `**${pen.name}**\n`
+          formatted += `- Capacity: ${pen.capacity || 'Not set'}\n`
+          formatted += `- Notes: ${pen.notes || 'None'}\n`
+        } else {
+          formatted = `Found ${data.length} pens:\n`
+          data.slice(0, 10).forEach((pen: any) => {
+            formatted += `- ${pen.name} (Capacity: ${pen.capacity || 'Not set'})\n`
+          })
+        }
+      } else if (data) {
+        formatted = `**${data.name}**\n`
+        formatted += `- Capacity: ${data.capacity || 'Not set'}\n`
+        formatted += `- Notes: ${data.notes || 'None'}\n`
+      }
+      break
+
+    case "getCattleInfo":
+      if (Array.isArray(data)) {
+        if (data.length === 0) {
+          formatted = "No cattle found matching your criteria."
+        } else if (data.length === 1) {
+          const cattle = data[0]
+          formatted = `**Cattle #${cattle.tagNumber || cattle.id}**\n`
+          formatted += `- Tag: ${cattle.tagNumber || 'Not set'}\n`
+          formatted += `- Pen: ${cattle.penId || 'Unassigned'}\n`
+          if (cattle.breed) formatted += `- Breed: ${cattle.breed}\n`
+          if (cattle.weight) formatted += `- Weight: ${cattle.weight} lbs\n`
+        } else {
+          formatted = `Found ${data.length} cattle:\n`
+          data.slice(0, 10).forEach((cattle: any) => {
+            formatted += `- Tag ${cattle.tagNumber || 'N/A'} (Pen: ${cattle.penId || 'Unassigned'})\n`
+          })
+        }
+      }
+      break
+
+    case "getInventoryInfo":
+      if (Array.isArray(data)) {
+        if (data.length === 0) {
+          formatted = "No inventory items found."
+        } else {
+          formatted = `**Inventory (${data.length} items):**\n\n`
+          data.slice(0, 10).forEach((item: any) => {
+            const lowStock = item.quantityOnHand <= item.reorderPoint ? ' ⚠️ LOW' : ''
+            formatted += `- **${item.name}**: ${item.quantityOnHand} ${item.unit}${lowStock}\n`
+            if (item.totalValue) formatted += `  Value: $${item.totalValue.toFixed(2)}\n`
+          })
+        }
+      }
+      break
+
+    default:
+      // Fallback to basic JSON formatting for unknown actions
+      formatted = aiMessage || "Here's what I found:\n\n"
+      formatted += `\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``
+  }
+
+  return formatted
 }
 
 export async function POST(request: NextRequest) {
@@ -107,27 +262,74 @@ export async function POST(request: NextRequest) {
         if (actionData.action) {
           // Execute the action
           switch (actionData.action) {
+            // Inventory actions
             case "addMedication":
               actionResult = await actionExecutor.addMedication(userId, actionData.params)
               break
-            case "updatePen":
-              actionResult = await actionExecutor.updatePen(userId, actionData.params)
+            case "getInventoryInfo":
+              actionResult = await actionExecutor.getInventoryInfo(userId, actionData.params?.itemName)
               break
-            case "logActivity":
-              actionResult = await actionExecutor.logActivity(userId, actionData.params)
+
+            // Cattle actions
+            case "addCattle":
+              actionResult = await actionExecutor.addCattle(userId, actionData.params)
               break
-            case "addHealthRecord":
-              actionResult = await actionExecutor.addHealthRecord(userId, actionData.params)
+            case "updateCattle":
+              actionResult = await actionExecutor.updateCattle(userId, actionData.params)
+              break
+            case "deleteCattle":
+              actionResult = await actionExecutor.deleteCattle(userId, actionData.params)
               break
             case "getCattleInfo":
               actionResult = await actionExecutor.getCattleInfo(userId, actionData.params)
               break
+            case "getAllCattle":
+              actionResult = await actionExecutor.getAllCattle(userId)
+              break
+            case "addWeightRecord":
+              actionResult = await actionExecutor.addWeightRecord(userId, actionData.params)
+              break
+
+            // Health actions
+            case "addHealthRecord":
+              actionResult = await actionExecutor.addHealthRecord(userId, actionData.params)
+              break
+
+            // Pen actions
+            case "addPen":
+              actionResult = await actionExecutor.addPen(userId, actionData.params)
+              break
+            case "updatePen":
+              actionResult = await actionExecutor.updatePen(userId, actionData.params)
+              break
+            case "deletePen":
+              actionResult = await actionExecutor.deletePen(userId, actionData.params)
+              break
             case "getPenInfo":
-              actionResult = await actionExecutor.getPenInfo(userId, actionData.params.penId)
+              actionResult = await actionExecutor.getPenInfo(userId, actionData.params?.penId)
               break
-            case "getInventoryInfo":
-              actionResult = await actionExecutor.getInventoryInfo(userId, actionData.params.itemName)
+            case "getCattleCountByPen":
+              actionResult = await actionExecutor.getCattleCountByPen(userId)
               break
+
+            // Barn actions
+            case "addBarn":
+              actionResult = await actionExecutor.addBarn(userId, actionData.params)
+              break
+            case "deleteBarn":
+              actionResult = await actionExecutor.deleteBarn(userId, actionData.params)
+              break
+
+            // Activity actions
+            case "logActivity":
+              actionResult = await actionExecutor.logActivity(userId, actionData.params)
+              break
+
+            // Summary/Stats actions
+            case "getFarmSummary":
+              actionResult = await actionExecutor.getFarmSummary(userId)
+              break
+
             default:
               actionResult = {
                 success: false,
@@ -135,21 +337,14 @@ export async function POST(request: NextRequest) {
               }
           }
 
-          // If action was successful, use the result message
+          // If action was successful, format response based on action type
           if (actionResult && actionResult.success) {
+            // Use AI-generated message or fallback to action result
             finalMessage = actionData.message || actionResult.message
 
-            // For info queries, append the data in a friendly way
+            // For query actions, format the data in a user-friendly way
             if (actionData.action.startsWith("get") && actionResult.data) {
-              if (Array.isArray(actionResult.data)) {
-                if (actionResult.data.length > 0) {
-                  finalMessage += `\n\nHere's what I found:\n${JSON.stringify(actionResult.data, null, 2)}`
-                } else {
-                  finalMessage += "\n\nNo results found."
-                }
-              } else {
-                finalMessage += `\n\nDetails:\n${JSON.stringify(actionResult.data, null, 2)}`
-              }
+              finalMessage = await formatQueryResponse(actionData.action, actionResult.data, actionData.message)
             }
           } else if (actionResult && !actionResult.success) {
             finalMessage = `Sorry, I encountered an error: ${actionResult.message || actionResult.error}`

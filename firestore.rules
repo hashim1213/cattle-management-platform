@@ -90,6 +90,26 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
 
+    // User-specific conversations (chat history)
+    match /users/{userId}/conversations/{conversationId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // User-specific inventory (medications, feeds, etc.)
+    match /users/{userId}/inventory/{itemId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // User-specific inventory transactions
+    match /users/{userId}/inventoryTransactions/{transactionId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // User-specific pen activities
+    match /users/{userId}/penActivities/{activityId} {
+      allow read, write: if isOwner(userId);
+    }
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;
