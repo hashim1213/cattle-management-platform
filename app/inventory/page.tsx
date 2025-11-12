@@ -206,34 +206,44 @@ export default function InventoryPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <Link href="/" className="text-sm text-muted-foreground hover:text-foreground mb-1 block">
-                ← Back to Dashboard
+      {/* Header - Mobile optimized */}
+      <header className="border-b border-border bg-card/95 backdrop-blur-md sticky top-0 z-40 lg:static">
+        <div className="w-full px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <Link href="/" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground mb-1 block touch-manipulation">
+                ← Back
               </Link>
-              <h1 className="text-2xl font-bold text-foreground">Inventory Management</h1>
+              <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">Inventory</h1>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setIsTransactionsOpen(true)}>
+            <div className="flex gap-2 flex-shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsTransactionsOpen(true)}
+                className="hidden md:flex touch-manipulation min-h-[44px]"
+              >
                 <Archive className="h-4 w-4 mr-2" />
-                Transaction History
+                History
               </Button>
-              <Button onClick={() => {
-                setSelectedItem(null)
-                setIsAddDialogOpen(true)
-              }}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Inventory Item
+              <Button
+                size="sm"
+                onClick={() => {
+                  setSelectedItem(null)
+                  setIsAddDialogOpen(true)
+                }}
+                className="touch-manipulation min-h-[44px] px-3 sm:px-4"
+              >
+                <Plus className="h-5 w-5 sm:mr-2" />
+                <span className="hidden sm:inline">Add Item</span>
+                <span className="sm:hidden">Add</span>
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="w-full px-4 sm:px-6 py-4 sm:py-6 pb-safe">
         {/* Status Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card>

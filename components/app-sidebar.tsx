@@ -125,32 +125,32 @@ export function AppSidebar() {
   return (
     <>
       {/* Mobile Top Bar - with iOS safe area support */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-sidebar border-b border-sidebar-border z-50 flex items-center px-4 backdrop-blur-sm bg-sidebar/95 safe-top">
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-sidebar border-b border-sidebar-border z-50 flex items-center px-4 backdrop-blur-md bg-sidebar/95 pt-safe">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
             <Button
               size="icon"
               variant="ghost"
-              className="text-sidebar-foreground h-10 w-10 active:bg-sidebar-accent"
+              className="text-sidebar-foreground h-11 w-11 touch-manipulation active:bg-sidebar-accent"
               aria-label="Open navigation menu"
             >
               <Menu className="h-6 w-6" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-[280px] sm:w-[320px] bg-sidebar safe-left">
+          <SheetContent side="left" className="p-0 w-[85vw] max-w-[320px] bg-sidebar safe-left border-r-0">
             <VisuallyHidden>
               <SheetTitle>Navigation Menu</SheetTitle>
             </VisuallyHidden>
-            <div className="flex h-full flex-col pb-safe">
+            <div className="flex h-full flex-col pb-safe pt-safe">
               <SidebarContent onLinkClick={() => setMobileOpen(false)} />
             </div>
           </SheetContent>
         </Sheet>
-        <div className="ml-3 flex items-center gap-2">
-          <div className="relative h-8 w-8">
+        <div className="ml-3 flex items-center gap-2 flex-1">
+          <div className="relative h-8 w-8 flex-shrink-0">
             <Image src="/images/logo.png" alt="CattleOS Logo" fill className="object-contain" />
           </div>
-          <h1 className="text-lg font-bold text-sidebar-foreground">CattleOS</h1>
+          <h1 className="text-base sm:text-lg font-bold text-sidebar-foreground truncate">CattleOS</h1>
         </div>
       </div>
 
