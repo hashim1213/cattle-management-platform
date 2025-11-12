@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Mic, MicOff, Send, Loader2, MessageSquare, History, Trash2, User, Bot, Sparkles } from "lucide-react"
+import { Mic, MicOff, Send, Loader2, MessageSquare, History, Trash2, User, Bot, Sparkles, Plus, Package, Activity, BarChart3, Stethoscope, Home, ChevronDown, ChevronUp } from "lucide-react"
 import { db } from "@/lib/firebase"
 import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } from "firebase/firestore"
 import { toast } from "sonner"
@@ -37,6 +37,7 @@ export default function AgentPage() {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
   const [isLoadingHistory, setIsLoadingHistory] = useState(false)
+  const [showQuickActions, setShowQuickActions] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
 
@@ -263,6 +264,70 @@ export default function AgentPage() {
     }
   }
 
+  // Quick action templates for easy access
+  const quickActions = [
+    {
+      category: "Cattle",
+      icon: "🐄",
+      color: "orange",
+      actions: [
+        { label: "Add New Cattle", template: "Add a new cow, tag [TAG_NUMBER], [BREED] breed, [WEIGHT] lbs" },
+        { label: "Weigh Cattle", template: "Weigh cow [TAG_NUMBER] at [WEIGHT] lbs" },
+        { label: "Move to Pen", template: "Move cow [TAG_NUMBER] to pen [PEN_ID]" },
+        { label: "View All Cattle", template: "How many cattle do I have?" },
+      ]
+    },
+    {
+      category: "Pens",
+      icon: "🏠",
+      color: "green",
+      actions: [
+        { label: "View All Pens", template: "Show me all my pens" },
+        { label: "Create New Pen", template: "Create a new pen called [PEN_NAME] with capacity [NUMBER]" },
+        { label: "Pen Status", template: "What's the status of pen [PEN_ID]?" },
+        { label: "Cattle by Pen", template: "Show me cattle count by pen" },
+      ]
+    },
+    {
+      category: "Inventory",
+      icon: "💊",
+      color: "purple",
+      actions: [
+        { label: "Check Inventory", template: "Check my inventory" },
+        { label: "Add Medication", template: "Add medication [NAME], quantity [AMOUNT] [UNIT]" },
+        { label: "Low Stock Alert", template: "What items are low in stock?" },
+        { label: "Use Medication", template: "Use [AMOUNT] [UNIT] of [MEDICATION] on cow [TAG_NUMBER]" },
+      ]
+    },
+    {
+      category: "Health",
+      icon: "🏥",
+      color: "red",
+      actions: [
+        { label: "Record Treatment", template: "Record treatment for cow [TAG_NUMBER] with [MEDICATION], [AMOUNT] [UNIT]" },
+        { label: "Check Health", template: "Show me health records for cow [TAG_NUMBER]" },
+        { label: "Sick Cattle", template: "Show me all sick cattle" },
+        { label: "Quarantine", template: "Quarantine cow [TAG_NUMBER]" },
+      ]
+    },
+    {
+      category: "Reports",
+      icon: "📊",
+      color: "blue",
+      actions: [
+        { label: "Farm Summary", template: "What's my farm status?" },
+        { label: "Growth Report", template: "Show me weight gain for cow [TAG_NUMBER]" },
+        { label: "Cost Analysis", template: "What are my total costs?" },
+        { label: "Performance", template: "Show me my best performing cattle" },
+      ]
+    }
+  ]
+
+  const handleQuickAction = (template: string) => {
+    setInputMessage(template)
+    setShowQuickActions(false)
+  }
+
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -304,22 +369,37 @@ export default function AgentPage() {
                           <Sparkles className="h-8 w-8 text-primary" />
                         </div>
                         <h2 className="text-2xl font-bold mb-2">Welcome to Farm Assistant</h2>
-                        <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                          Your AI-powered farm management companion. Get started with these suggestions:
+                        <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                          Your AI-powered farm management companion. Click any card below or use Quick Actions:
                         </p>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-w-4xl mx-auto mb-8">
+                          <button
+                            onClick={() => setInputMessage("What's my farm status?")}
+                            className="group p-4 bg-card hover:bg-accent border rounded-xl text-left transition-all hover:shadow-md hover:scale-[1.02]"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                                <span className="text-2xl">📊</span>
+                              </div>
+                              <div className="flex-1">
+                                <p className="font-semibold mb-1 group-hover:text-primary transition-colors">Farm Overview</p>
+                                <p className="text-xs text-muted-foreground">Complete farm statistics</p>
+                              </div>
+                            </div>
+                          </button>
+
                           <button
                             onClick={() => setInputMessage("How many cattle do I have?")}
                             className="group p-4 bg-card hover:bg-accent border rounded-xl text-left transition-all hover:shadow-md hover:scale-[1.02]"
                           >
                             <div className="flex items-start gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                                <span className="text-xl">📊</span>
+                              <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+                                <span className="text-2xl">🐄</span>
                               </div>
                               <div className="flex-1">
-                                <p className="font-medium mb-1 group-hover:text-primary transition-colors">Farm Overview</p>
-                                <p className="text-xs text-muted-foreground">Get complete farm statistics</p>
+                                <p className="font-semibold mb-1 group-hover:text-primary transition-colors">View Cattle</p>
+                                <p className="text-xs text-muted-foreground">See all your cattle</p>
                               </div>
                             </div>
                           </button>
@@ -329,12 +409,12 @@ export default function AgentPage() {
                             className="group p-4 bg-card hover:bg-accent border rounded-xl text-left transition-all hover:shadow-md hover:scale-[1.02]"
                           >
                             <div className="flex items-start gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
-                                <span className="text-xl">🏠</span>
+                              <div className="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                                <span className="text-2xl">🏠</span>
                               </div>
                               <div className="flex-1">
-                                <p className="font-medium mb-1 group-hover:text-primary transition-colors">View Pens</p>
-                                <p className="text-xs text-muted-foreground">See all pens and cattle</p>
+                                <p className="font-semibold mb-1 group-hover:text-primary transition-colors">View Pens</p>
+                                <p className="text-xs text-muted-foreground">Check all pens</p>
                               </div>
                             </div>
                           </button>
@@ -344,30 +424,55 @@ export default function AgentPage() {
                             className="group p-4 bg-card hover:bg-accent border rounded-xl text-left transition-all hover:shadow-md hover:scale-[1.02]"
                           >
                             <div className="flex items-start gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
-                                <span className="text-xl">💊</span>
+                              <div className="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                                <span className="text-2xl">💊</span>
                               </div>
                               <div className="flex-1">
-                                <p className="font-medium mb-1 group-hover:text-primary transition-colors">Check Inventory</p>
-                                <p className="text-xs text-muted-foreground">View medications and stock</p>
+                                <p className="font-semibold mb-1 group-hover:text-primary transition-colors">Check Inventory</p>
+                                <p className="text-xs text-muted-foreground">Medications & supplies</p>
                               </div>
                             </div>
                           </button>
 
                           <button
-                            onClick={() => setInputMessage("Add a new cow, tag 1001, Angus breed, 850 lbs")}
+                            onClick={() => setInputMessage("Add a new cow, tag [TAG_NUMBER], [BREED] breed, [WEIGHT] lbs")}
                             className="group p-4 bg-card hover:bg-accent border rounded-xl text-left transition-all hover:shadow-md hover:scale-[1.02]"
                           >
                             <div className="flex items-start gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center flex-shrink-0">
-                                <span className="text-xl">🐄</span>
+                              <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+                                <span className="text-2xl">➕</span>
                               </div>
                               <div className="flex-1">
-                                <p className="font-medium mb-1 group-hover:text-primary transition-colors">Add Cattle</p>
+                                <p className="font-semibold mb-1 group-hover:text-primary transition-colors">Add Cattle</p>
                                 <p className="text-xs text-muted-foreground">Register new cattle</p>
                               </div>
                             </div>
                           </button>
+
+                          <button
+                            onClick={() => setInputMessage("What items are low in stock?")}
+                            className="group p-4 bg-card hover:bg-accent border rounded-xl text-left transition-all hover:shadow-md hover:scale-[1.02]"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="w-12 h-12 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                                <span className="text-2xl">⚠️</span>
+                              </div>
+                              <div className="flex-1">
+                                <p className="font-semibold mb-1 group-hover:text-primary transition-colors">Low Stock</p>
+                                <p className="text-xs text-muted-foreground">Check alerts</p>
+                              </div>
+                            </div>
+                          </button>
+                        </div>
+
+                        <div className="max-w-xl mx-auto bg-muted/50 border rounded-lg p-4">
+                          <p className="text-sm font-medium mb-2">💡 Pro Tips for Easy Use:</p>
+                          <ul className="text-xs text-muted-foreground space-y-1 text-left">
+                            <li>• Click <strong>Quick Actions</strong> button for templates</li>
+                            <li>• Use the <strong>microphone</strong> for hands-free voice commands</li>
+                            <li>• Replace [BRACKETS] in templates with your actual values</li>
+                            <li>• Try natural language: "How many cattle in pen 5?"</li>
+                          </ul>
                         </div>
                       </div>
                     )}
@@ -425,65 +530,154 @@ export default function AgentPage() {
                 </div>
 
                 <div className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                  <div className="max-w-4xl mx-auto p-4">
-                    <div className="flex gap-2 items-end">
-                      <Button
-                        onClick={isRecording ? stopRecording : startRecording}
-                        variant={isRecording ? "destructive" : "ghost"}
-                        size="icon"
-                        disabled={isLoading}
-                        className="flex-shrink-0 h-10 w-10"
-                      >
-                        {isRecording ? (
-                          <MicOff className="h-5 w-5" />
-                        ) : (
-                          <Mic className="h-5 w-5" />
-                        )}
-                      </Button>
+                  <div className="max-w-4xl mx-auto">
+                    {/* Quick Actions Panel */}
+                    {showQuickActions && (
+                      <div className="border-b p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-sm font-semibold flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 text-primary" />
+                            Quick Actions
+                          </h3>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowQuickActions(false)}
+                            className="h-8"
+                          >
+                            <ChevronDown className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <ScrollArea className="max-h-[300px]">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pr-4">
+                            {quickActions.map((category, idx) => (
+                              <div key={idx} className="space-y-2">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="text-lg">{category.icon}</span>
+                                  <span className="text-sm font-medium">{category.category}</span>
+                                </div>
+                                <div className="space-y-1.5">
+                                  {category.actions.map((action, actionIdx) => (
+                                    <button
+                                      key={actionIdx}
+                                      onClick={() => handleQuickAction(action.template)}
+                                      className="w-full text-left px-3 py-2 text-sm bg-card hover:bg-accent border rounded-lg transition-all hover:shadow-sm hover:scale-[1.02]"
+                                      disabled={isLoading || isRecording}
+                                    >
+                                      {action.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </div>
+                    )}
 
-                      <div className="flex-1 relative">
-                        <Textarea
-                          placeholder="Message Farm Assistant..."
-                          value={inputMessage}
-                          onChange={(e) => setInputMessage(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && !e.shiftKey) {
-                              e.preventDefault()
-                              sendMessage(inputMessage)
-                            }
-                          }}
-                          className="min-h-[52px] max-h-[200px] resize-none pr-12 rounded-2xl"
-                          disabled={isLoading || isRecording}
-                        />
+                    <div className="p-4">
+                      {/* Action Buttons Row */}
+                      <div className="flex gap-2 mb-3 overflow-x-auto pb-2">
                         <Button
-                          onClick={() => sendMessage(inputMessage)}
-                          disabled={!inputMessage.trim() || isLoading || isRecording}
-                          size="icon"
-                          className="absolute right-2 bottom-2 h-8 w-8 rounded-lg"
+                          onClick={() => setShowQuickActions(!showQuickActions)}
+                          variant="outline"
+                          size="sm"
+                          className="flex-shrink-0"
+                          disabled={isLoading || isRecording}
                         >
-                          {isLoading ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Send className="h-4 w-4" />
-                          )}
+                          <Plus className="h-4 w-4 mr-1" />
+                          Quick Actions
+                          {showQuickActions ? <ChevronDown className="h-3 w-3 ml-1" /> : <ChevronUp className="h-3 w-3 ml-1" />}
                         </Button>
+                        {quickActions.slice(0, 5).map((category, idx) => (
+                          <Button
+                            key={idx}
+                            onClick={() => {
+                              const firstAction = category.actions[0]
+                              if (firstAction) {
+                                handleQuickAction(firstAction.template)
+                              }
+                            }}
+                            variant="outline"
+                            size="sm"
+                            className="flex-shrink-0"
+                            disabled={isLoading || isRecording}
+                          >
+                            <span className="mr-1.5">{category.icon}</span>
+                            {category.category}
+                          </Button>
+                        ))}
                       </div>
 
-                      {currentMessages.length > 0 && (
+                      {/* Input Area */}
+                      <div className="flex gap-2 items-end">
                         <Button
-                          onClick={startNewConversation}
-                          variant="ghost"
+                          onClick={isRecording ? stopRecording : startRecording}
+                          variant={isRecording ? "destructive" : "default"}
                           size="icon"
                           disabled={isLoading}
-                          className="flex-shrink-0 h-10 w-10"
+                          className="flex-shrink-0 h-12 w-12"
+                          title={isRecording ? "Stop recording" : "Start voice input"}
                         >
-                          <MessageSquare className="h-5 w-5" />
+                          {isRecording ? (
+                            <MicOff className="h-6 w-6" />
+                          ) : (
+                            <Mic className="h-6 w-6" />
+                          )}
                         </Button>
-                      )}
+
+                        <div className="flex-1 relative">
+                          <Textarea
+                            placeholder="Type or click Quick Actions above..."
+                            value={inputMessage}
+                            onChange={(e) => setInputMessage(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault()
+                                sendMessage(inputMessage)
+                              }
+                            }}
+                            className="min-h-[52px] max-h-[200px] resize-none pr-12 rounded-2xl text-base"
+                            disabled={isLoading || isRecording}
+                          />
+                          <Button
+                            onClick={() => sendMessage(inputMessage)}
+                            disabled={!inputMessage.trim() || isLoading || isRecording}
+                            size="icon"
+                            className="absolute right-2 bottom-2 h-9 w-9 rounded-lg"
+                          >
+                            {isLoading ? (
+                              <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : (
+                              <Send className="h-5 w-5" />
+                            )}
+                          </Button>
+                        </div>
+
+                        {currentMessages.length > 0 && (
+                          <Button
+                            onClick={startNewConversation}
+                            variant="outline"
+                            size="icon"
+                            disabled={isLoading}
+                            className="flex-shrink-0 h-12 w-12"
+                            title="Start new conversation"
+                          >
+                            <MessageSquare className="h-5 w-5" />
+                          </Button>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between mt-2">
+                        <p className="text-xs text-muted-foreground">
+                          Press Enter to send • Shift+Enter for new line
+                        </p>
+                        {inputMessage.includes('[') && (
+                          <p className="text-xs text-orange-600 font-medium">
+                            Replace [BRACKETS] with your values
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground text-center mt-2">
-                      Press Enter to send, Shift+Enter for new line
-                    </p>
                   </div>
                 </div>
               </div>
