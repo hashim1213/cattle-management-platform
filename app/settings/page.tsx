@@ -1,75 +1,121 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
+import { Textarea } from "@/components/ui/textarea"
 import { useFarmSettings } from "@/hooks/use-farm-settings"
-import { Settings as SettingsIcon, Bell, Database, Save, Trash2, AlertTriangle } from "lucide-react"
+import { useAuth } from "@/contexts/auth-context"
+import { Settings as SettingsIcon, Bell, Database, Save, User, MapPin, Home } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { resetAllLocalStorageData, resetInventoryData } from "@/lib/reset-data"
-import { useRouter } from "next/navigation"
+import { doc, getDoc, updateDoc } from "firebase/firestore"
+import { db } from "@/lib/firebase"
+
+interface UserProfile {
+  displayName: string
+  email: string
+  farmName: string
+  location: string
+  farmSize?: string
+  otherFarmingActivities?: string
+}
 
 export default function SettingsPage() {
-  const { settings, updateSettings, updatePreferences, initializeSettings } = useFarmSettings()
+  const { settings, updateSettings, updatePreferences } = useFarmSettings()
+  const { user } = useAuth()
   const { toast } = useToast()
-  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
 
+  // Farm settings
   const [farmName, setFarmName] = useState(settings?.farmName || "")
   const [enablePastures, setEnablePastures] = useState(settings?.preferences.enablePastures ?? true)
   const [enableRations, setEnableRations] = useState(settings?.preferences.enableRations ?? true)
 
-  const handleSaveSettings = () => {
-    if (farmName && !settings) {
-      initializeSettings(farmName, "both")
-    } else if (settings) {
-      updateSettings({ farmName })
-    }
+  // User profile
+  const [displayName, setDisplayName] = useState("")
+  const [location, setLocation] = useState("")
+  const [farmSize, setFarmSize] = useState("")
+  const [otherActivities, setOtherActivities] = useState("")
 
-    updatePreferences({
-      enablePastures,
-      enableRations,
-    })
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (!user) return
 
-    toast({
-      title: "Settings Saved",
-      description: "Your preferences have been updated successfully.",
-    })
-  }
+      try {
+        const profileRef = doc(db, "userProfiles", user.uid)
+        const profileSnap = await getDoc(profileRef)
 
-  const handleResetInventory = () => {
-    if (confirm("Are you sure you want to reset all inventory data? This action cannot be undone.")) {
-      resetInventoryData()
-      toast({
-        title: "Inventory Reset",
-        description: "All inventory data has been cleared. Refresh the page to see changes.",
-      })
-      setTimeout(() => window.location.reload(), 1500)
-    }
-  }
-
-  const handleResetAllData = () => {
-    if (confirm("⚠️ WARNING: This will delete ALL your data including cattle, inventory, pens, and settings. Are you absolutely sure?")) {
-      if (confirm("This is your last chance. Type 'DELETE' in the next prompt to confirm.") &&
-          prompt("Type DELETE to confirm:") === "DELETE") {
-        resetAllLocalStorageData()
-        toast({
-          title: "All Data Reset",
-          description: "All application data has been cleared. Redirecting...",
-          variant: "destructive",
-        })
-        setTimeout(() => {
-          router.push("/login")
-          window.location.reload()
-        }, 2000)
+        if (profileSnap.exists()) {
+          const data = profileSnap.data() as UserProfile
+          setUserProfile(data)
+          setDisplayName(data.displayName || "")
+          setLocation(data.location || "")
+          setFarmSize(data.farmSize || "")
+          setOtherActivities(data.otherFarmingActivities || "")
+          setFarmName(data.farmName || settings?.farmName || "")
+        }
+      } catch (error) {
+        console.error("Error loading user profile:", error)
       }
     }
-  }
 
+    loadUserProfile()
+  }, [user, settings?.farmName])
+
+  const handleSaveSettings = async () => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to save settings",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      // Update farm settings
+      if (settings) {
+        await updateSettings({ farmName })
+      }
+
+      await updatePreferences({
+        enablePastures,
+        enableRations,
+      })
+
+      // Update user profile in Firestore
+      const profileRef = doc(db, "userProfiles", user.uid)
+      await updateDoc(profileRef, {
+        displayName,
+        farmName,
+        location,
+        farmSize: farmSize.trim() || null,
+        otherFarmingActivities: otherActivities.trim() || null,
+        updatedAt: new Date().toISOString(),
+      })
+
+      toast({
+        title: "Settings Saved",
+        description: "Your preferences and profile have been updated successfully.",
+      })
+    } catch (error) {
+      console.error("Error saving settings:", error)
+      toast({
+        title: "Error",
+        description: "Failed to save settings. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -83,7 +129,7 @@ export default function SettingsPage() {
             <div>
               <h1 className="text-2xl font-bold text-foreground">Settings</h1>
               <p className="text-sm text-muted-foreground">
-                Manage your farm preferences and user settings
+                Manage your profile, farm preferences, and user settings
               </p>
             </div>
           </div>
@@ -91,6 +137,94 @@ export default function SettingsPage() {
       </header>
 
       <main className="container mx-auto px-4 sm:px-6 py-6 space-y-6 max-w-4xl">
+        {/* User Profile */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              User Profile
+            </CardTitle>
+            <CardDescription>Update your personal and farm information</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="displayName">Full Name</Label>
+              <Input
+                id="displayName"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Enter your full name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                value={user?.email || ""}
+                disabled
+                className="bg-muted cursor-not-allowed"
+              />
+              <p className="text-xs text-muted-foreground">
+                Email cannot be changed here. Contact support to update your email.
+              </p>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-2">
+              <Label htmlFor="farmNameProfile" className="flex items-center gap-2">
+                <Home className="h-4 w-4" />
+                Farm/Ranch Name
+              </Label>
+              <Input
+                id="farmNameProfile"
+                value={farmName}
+                onChange={(e) => setFarmName(e.target.value)}
+                placeholder="e.g., Smith Family Ranch"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="location" className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                Location
+              </Label>
+              <Input
+                id="location"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="e.g., Alberta, Canada"
+              />
+              <p className="text-xs text-muted-foreground">City, State/Province, Country</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="farmSize">Farm Size</Label>
+              <Input
+                id="farmSize"
+                value={farmSize}
+                onChange={(e) => setFarmSize(e.target.value)}
+                placeholder="e.g., 500 acres, 200 hectares"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="otherActivities">Other Farming Activities</Label>
+              <Textarea
+                id="otherActivities"
+                value={otherActivities}
+                onChange={(e) => setOtherActivities(e.target.value)}
+                placeholder="e.g., Crops, hay, other livestock..."
+                rows={3}
+              />
+              <p className="text-xs text-muted-foreground">
+                Tell us what else you farm besides cattle
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Farm Settings */}
         <Card>
           <CardHeader>
@@ -98,21 +232,9 @@ export default function SettingsPage() {
               <Database className="h-5 w-5" />
               Farm Settings
             </CardTitle>
-            <CardDescription>Configure your farm information</CardDescription>
+            <CardDescription>Configure your farm features and preferences</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="farmName">Farm Name</Label>
-              <Input
-                id="farmName"
-                value={farmName}
-                onChange={(e) => setFarmName(e.target.value)}
-                placeholder="Enter your farm name"
-              />
-            </div>
-
-            <Separator />
-
             <div className="space-y-4">
               <h3 className="font-semibold">Feature Toggles</h3>
 
@@ -146,7 +268,6 @@ export default function SettingsPage() {
             </div>
           </CardContent>
         </Card>
-
 
         {/* Notifications */}
         <Card>
@@ -200,65 +321,11 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Danger Zone */}
-        <Card className="border-red-200 dark:border-red-900">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
-              <AlertTriangle className="h-5 w-5" />
-              Danger Zone
-            </CardTitle>
-            <CardDescription>
-              Irreversible actions that will delete your data
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 border border-red-200 dark:border-red-900 rounded-lg bg-red-50 dark:bg-red-950/20">
-              <div className="space-y-0.5">
-                <Label className="text-base font-semibold">Reset Inventory Data</Label>
-                <p className="text-sm text-muted-foreground">
-                  Delete all inventory items, transactions, and alerts. Cattle data will be preserved.
-                </p>
-              </div>
-              <Button variant="destructive" onClick={handleResetInventory}>
-                <Trash2 className="h-4 w-4 mr-2" />
-                Reset Inventory
-              </Button>
-            </div>
-
-            <div className="flex items-center justify-between p-4 border border-red-200 dark:border-red-900 rounded-lg bg-red-50 dark:bg-red-950/20">
-              <div className="space-y-0.5">
-                <Label className="text-base font-semibold">Reset All Data</Label>
-                <p className="text-sm text-muted-foreground">
-                  Delete everything including cattle, inventory, pens, batches, and all settings.
-                </p>
-              </div>
-              <Button variant="destructive" onClick={handleResetAllData}>
-                <Trash2 className="h-4 w-4 mr-2" />
-                Reset Everything
-              </Button>
-            </div>
-
-            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-lg p-4">
-              <div className="flex gap-3">
-                <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-medium text-amber-900 dark:text-amber-100 mb-1">
-                    Warning: These actions cannot be undone
-                  </p>
-                  <p className="text-sm text-amber-700 dark:text-amber-200">
-                    Make sure you have backed up any important data before proceeding. Firebase data will not be affected by localStorage resets.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Save Button */}
         <div className="flex justify-end">
-          <Button onClick={handleSaveSettings}>
+          <Button onClick={handleSaveSettings} disabled={isLoading}>
             <Save className="h-4 w-4 mr-2" />
-            Save Settings
+            {isLoading ? "Saving..." : "Save Settings"}
           </Button>
         </div>
       </main>

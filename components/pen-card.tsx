@@ -4,10 +4,12 @@ import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Grid3x3, TrendingUp, TrendingDown, ScanLine } from "lucide-react"
+import { Grid3x3, TrendingUp, TrendingDown, ScanLine, Wheat, Syringe } from "lucide-react"
 import { type Pen, type Barn } from "@/lib/pen-store-firebase"
 import { Progress } from "@/components/ui/progress"
 import { RFIDImageImportDialog } from "@/components/rfid-image-import-dialog"
+import { PenFeedDialog } from "@/components/pen-feed-dialog"
+import { PenMedicationDialog } from "@/components/pen-medication-dialog"
 
 interface PenCardProps {
   pen: Pen
@@ -16,6 +18,8 @@ interface PenCardProps {
 
 export function PenCard({ pen, barn }: PenCardProps) {
   const [isImportOpen, setIsImportOpen] = useState(false)
+  const [isFeedDialogOpen, setIsFeedDialogOpen] = useState(false)
+  const [isMedicationDialogOpen, setIsMedicationDialogOpen] = useState(false)
   const utilizationRate = pen.capacity > 0 ? (pen.currentCount / pen.capacity) * 100 : 0
   const available = pen.capacity - pen.currentCount
 
@@ -64,7 +68,25 @@ export function PenCard({ pen, barn }: PenCardProps) {
             </p>
           )}
 
-          <div className="mt-4 pt-3 border-t">
+          <div className="mt-4 pt-3 border-t space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsFeedDialogOpen(true)}
+              >
+                <Wheat className="h-3 w-3 mr-1" />
+                Feed
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsMedicationDialogOpen(true)}
+              >
+                <Syringe className="h-3 w-3 mr-1" />
+                Meds
+              </Button>
+            </div>
             <Button
               variant="outline"
               size="sm"
@@ -72,7 +94,7 @@ export function PenCard({ pen, barn }: PenCardProps) {
               onClick={() => setIsImportOpen(true)}
             >
               <ScanLine className="h-3 w-3 mr-2" />
-              Import RFID to Pen
+              Import RFID
             </Button>
           </div>
         </div>
@@ -85,6 +107,24 @@ export function PenCard({ pen, barn }: PenCardProps) {
       defaultPenId={pen.id}
       onSuccess={() => {
         // Refresh will happen via the interval in cattle table
+      }}
+    />
+
+    <PenFeedDialog
+      open={isFeedDialogOpen}
+      onOpenChange={setIsFeedDialogOpen}
+      pen={pen}
+      onSuccess={() => {
+        // Activity recorded
+      }}
+    />
+
+    <PenMedicationDialog
+      open={isMedicationDialogOpen}
+      onOpenChange={setIsMedicationDialogOpen}
+      pen={pen}
+      onSuccess={() => {
+        // Activity recorded
       }}
     />
     </>

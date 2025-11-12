@@ -22,6 +22,8 @@ import {
 } from "lucide-react"
 import { type FarmSector, farmSettingsStore } from "@/lib/farm-settings-store"
 import { lifecycleConfig, type LifecycleStage } from "@/lib/lifecycle-config"
+import { doc, updateDoc, getDoc } from "firebase/firestore"
+import { db } from "@/lib/firebase"
 
 interface OperationType {
   id: FarmSector
@@ -106,9 +108,29 @@ export default function OnboardingPage() {
   const [newStageName, setNewStageName] = useState("")
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/login")
+    const checkOnboardingStatus = async () => {
+      if (!authLoading && !user) {
+        router.push("/login")
+        return
+      }
+
+      if (user) {
+        // Check if user has already completed onboarding
+        try {
+          const userProfileRef = doc(db, "userProfiles", user.uid)
+          const userProfileSnap = await getDoc(userProfileRef)
+
+          if (userProfileSnap.exists() && userProfileSnap.data()?.onboardingCompleted) {
+            // Already completed onboarding, redirect to dashboard
+            router.push("/")
+          }
+        } catch (error) {
+          console.error("Error checking onboarding status:", error)
+        }
+      }
     }
+
+    checkOnboardingStatus()
   }, [user, authLoading, router])
 
   const progress = (step / 4) * 100
@@ -138,7 +160,37 @@ export default function OnboardingPage() {
       // Initialize farm settings
       await farmSettingsStore.initializeSettings(farmName.trim(), selectedOperation, user.uid)
 
-      // Clear existing stages and add custom ones
+      // Save lifecycle stages to Firestore
+      const lifecycleStages = stages.map((stage, index) => ({
+        id: `stage-${Date.now()}-${index}`,
+        name: stage.name,
+        order: index + 1,
+        color: stage.color,
+        description: stage.description || "",
+      }))
+
+      // Get existing user profile data
+      const userProfileRef = doc(db, "userProfiles", user.uid)
+      const userProfileSnap = await getDoc(userProfileRef)
+
+      if (userProfileSnap.exists()) {
+        // Update existing profile with lifecycle and mark onboarding complete
+        await updateDoc(userProfileRef, {
+          lifecycleStages,
+          onboardingCompleted: true,
+          updatedAt: new Date().toISOString(),
+        })
+      } else {
+        // If profile doesn't exist, create it with lifecycle stages
+        await updateDoc(userProfileRef, {
+          lifecycleStages,
+          onboardingCompleted: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
+      }
+
+      // Also save to local lifecycle config for immediate use
       lifecycleConfig.resetToDefault()
       const existingStages = lifecycleConfig.getStages()
       existingStages.forEach(stage => {
