@@ -42,7 +42,12 @@ export default function AgentPage() {
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    if (messagesEndRef.current) {
+      // Use requestAnimationFrame to ensure DOM has updated
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
+      })
+    }
   }, [currentMessages])
 
   // Load conversation history
@@ -289,8 +294,9 @@ export default function AgentPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col min-h-0 p-0">
-                <ScrollArea className="flex-1 px-6" ref={scrollAreaRef}>
-                  <div className="space-y-4 pb-4">
+                <div className="flex-1 overflow-hidden">
+                  <ScrollArea className="h-full px-6" ref={scrollAreaRef}>
+                    <div className="space-y-4 pb-4 pt-4">
                     {currentMessages.length === 0 && (
                       <div className="text-center text-muted-foreground py-8">
                         <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -354,15 +360,6 @@ export default function AgentPage() {
                             <span className="text-xs text-muted-foreground">Stock up your inventory</span>
                           </button>
                         </div>
-
-                        <div className="mt-6 text-xs text-muted-foreground">
-                          <p className="font-medium mb-1">I can also help you:</p>
-                          <p>• Update cattle weights and move them between pens</p>
-                          <p>• Record health treatments and medications</p>
-                          <p>• Create and manage barns</p>
-                          <p>• Log activities and track pen operations</p>
-                          <p>• Delete records when needed</p>
-                        </div>
                       </div>
                     )}
 
@@ -395,8 +392,9 @@ export default function AgentPage() {
                     )}
 
                     <div ref={messagesEndRef} />
-                  </div>
-                </ScrollArea>
+                    </div>
+                  </ScrollArea>
+                </div>
 
                 <div className="border-t p-4 space-y-3">
                   <div className="flex gap-2">
@@ -481,7 +479,8 @@ export default function AgentPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col min-h-0 p-0">
-                <ScrollArea className="flex-1 px-6">
+                <div className="flex-1 overflow-hidden">
+                  <ScrollArea className="h-full px-6">
                   {isLoadingHistory ? (
                     <div className="flex items-center justify-center py-8">
                       <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -536,7 +535,8 @@ export default function AgentPage() {
                       ))}
                     </div>
                   )}
-                </ScrollArea>
+                  </ScrollArea>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
