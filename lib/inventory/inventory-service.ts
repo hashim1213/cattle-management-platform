@@ -667,4 +667,9 @@ class InventoryService {
   }
 }
 
-export const inventoryService = InventoryService.getInstance()
+// Export Firebase service as default - provides real-time sync
+export { firebaseInventoryService as inventoryService } from "./inventory-service-firebase"
+
+// Keep localStorage service available for legacy/offline use
+const localStorageService = InventoryService.getInstance()
+export { localStorageService }

@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Link from "next/link"
+import { useAuth } from "@/contexts/auth-context"
 import { inventoryService } from "@/lib/inventory/inventory-service"
 import {
   InventoryItem,
@@ -39,6 +40,7 @@ import { InventoryTransactionsDialog } from "@/components/inventory-transactions
 import { useToast } from "@/hooks/use-toast"
 
 export default function InventoryPage() {
+  const { user } = useAuth()
   const { toast } = useToast()
   const [inventory, setInventory] = useState<InventoryItem[]>([])
   const [filteredInventory, setFilteredInventory] = useState<InventoryItem[]>([])
@@ -49,15 +51,35 @@ export default function InventoryPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null)
   const [isTransactionsOpen, setIsTransactionsOpen] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
 
-  // Load inventory on mount and subscribe to changes
+  // Initialize Firebase inventory service when user is available
   useEffect(() => {
+    if (user?.uid && !isInitialized) {
+      inventoryService.initialize(user.uid).then(() => {
+        setIsInitialized(true)
+        loadInventory()
+      })
+    }
+
+    return () => {
+      if (user?.uid) {
+        inventoryService.cleanup()
+        setIsInitialized(false)
+      }
+    }
+  }, [user?.uid])
+
+  // Subscribe to inventory changes
+  useEffect(() => {
+    if (!isInitialized) return
+
     loadInventory()
     const unsubscribe = inventoryService.subscribe(() => {
       loadInventory()
     })
     return unsubscribe
-  }, [])
+  }, [isInitialized])
 
   // Apply filters when inventory or filters change
   useEffect(() => {
