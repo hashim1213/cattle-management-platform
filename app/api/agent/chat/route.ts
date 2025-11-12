@@ -14,6 +14,7 @@ You can help with:
 3. Logging activities for pens
 4. Recording health treatments
 5. Querying cattle, pen, and inventory information
+6. Providing farm summaries and statistics
 
 When users ask you to perform actions, you should:
 - Parse their request to understand the intent
@@ -22,13 +23,20 @@ When users ask you to perform actions, you should:
 - Provide clear, friendly confirmation
 
 Available Actions:
+
+WRITE ACTIONS (modify data):
 - addMedication: Add medication to inventory (params: name, category, quantity, unit, costPerUnit, withdrawalPeriod, storageLocation, notes)
 - updatePen: Update pen information (params: penId, name, capacity, notes)
 - logActivity: Log an activity for a pen (params: penId, activityType, description, date, notes)
 - addHealthRecord: Record health treatment and deduct inventory (params: cattleId/tagNumber/penId, medicationName, quantity, date, notes)
-- getCattleInfo: Get information about cattle (params: tagNumber, penId, or cattleId)
-- getPenInfo: Get information about pens (params: penId optional)
-- getInventoryInfo: Get information about inventory (params: itemName optional)
+
+READ ACTIONS (query data):
+- getCattleInfo: Get information about specific cattle (params: tagNumber, penId, or cattleId)
+- getPenInfo: Get information about specific pens (params: penId - optional, omit to get all pens)
+- getInventoryInfo: Get information about inventory items (params: itemName - optional, omit to get all items)
+- getAllCattle: Get total cattle count with summary by pen (no params needed)
+- getFarmSummary: Get comprehensive farm statistics including cattle, pens, and inventory (no params needed)
+- getCattleCountByPen: Get cattle count per pen with pen details (no params needed)
 
 Medication categories: antibiotic, antiparasitic, vaccine, anti-inflammatory, hormone, vitamin-injectable, drug-other
 Common units: cc, ml, lbs, kg, tons, bales, bags, doses
@@ -37,10 +45,15 @@ When executing actions, you MUST respond with a JSON object containing:
 {
   "action": "actionName",
   "params": { ... },
-  "message": "A friendly message to the user"
+  "message": "A friendly, conversational message to the user explaining what you found or did"
 }
 
-For informational queries (like "how many cattle in pen 3?"), execute the appropriate get action first, then provide a conversational response.
+IMPORTANT: For informational queries, you will receive the data back after executing the action. Use that data to craft a conversational, human-readable response. DO NOT just dump raw JSON data to the user.
+
+Examples:
+- User: "How many cattle do I have?" → Use getAllCattle action, then respond with: "You have [X] cattle total, distributed across [Y] pens."
+- User: "What's in pen 3?" → Use getCattleInfo with penId, then respond with: "Pen 3 currently has [X] cattle."
+- User: "Give me a farm overview" → Use getFarmSummary, then provide a nice summary of the stats.
 
 Be conversational, friendly, and use farming terminology appropriately. Confirm actions before marking them complete.`
 
@@ -53,6 +66,127 @@ interface ChatRequest {
   messages: ChatMessage[]
   conversationId?: string
   userId?: string
+}
+
+/**
+ * Format query response data into human-readable text
+ */
+async function formatQueryResponse(action: string, data: any, aiMessage?: string): Promise<string> {
+  let formatted = aiMessage || "Here's what I found:\n\n"
+
+  switch (action) {
+    case "getAllCattle":
+      if (data.totalCount === 0) {
+        formatted = "You don't have any cattle in your system yet."
+      } else {
+        formatted = `You have **${data.totalCount} cattle** total.\n\n`
+        if (data.penSummary && data.penSummary.length > 0) {
+          formatted += "**Distribution by pen:**\n"
+          data.penSummary.forEach((pen: any) => {
+            const penName = pen.penId === 'unassigned' ? 'Unassigned' : `Pen ${pen.penId}`
+            formatted += `- ${penName}: ${pen.count} cattle\n`
+          })
+        }
+      }
+      break
+
+    case "getFarmSummary":
+      formatted = "**Farm Overview:**\n\n"
+      formatted += `🐄 **Cattle:** ${data.cattle.total} total\n`
+      formatted += `🏠 **Pens:** ${data.pens.total} total\n`
+      formatted += `📦 **Inventory:** ${data.inventory.total} items (Total value: $${data.inventory.totalValue.toFixed(2)})\n`
+
+      if (data.inventory.lowStockCount > 0) {
+        formatted += `\n⚠️ **${data.inventory.lowStockCount} items are low in stock:**\n`
+        data.inventory.lowStockItems.slice(0, 5).forEach((item: any) => {
+          formatted += `- ${item.name}: ${item.quantity} ${item.unit}\n`
+        })
+      }
+
+      if (data.pens.penList && data.pens.penList.length > 0) {
+        formatted += `\n**Your pens:**\n`
+        data.pens.penList.slice(0, 5).forEach((pen: any) => {
+          formatted += `- ${pen.name} (Capacity: ${pen.capacity || 'Not set'})\n`
+        })
+      }
+      break
+
+    case "getCattleCountByPen":
+      if (data && data.length > 0) {
+        formatted = `**Cattle distribution across ${data.length} pens:**\n\n`
+        data.forEach((pen: any) => {
+          const utilization = pen.capacity ? ` (${Math.round((pen.count / pen.capacity) * 100)}% full)` : ''
+          formatted += `- **${pen.name}:** ${pen.count} cattle${utilization}\n`
+        })
+      } else {
+        formatted = "No pens found in your system."
+      }
+      break
+
+    case "getPenInfo":
+      if (Array.isArray(data)) {
+        if (data.length === 0) {
+          formatted = "No pens found."
+        } else if (data.length === 1) {
+          const pen = data[0]
+          formatted = `**${pen.name}**\n`
+          formatted += `- Capacity: ${pen.capacity || 'Not set'}\n`
+          formatted += `- Notes: ${pen.notes || 'None'}\n`
+        } else {
+          formatted = `Found ${data.length} pens:\n`
+          data.slice(0, 10).forEach((pen: any) => {
+            formatted += `- ${pen.name} (Capacity: ${pen.capacity || 'Not set'})\n`
+          })
+        }
+      } else if (data) {
+        formatted = `**${data.name}**\n`
+        formatted += `- Capacity: ${data.capacity || 'Not set'}\n`
+        formatted += `- Notes: ${data.notes || 'None'}\n`
+      }
+      break
+
+    case "getCattleInfo":
+      if (Array.isArray(data)) {
+        if (data.length === 0) {
+          formatted = "No cattle found matching your criteria."
+        } else if (data.length === 1) {
+          const cattle = data[0]
+          formatted = `**Cattle #${cattle.tagNumber || cattle.id}**\n`
+          formatted += `- Tag: ${cattle.tagNumber || 'Not set'}\n`
+          formatted += `- Pen: ${cattle.penId || 'Unassigned'}\n`
+          if (cattle.breed) formatted += `- Breed: ${cattle.breed}\n`
+          if (cattle.weight) formatted += `- Weight: ${cattle.weight} lbs\n`
+        } else {
+          formatted = `Found ${data.length} cattle:\n`
+          data.slice(0, 10).forEach((cattle: any) => {
+            formatted += `- Tag ${cattle.tagNumber || 'N/A'} (Pen: ${cattle.penId || 'Unassigned'})\n`
+          })
+        }
+      }
+      break
+
+    case "getInventoryInfo":
+      if (Array.isArray(data)) {
+        if (data.length === 0) {
+          formatted = "No inventory items found."
+        } else {
+          formatted = `**Inventory (${data.length} items):**\n\n`
+          data.slice(0, 10).forEach((item: any) => {
+            const lowStock = item.quantityOnHand <= item.reorderPoint ? ' ⚠️ LOW' : ''
+            formatted += `- **${item.name}**: ${item.quantityOnHand} ${item.unit}${lowStock}\n`
+            if (item.totalValue) formatted += `  Value: $${item.totalValue.toFixed(2)}\n`
+          })
+        }
+      }
+      break
+
+    default:
+      // Fallback to basic JSON formatting for unknown actions
+      formatted = aiMessage || "Here's what I found:\n\n"
+      formatted += `\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``
+  }
+
+  return formatted
 }
 
 export async function POST(request: NextRequest) {
@@ -123,10 +257,19 @@ export async function POST(request: NextRequest) {
               actionResult = await actionExecutor.getCattleInfo(userId, actionData.params)
               break
             case "getPenInfo":
-              actionResult = await actionExecutor.getPenInfo(userId, actionData.params.penId)
+              actionResult = await actionExecutor.getPenInfo(userId, actionData.params?.penId)
               break
             case "getInventoryInfo":
-              actionResult = await actionExecutor.getInventoryInfo(userId, actionData.params.itemName)
+              actionResult = await actionExecutor.getInventoryInfo(userId, actionData.params?.itemName)
+              break
+            case "getAllCattle":
+              actionResult = await actionExecutor.getAllCattle(userId)
+              break
+            case "getFarmSummary":
+              actionResult = await actionExecutor.getFarmSummary(userId)
+              break
+            case "getCattleCountByPen":
+              actionResult = await actionExecutor.getCattleCountByPen(userId)
               break
             default:
               actionResult = {
@@ -135,21 +278,14 @@ export async function POST(request: NextRequest) {
               }
           }
 
-          // If action was successful, use the result message
+          // If action was successful, format response based on action type
           if (actionResult && actionResult.success) {
+            // Use AI-generated message or fallback to action result
             finalMessage = actionData.message || actionResult.message
 
-            // For info queries, append the data in a friendly way
+            // For query actions, format the data in a user-friendly way
             if (actionData.action.startsWith("get") && actionResult.data) {
-              if (Array.isArray(actionResult.data)) {
-                if (actionResult.data.length > 0) {
-                  finalMessage += `\n\nHere's what I found:\n${JSON.stringify(actionResult.data, null, 2)}`
-                } else {
-                  finalMessage += "\n\nNo results found."
-                }
-              } else {
-                finalMessage += `\n\nDetails:\n${JSON.stringify(actionResult.data, null, 2)}`
-              }
+              finalMessage = await formatQueryResponse(actionData.action, actionResult.data, actionData.message)
             }
           } else if (actionResult && !actionResult.success) {
             finalMessage = `Sorry, I encountered an error: ${actionResult.message || actionResult.error}`

@@ -497,6 +497,192 @@ class AgentActionExecutor {
       }
     }
   }
+
+  /**
+   * Get all cattle with summary statistics
+   */
+  async getAllCattle(userId: string): Promise<ActionResult> {
+    if (!userId) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: "NOT_AUTHENTICATED"
+      }
+    }
+
+    try {
+      const snapshot = await getDocs(collection(db, `users/${userId}/cattle`))
+      const cattle = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+
+      // Group by pen
+      const byPen: Record<string, any[]> = {}
+      cattle.forEach(c => {
+        const penId = (c as any).penId || 'unassigned'
+        if (!byPen[penId]) byPen[penId] = []
+        byPen[penId].push(c)
+      })
+
+      return {
+        success: true,
+        message: `You have ${cattle.length} cattle total`,
+        data: {
+          totalCount: cattle.length,
+          cattle: cattle,
+          byPen: byPen,
+          penSummary: Object.entries(byPen).map(([penId, animals]) => ({
+            penId,
+            count: animals.length
+          }))
+        }
+      }
+    } catch (error: any) {
+      console.error("Error getting all cattle:", error)
+      return {
+        success: false,
+        message: "Failed to get cattle information",
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * Get farm summary with comprehensive statistics
+   */
+  async getFarmSummary(userId: string): Promise<ActionResult> {
+    if (!userId) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: "NOT_AUTHENTICATED"
+      }
+    }
+
+    try {
+      // Get all data in parallel
+      const [cattleSnapshot, pensSnapshot, inventorySnapshot] = await Promise.all([
+        getDocs(collection(db, `users/${userId}/cattle`)),
+        getDocs(collection(db, `users/${userId}/pens`)),
+        getDocs(collection(db, `users/${userId}/inventory`))
+      ])
+
+      const cattle = cattleSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      const pens = pensSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      const inventory = inventorySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as InventoryItem }))
+
+      // Calculate statistics
+      const totalCattle = cattle.length
+      const totalPens = pens.length
+      const totalInventoryItems = inventory.length
+
+      // Inventory value
+      const totalInventoryValue = inventory.reduce((sum, item) => {
+        const itemData = item as InventoryItem
+        return sum + (itemData.totalValue || 0)
+      }, 0)
+
+      // Low stock items
+      const lowStockItems = inventory.filter(item => {
+        const itemData = item as InventoryItem
+        return itemData.quantityOnHand <= itemData.reorderPoint
+      })
+
+      // Cattle by pen
+      const cattleByPen: Record<string, number> = {}
+      cattle.forEach(c => {
+        const penId = (c as any).penId || 'unassigned'
+        cattleByPen[penId] = (cattleByPen[penId] || 0) + 1
+      })
+
+      return {
+        success: true,
+        message: "Farm summary retrieved successfully",
+        data: {
+          cattle: {
+            total: totalCattle,
+            byPen: cattleByPen
+          },
+          pens: {
+            total: totalPens,
+            penList: pens.map(p => ({ id: p.id, name: (p as any).name, capacity: (p as any).capacity }))
+          },
+          inventory: {
+            total: totalInventoryItems,
+            totalValue: totalInventoryValue,
+            lowStockCount: lowStockItems.length,
+            lowStockItems: lowStockItems.map(item => ({
+              name: (item as InventoryItem).name,
+              quantity: (item as InventoryItem).quantityOnHand,
+              unit: (item as InventoryItem).unit
+            }))
+          }
+        }
+      }
+    } catch (error: any) {
+      console.error("Error getting farm summary:", error)
+      return {
+        success: false,
+        message: "Failed to get farm summary",
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * Get cattle count by pen
+   */
+  async getCattleCountByPen(userId: string): Promise<ActionResult> {
+    if (!userId) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: "NOT_AUTHENTICATED"
+      }
+    }
+
+    try {
+      const [cattleSnapshot, pensSnapshot] = await Promise.all([
+        getDocs(collection(db, `users/${userId}/cattle`)),
+        getDocs(collection(db, `users/${userId}/pens`))
+      ])
+
+      const cattle = cattleSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      const pens = pensSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+
+      // Create pen map
+      const penMap: Record<string, any> = {}
+      pens.forEach(p => {
+        penMap[p.id] = {
+          id: p.id,
+          name: (p as any).name,
+          capacity: (p as any).capacity,
+          count: 0
+        }
+      })
+
+      // Count cattle per pen
+      cattle.forEach(c => {
+        const penId = (c as any).penId
+        if (penId && penMap[penId]) {
+          penMap[penId].count++
+        }
+      })
+
+      const penSummary = Object.values(penMap)
+
+      return {
+        success: true,
+        message: `Cattle distribution across ${penSummary.length} pens`,
+        data: penSummary
+      }
+    } catch (error: any) {
+      console.error("Error getting cattle count by pen:", error)
+      return {
+        success: false,
+        message: "Failed to get cattle count by pen",
+        error: error.message
+      }
+    }
+  }
 }
 
 export const actionExecutor = new AgentActionExecutor()
