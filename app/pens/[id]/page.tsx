@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { ArrowLeft, Grid3x3, Wheat, Syringe, DollarSign } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -26,9 +26,7 @@ import { toast } from "sonner"
 export default function PenDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const { getPen, barns, updatePen, pens } = usePenStore()
-  const [pen, setPen] = useState<any>(null)
-  const [barn, setBarn] = useState<any>(null)
+  const { barns, updatePen, pens } = usePenStore()
   const [cattle, setCattle] = useState<Cattle[]>([])
   const [loading, setLoading] = useState(true)
   const [isFeedDialogOpen, setIsFeedDialogOpen] = useState(false)
@@ -36,39 +34,36 @@ export default function PenDetailPage() {
   const [isValueDialogOpen, setIsValueDialogOpen] = useState(false)
   const [penValue, setPenValue] = useState<string>("")
 
+  // Use useMemo to get current pen and barn - this is reactive to subscription updates
+  const pen = useMemo(() => {
+    return pens.find(p => p.id === params.id) || null
+  }, [pens, params.id])
+
+  const barn = useMemo(() => {
+    return pen ? barns.find(b => b.id === pen.barnId) || null : null
+  }, [barns, pen])
+
+  // Only load cattle when pen ID changes
   useEffect(() => {
-    const loadPenData = async () => {
+    const loadCattle = async () => {
       try {
-        console.log("Loading pen detail page data...")
-        const penData = getPen(params.id as string)
-        console.log("Pen data:", penData)
-
-        if (penData) {
-          setPen(penData)
-          const barnData = barns.find(b => b.id === penData.barnId)
-          setBarn(barnData)
-
-          // Load cattle in this pen
-          const allCattle = await firebaseDataStore.getCattle()
-          console.log(`Total cattle loaded: ${allCattle.length}`)
-          const penCattle = allCattle.filter(c => c.penId === params.id)
-          console.log(`Cattle in this pen: ${penCattle.length}`)
-          setCattle(penCattle)
-        } else {
-          console.error("Pen not found:", params.id)
-        }
+        console.log("Loading cattle for pen:", params.id)
+        setLoading(true)
+        const allCattle = await firebaseDataStore.getCattle()
+        console.log(`Total cattle loaded: ${allCattle.length}`)
+        const penCattle = allCattle.filter(c => c.penId === params.id)
+        console.log(`Cattle in this pen: ${penCattle.length}`)
+        setCattle(penCattle)
       } catch (error) {
-        console.error("Error loading pen data:", error)
-        // Set empty state on error
+        console.error("Error loading cattle:", error)
         setCattle([])
       } finally {
         setLoading(false)
       }
     }
 
-    loadPenData()
-    // Only reload when pen ID changes or when pens/barns length changes (not reference)
-  }, [params.id, pens.length, barns.length, getPen])
+    loadCattle()
+  }, [params.id])
 
   const handleUpdatePenValue = async () => {
     if (!pen) {
