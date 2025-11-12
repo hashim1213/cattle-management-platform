@@ -26,14 +26,19 @@ export default function HealthOverviewPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [cattleData, healthData] = await Promise.all([
-          firebaseDataStore.getCattle(),
-          firebaseDataStore.getAllHealthRecords()
-        ])
+        console.log("Loading health page data...")
+        const cattleData = await firebaseDataStore.getCattle()
+        console.log(`Loaded ${cattleData.length} cattle`)
         setCattle(cattleData)
+
+        const healthData = await firebaseDataStore.getAllHealthRecords()
+        console.log(`Loaded ${healthData.length} health records`)
         setHealthRecords(healthData)
       } catch (error) {
         console.error("Failed to load health data:", error)
+        // Set empty data on error to avoid infinite loading
+        setCattle([])
+        setHealthRecords([])
       } finally {
         setLoading(false)
       }
