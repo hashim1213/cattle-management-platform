@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useLifecycleConfig } from "@/hooks/use-lifecycle-config"
 import { Settings, Plus, Trash2, GripVertical, RotateCcw, Edit } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { LifecycleStage } from "@/lib/lifecycle-config"
+import type { LifecycleStage } from "@/lib/lifecycle-config-firebase"
 
 export function LifecycleSettingsDialog() {
   const [open, setOpen] = useState(false)

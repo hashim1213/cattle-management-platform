@@ -23,7 +23,7 @@ import { Loader2 } from "lucide-react"
 import { firebaseDataStore } from "@/lib/data-store-firebase"
 import { usePenStore } from "@/hooks/use-pen-store"
 import { useBatchStore } from "@/hooks/use-batch-store"
-import { lifecycleConfig } from "@/lib/lifecycle-config"
+import { useLifecycleConfig } from "@/hooks/use-lifecycle-config"
 import { Checkbox } from "@/components/ui/checkbox"
 
 interface BulkEditDialogProps {
@@ -43,7 +43,7 @@ export function BulkEditDialog({
   const [loading, setLoading] = useState(false)
   const { pens = [], barns = [] } = usePenStore()
   const { batches = [] } = useBatchStore()
-  const stages = lifecycleConfig.getStages()
+  const { stages } = useLifecycleConfig()
 
   // Fields to edit
   const [updateStage, setUpdateStage] = useState(false)

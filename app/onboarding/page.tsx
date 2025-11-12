@@ -21,7 +21,7 @@ import {
   X
 } from "lucide-react"
 import { type FarmSector, farmSettingsStore } from "@/lib/farm-settings-store"
-import { lifecycleConfig, type LifecycleStage } from "@/lib/lifecycle-config"
+import { firebaseLifecycleConfig, type LifecycleStage } from "@/lib/lifecycle-config-firebase"
 import { doc, updateDoc, getDoc, setDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 
@@ -197,17 +197,17 @@ export default function OnboardingPage() {
         console.log("User profile created with lifecycle stages")
       }
 
-      // Also save to local lifecycle config for immediate use
-      lifecycleConfig.resetToDefault()
-      const existingStages = lifecycleConfig.getStages()
-      existingStages.forEach(stage => {
-        lifecycleConfig.removeStage(stage.id)
-      })
+      // Save lifecycle stages to Firebase
+      await firebaseLifecycleConfig.resetToDefault()
+      const existingStages = firebaseLifecycleConfig.getStages()
+      for (const stage of existingStages) {
+        await firebaseLifecycleConfig.removeStage(stage.id)
+      }
 
       // Add user's custom stages
-      stages.forEach((stage) => {
-        lifecycleConfig.addStage(stage)
-      })
+      for (const stage of stages) {
+        await firebaseLifecycleConfig.addStage(stage)
+      }
 
       console.log("Onboarding completed successfully, redirecting to dashboard")
 
