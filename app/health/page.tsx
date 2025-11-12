@@ -48,13 +48,17 @@ export default function HealthOverviewPage() {
 
   // Calculate health statistics
   const stats = useMemo(() => {
-    const activeCattle = cattle.filter(c => c.status === "Active")
+    // Ensure cattle is an array
+    const cattleArray = Array.isArray(cattle) ? cattle : []
+    const healthRecordsArray = Array.isArray(healthRecords) ? healthRecords : []
+
+    const activeCattle = cattleArray.filter(c => c.status === "Active")
     const totalCattle = activeCattle.length
 
     // Mortality statistics
-    const deceasedCattle = cattle.filter(c => c.status === "Deceased")
-    const soldCattle = cattle.filter(c => c.status === "Sold")
-    const culledCattle = cattle.filter(c => c.status === "Culled")
+    const deceasedCattle = cattleArray.filter(c => c.status === "Deceased")
+    const soldCattle = cattleArray.filter(c => c.status === "Sold")
+    const culledCattle = cattleArray.filter(c => c.status === "Culled")
     const mortalityRate = totalCattle > 0 ? (deceasedCattle.length / (totalCattle + deceasedCattle.length)) * 100 : 0
 
     // Health status breakdown
@@ -69,7 +73,7 @@ export default function HealthOverviewPage() {
     // Recent health records (last 7 days)
     const sevenDaysAgo = new Date()
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-    const recentHealthRecords = healthRecords.filter(r =>
+    const recentHealthRecords = healthRecordsArray.filter(r =>
       new Date(r.date) >= sevenDaysAgo
     ).length
 
@@ -107,9 +111,11 @@ export default function HealthOverviewPage() {
 
   // Group deceased cattle by notes
   const mortalityCauses = useMemo(() => {
+    // Ensure cattle is an array
+    const cattleArray = Array.isArray(cattle) ? cattle : []
     const causes: Record<string, number> = {}
 
-    cattle.filter(c => c.status === "Deceased").forEach(c => {
+    cattleArray.filter(c => c.status === "Deceased").forEach(c => {
       const cause = c.notes || "Unknown"
       causes[cause] = (causes[cause] || 0) + 1
     })
@@ -119,10 +125,14 @@ export default function HealthOverviewPage() {
 
   // Recent health events from health records
   const recentEvents = useMemo(() => {
-    return healthRecords
+    // Ensure arrays exist
+    const healthRecordsArray = Array.isArray(healthRecords) ? healthRecords : []
+    const cattleArray = Array.isArray(cattle) ? cattle : []
+
+    return healthRecordsArray
       .slice(0, 20)
       .map(record => {
-        const animal = cattle.find(c => c.id === record.cattleId)
+        const animal = cattleArray.find(c => c.id === record.cattleId)
         if (!animal) return null
 
         return {
@@ -142,7 +152,9 @@ export default function HealthOverviewPage() {
 
   // Filtered cattle for bulk treatment
   const filteredCattle = useMemo(() => {
-    const activeCattle = cattle.filter(c => c.status === "Active")
+    // Ensure cattle is an array
+    const cattleArray = Array.isArray(cattle) ? cattle : []
+    const activeCattle = cattleArray.filter(c => c.status === "Active")
     if (!searchQuery) return activeCattle
 
     const query = searchQuery.toLowerCase()
