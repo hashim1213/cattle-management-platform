@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Mic, MicOff, Send, Loader2, MessageSquare, History, Trash2 } from "lucide-react"
+import { Mic, MicOff, Send, Loader2, MessageSquare, History, Trash2, User, Bot, Sparkles } from "lucide-react"
 import { db } from "@/lib/firebase"
 import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } from "firebase/firestore"
 import { toast } from "sonner"
@@ -264,100 +264,109 @@ export default function AgentPage() {
   }
 
   return (
-    <div className="h-full p-4 lg:p-6 overflow-hidden">
-      <div className="max-w-7xl mx-auto h-full flex flex-col">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold">Farm Assistant</h1>
-          <p className="text-muted-foreground">
-            Chat or speak to manage your farm operations
-          </p>
+    <div className="h-full flex flex-col overflow-hidden">
+      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="max-w-7xl mx-auto px-4 lg:px-6 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <span className="text-2xl">🌾</span>
+              Farm Assistant
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              AI-powered farm management
+            </p>
+          </div>
+          <Tabs defaultValue="chat" className="w-auto">
+            <TabsList>
+              <TabsTrigger value="chat" className="gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Chat
+              </TabsTrigger>
+              <TabsTrigger value="history" className="gap-2">
+                <History className="h-4 w-4" />
+                History
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
+      </div>
 
-        <Tabs defaultValue="chat" className="flex-1 flex flex-col min-h-0">
-          <TabsList className="mb-4">
-            <TabsTrigger value="chat" className="gap-2">
-              <MessageSquare className="h-4 w-4" />
-              Chat
-            </TabsTrigger>
-            <TabsTrigger value="history" className="gap-2">
-              <History className="h-4 w-4" />
-              History
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="chat" className="flex-1 flex flex-col min-h-0 mt-0">
-            <Card className="flex-1 flex flex-col min-h-0">
-              <CardHeader>
-                <CardTitle>Chat with Farm Assistant</CardTitle>
-                <CardDescription>
-                  Ask me to add medications, update pens, log activities, or get information
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col min-h-0 p-0">
-                <div className="flex-1 overflow-hidden">
-                  <ScrollArea className="h-full px-6" ref={scrollAreaRef}>
-                    <div className="space-y-4 pb-4 pt-4">
+      <div className="flex-1 overflow-hidden">
+        <Tabs defaultValue="chat" className="h-full flex flex-col">
+          <TabsContent value="chat" className="flex-1 m-0 data-[state=inactive]:hidden h-full">
+            <div className="h-full flex flex-col">
+                <div className="flex-1 overflow-hidden bg-gradient-to-b from-background to-muted/20">
+                  <ScrollArea className="h-full" ref={scrollAreaRef}>
+                    <div className="max-w-4xl mx-auto px-4 py-6">
                     {currentMessages.length === 0 && (
-                      <div className="text-center text-muted-foreground py-8">
-                        <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p className="text-lg font-medium">Farm Assistant - Full Control</p>
-                        <p className="text-sm mt-2 mb-4">
-                          I can manage your entire farm. Try these quick actions:
+                      <div className="text-center py-12">
+                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-6">
+                          <Sparkles className="h-8 w-8 text-primary" />
+                        </div>
+                        <h2 className="text-2xl font-bold mb-2">Welcome to Farm Assistant</h2>
+                        <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                          Your AI-powered farm management companion. Get started with these suggestions:
                         </p>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-w-3xl mx-auto text-left">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
                           <button
                             onClick={() => setInputMessage("How many cattle do I have?")}
-                            className="p-3 text-sm bg-muted hover:bg-accent rounded-lg text-left transition-colors"
+                            className="group p-4 bg-card hover:bg-accent border rounded-xl text-left transition-all hover:shadow-md hover:scale-[1.02]"
                           >
-                            <strong>📊 Farm Overview</strong>
-                            <br />
-                            <span className="text-xs text-muted-foreground">Get complete farm statistics</span>
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                                <span className="text-xl">📊</span>
+                              </div>
+                              <div className="flex-1">
+                                <p className="font-medium mb-1 group-hover:text-primary transition-colors">Farm Overview</p>
+                                <p className="text-xs text-muted-foreground">Get complete farm statistics</p>
+                              </div>
+                            </div>
                           </button>
 
                           <button
                             onClick={() => setInputMessage("Show me all my pens")}
-                            className="p-3 text-sm bg-muted hover:bg-accent rounded-lg text-left transition-colors"
+                            className="group p-4 bg-card hover:bg-accent border rounded-xl text-left transition-all hover:shadow-md hover:scale-[1.02]"
                           >
-                            <strong>🏠 List Pens</strong>
-                            <br />
-                            <span className="text-xs text-muted-foreground">View all pens and cattle distribution</span>
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                                <span className="text-xl">🏠</span>
+                              </div>
+                              <div className="flex-1">
+                                <p className="font-medium mb-1 group-hover:text-primary transition-colors">View Pens</p>
+                                <p className="text-xs text-muted-foreground">See all pens and cattle</p>
+                              </div>
+                            </div>
                           </button>
 
                           <button
                             onClick={() => setInputMessage("Check my inventory")}
-                            className="p-3 text-sm bg-muted hover:bg-accent rounded-lg text-left transition-colors"
+                            className="group p-4 bg-card hover:bg-accent border rounded-xl text-left transition-all hover:shadow-md hover:scale-[1.02]"
                           >
-                            <strong>💊 Check Inventory</strong>
-                            <br />
-                            <span className="text-xs text-muted-foreground">View all medications and stock levels</span>
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                                <span className="text-xl">💊</span>
+                              </div>
+                              <div className="flex-1">
+                                <p className="font-medium mb-1 group-hover:text-primary transition-colors">Check Inventory</p>
+                                <p className="text-xs text-muted-foreground">View medications and stock</p>
+                              </div>
+                            </div>
                           </button>
 
                           <button
                             onClick={() => setInputMessage("Add a new cow, tag 1001, Angus breed, 850 lbs")}
-                            className="p-3 text-sm bg-muted hover:bg-accent rounded-lg text-left transition-colors"
+                            className="group p-4 bg-card hover:bg-accent border rounded-xl text-left transition-all hover:shadow-md hover:scale-[1.02]"
                           >
-                            <strong>🐄 Add Cattle</strong>
-                            <br />
-                            <span className="text-xs text-muted-foreground">Add new cattle to your herd</span>
-                          </button>
-
-                          <button
-                            onClick={() => setInputMessage("Create a new pen called North Pen with capacity 50")}
-                            className="p-3 text-sm bg-muted hover:bg-accent rounded-lg text-left transition-colors"
-                          >
-                            <strong>➕ Create Pen</strong>
-                            <br />
-                            <span className="text-xs text-muted-foreground">Add a new pen to your barn</span>
-                          </button>
-
-                          <button
-                            onClick={() => setInputMessage("Add 1000ml of Draxxin antibiotic to inventory")}
-                            className="p-3 text-sm bg-muted hover:bg-accent rounded-lg text-left transition-colors"
-                          >
-                            <strong>💉 Add Medication</strong>
-                            <br />
-                            <span className="text-xs text-muted-foreground">Stock up your inventory</span>
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+                                <span className="text-xl">🐄</span>
+                              </div>
+                              <div className="flex-1">
+                                <p className="font-medium mb-1 group-hover:text-primary transition-colors">Add Cattle</p>
+                                <p className="text-xs text-muted-foreground">Register new cattle</p>
+                              </div>
+                            </div>
                           </button>
                         </div>
                       </div>
@@ -366,27 +375,46 @@ export default function AgentPage() {
                     {currentMessages.map((message, index) => (
                       <div
                         key={index}
-                        className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                        className={`flex gap-3 mb-6 ${message.role === "user" ? "flex-row-reverse" : "flex-row"}`}
                       >
-                        <div
-                          className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                            message.role === "user"
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted"
-                          }`}
-                        >
-                          <p className="whitespace-pre-wrap">{message.content}</p>
-                          <p className="text-xs opacity-70 mt-1">
-                            {new Date(message.timestamp).toLocaleTimeString()}
+                        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                          message.role === "user"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-gradient-to-br from-purple-500 to-pink-500 text-white"
+                        }`}>
+                          {message.role === "user" ? (
+                            <User className="h-4 w-4" />
+                          ) : (
+                            <Bot className="h-4 w-4" />
+                          )}
+                        </div>
+                        <div className={`flex-1 max-w-[85%] ${message.role === "user" ? "items-end" : "items-start"} flex flex-col`}>
+                          <div
+                            className={`rounded-2xl px-4 py-3 ${
+                              message.role === "user"
+                                ? "bg-primary text-primary-foreground rounded-tr-sm"
+                                : "bg-card border rounded-tl-sm shadow-sm"
+                            }`}
+                          >
+                            <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1.5 px-1">
+                            {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
                       </div>
                     ))}
 
                     {isLoading && (
-                      <div className="flex justify-start">
-                        <div className="bg-muted rounded-lg px-4 py-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                      <div className="flex gap-3 mb-6">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                          <Bot className="h-4 w-4 text-white" />
+                        </div>
+                        <div className="bg-card border rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                            <span className="text-sm text-muted-foreground">Thinking...</span>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -396,149 +424,148 @@ export default function AgentPage() {
                   </ScrollArea>
                 </div>
 
-                <div className="border-t p-4 space-y-3">
-                  <div className="flex gap-2">
-                    <Textarea
-                      placeholder="Type your message or use voice..."
-                      value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault()
-                          sendMessage(inputMessage)
-                        }
-                      }}
-                      className="min-h-[80px] resize-none"
-                      disabled={isLoading || isRecording}
-                    />
-                  </div>
-
-                  <div className="flex gap-2 justify-between">
-                    <Button
-                      onClick={isRecording ? stopRecording : startRecording}
-                      variant={isRecording ? "destructive" : "outline"}
-                      size="lg"
-                      disabled={isLoading}
-                      className="gap-2"
-                    >
-                      {isRecording ? (
-                        <>
+                <div className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                  <div className="max-w-4xl mx-auto p-4">
+                    <div className="flex gap-2 items-end">
+                      <Button
+                        onClick={isRecording ? stopRecording : startRecording}
+                        variant={isRecording ? "destructive" : "ghost"}
+                        size="icon"
+                        disabled={isLoading}
+                        className="flex-shrink-0 h-10 w-10"
+                      >
+                        {isRecording ? (
                           <MicOff className="h-5 w-5" />
-                          Stop Recording
-                        </>
-                      ) : (
-                        <>
+                        ) : (
                           <Mic className="h-5 w-5" />
-                          Voice Input
-                        </>
-                      )}
-                    </Button>
+                        )}
+                      </Button>
 
-                    <div className="flex gap-2">
+                      <div className="flex-1 relative">
+                        <Textarea
+                          placeholder="Message Farm Assistant..."
+                          value={inputMessage}
+                          onChange={(e) => setInputMessage(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                              e.preventDefault()
+                              sendMessage(inputMessage)
+                            }
+                          }}
+                          className="min-h-[52px] max-h-[200px] resize-none pr-12 rounded-2xl"
+                          disabled={isLoading || isRecording}
+                        />
+                        <Button
+                          onClick={() => sendMessage(inputMessage)}
+                          disabled={!inputMessage.trim() || isLoading || isRecording}
+                          size="icon"
+                          className="absolute right-2 bottom-2 h-8 w-8 rounded-lg"
+                        >
+                          {isLoading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Send className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+
                       {currentMessages.length > 0 && (
                         <Button
                           onClick={startNewConversation}
-                          variant="outline"
-                          size="lg"
+                          variant="ghost"
+                          size="icon"
                           disabled={isLoading}
+                          className="flex-shrink-0 h-10 w-10"
                         >
-                          New Chat
+                          <MessageSquare className="h-5 w-5" />
                         </Button>
                       )}
-                      <Button
-                        onClick={() => sendMessage(inputMessage)}
-                        disabled={!inputMessage.trim() || isLoading || isRecording}
-                        size="lg"
-                        className="gap-2"
-                      >
-                        {isLoading ? (
-                          <>
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                            Processing...
-                          </>
-                        ) : (
-                          <>
-                            <Send className="h-5 w-5" />
-                            Send
-                          </>
-                        )}
-                      </Button>
                     </div>
+                    <p className="text-xs text-muted-foreground text-center mt-2">
+                      Press Enter to send, Shift+Enter for new line
+                    </p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
           </TabsContent>
 
-          <TabsContent value="history" className="flex-1 flex flex-col min-h-0 mt-0">
-            <Card className="flex-1 flex flex-col min-h-0">
-              <CardHeader>
-                <CardTitle>Conversation History</CardTitle>
-                <CardDescription>
-                  View and revisit your past conversations
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col min-h-0 p-0">
-                <div className="flex-1 overflow-hidden">
-                  <ScrollArea className="h-full px-6">
+          <TabsContent value="history" className="flex-1 m-0 data-[state=inactive]:hidden h-full">
+            <div className="h-full flex flex-col bg-gradient-to-b from-background to-muted/20">
+              <div className="flex-1 overflow-hidden">
+                <ScrollArea className="h-full">
+                  <div className="max-w-4xl mx-auto px-4 py-6">
                   {isLoadingHistory ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    <div className="flex items-center justify-center py-12">
+                      <div className="text-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-3" />
+                        <p className="text-sm text-muted-foreground">Loading conversations...</p>
+                      </div>
                     </div>
                   ) : conversations.length === 0 ? (
-                    <div className="text-center text-muted-foreground py-8">
-                      <History className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p className="text-lg font-medium">No conversation history</p>
-                      <p className="text-sm mt-2">
-                        Start chatting to build your conversation history
+                    <div className="text-center py-12">
+                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-6">
+                        <History className="h-8 w-8 text-primary" />
+                      </div>
+                      <h2 className="text-xl font-bold mb-2">No Conversations Yet</h2>
+                      <p className="text-muted-foreground max-w-sm mx-auto">
+                        Start chatting with Farm Assistant to build your conversation history
                       </p>
                     </div>
                   ) : (
                     <div className="space-y-3 pb-4">
                       {conversations.map((conversation) => (
-                        <Card
+                        <div
                           key={conversation.id}
-                          className="cursor-pointer hover:bg-accent transition-colors"
+                          className="group bg-card border rounded-xl p-4 hover:shadow-lg transition-all cursor-pointer hover:scale-[1.01]"
                         >
-                          <CardContent className="p-4">
-                            <div className="flex justify-between items-start gap-4">
-                              <div
-                                className="flex-1"
-                                onClick={() => {
-                                  loadConversation(conversation)
-                                  // Switch to chat tab
-                                  const chatTab = document.querySelector('[value="chat"]') as HTMLElement
-                                  chatTab?.click()
-                                }}
-                              >
-                                <h3 className="font-medium mb-1">{conversation.title}</h3>
-                                <p className="text-sm text-muted-foreground">
-                                  {conversation.messages.length} messages
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  Last updated: {new Date(conversation.updatedAt).toLocaleString()}
-                                </p>
+                          <div className="flex justify-between items-start gap-4">
+                            <div
+                              className="flex-1"
+                              onClick={() => {
+                                loadConversation(conversation)
+                                // Switch to chat tab
+                                const chatTab = document.querySelector('[value="chat"]') as HTMLElement
+                                chatTab?.click()
+                              }}
+                            >
+                              <div className="flex items-start gap-3 mb-2">
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                                  <MessageSquare className="h-4 w-4 text-white" />
+                                </div>
+                                <div className="flex-1">
+                                  <h3 className="font-semibold group-hover:text-primary transition-colors line-clamp-2">{conversation.title}</h3>
+                                  <div className="flex items-center gap-3 mt-1.5">
+                                    <span className="text-xs text-muted-foreground">
+                                      {conversation.messages.length} messages
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">•</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {new Date(conversation.updatedAt).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  deleteConversation(conversation.id)
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
                             </div>
-                          </CardContent>
-                        </Card>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                deleteConversation(conversation.id)
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   )}
+                  </div>
                   </ScrollArea>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
           </TabsContent>
         </Tabs>
       </div>
