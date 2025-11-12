@@ -62,10 +62,10 @@ export default function HealthOverviewPage() {
     const mortalityRate = totalCattle > 0 ? (deceasedCattle.length / (totalCattle + deceasedCattle.length)) * 100 : 0
 
     // Health status breakdown
-    const healthyCattle = activeCattle.filter(c => c.healthStatus === "Healthy").length
-    const sickCattle = activeCattle.filter(c => c.healthStatus === "Sick").length
-    const treatmentCattle = activeCattle.filter(c => c.healthStatus === "Treatment").length
-    const quarantineCattle = activeCattle.filter(c => c.healthStatus === "Quarantine").length
+    const healthyCattle = activeCattle.filter(c => c && c.healthStatus === "Healthy").length
+    const sickCattle = activeCattle.filter(c => c && c.healthStatus === "Sick").length
+    const treatmentCattle = activeCattle.filter(c => c && c.healthStatus === "Treatment").length
+    const quarantineCattle = activeCattle.filter(c => c && c.healthStatus === "Quarantine").length
 
     // Cattle with health issues (sick + treatment + quarantine)
     const cattleWithIssues = sickCattle + treatmentCattle + quarantineCattle
@@ -132,14 +132,14 @@ export default function HealthOverviewPage() {
     return healthRecordsArray
       .slice(0, 20)
       .map(record => {
-        const animal = cattleArray.find(c => c.id === record.cattleId)
-        if (!animal) return null
+        const animal = cattleArray.find(c => c && c.id === record.cattleId)
+        if (!animal || !animal.tagNumber) return null
 
         return {
           id: record.id,
           type: "health_check",
           cattleId: record.cattleId,
-          tagNumber: animal.tagNumber,
+          tagNumber: animal.tagNumber || "Unknown",
           date: record.date,
           description: record.diagnosis || "Health check performed",
           severity: record.severity || ("low" as "low" | "medium" | "high")
@@ -154,15 +154,19 @@ export default function HealthOverviewPage() {
   const filteredCattle = useMemo(() => {
     // Ensure cattle is an array
     const cattleArray = Array.isArray(cattle) ? cattle : []
-    const activeCattle = cattleArray.filter(c => c.status === "Active")
+    const activeCattle = cattleArray.filter(c => c && c.status === "Active")
     if (!searchQuery) return activeCattle
 
     const query = searchQuery.toLowerCase()
-    return activeCattle.filter(c =>
-      c.tagNumber.toLowerCase().includes(query) ||
-      c.name?.toLowerCase().includes(query) ||
-      c.breed.toLowerCase().includes(query)
-    )
+    return activeCattle.filter(c => {
+      // Defensive checks for null/undefined fields
+      if (!c) return false
+      const tagNumber = (c.tagNumber || "").toLowerCase()
+      const name = (c.name || "").toLowerCase()
+      const breed = (c.breed || "").toLowerCase()
+
+      return tagNumber.includes(query) || name.includes(query) || breed.includes(query)
+    })
   }, [cattle, searchQuery])
 
   // Selection handlers

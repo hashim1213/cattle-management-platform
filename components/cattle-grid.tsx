@@ -61,10 +61,16 @@ export function CattleGrid({ searchQuery, filters }: CattleGridProps) {
   const safeCattle = Array.isArray(cattle) ? cattle : []
 
   const filteredCattle = safeCattle.filter((animal) => {
+    // Defensive checks for required fields
+    if (!animal || !animal.tagNumber || !animal.breed || !animal.sex) {
+      console.warn("[CATTLE GRID] Skipping cattle with missing required fields:", animal)
+      return false
+    }
+
     const matchesSearch = searchQuery
-      ? animal.tagNumber.includes(searchQuery) ||
-        animal.breed.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        animal.lot.toLowerCase().includes(searchQuery.toLowerCase())
+      ? (animal.tagNumber || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (animal.breed || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (animal.lot || "").toLowerCase().includes(searchQuery.toLowerCase())
       : true
 
     const matchesStatus = filters.status === "all" || animal.status === filters.status
@@ -108,9 +114,9 @@ export function CattleGrid({ searchQuery, filters }: CattleGridProps) {
             <div className="flex items-start gap-3">
               <div className="flex-1 min-w-0">
                 <h3 className="font-bold text-lg text-foreground truncate">
-                  Tag #{animal.tagNumber}
+                  Tag #{animal.tagNumber || "Unknown"}
                 </h3>
-                <p className="text-sm text-muted-foreground">{animal.breed} • {animal.sex}</p>
+                <p className="text-sm text-muted-foreground">{animal.breed || "Unknown"} • {animal.sex || "Unknown"}</p>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -145,20 +151,20 @@ export function CattleGrid({ searchQuery, filters }: CattleGridProps) {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex gap-2 flex-wrap">
-              <Badge variant="outline">{animal.breed}</Badge>
-              <Badge variant="outline">{animal.sex}</Badge>
+              <Badge variant="outline">{animal.breed || "Unknown"}</Badge>
+              <Badge variant="outline">{animal.sex || "Unknown"}</Badge>
               <Badge variant="secondary" className="capitalize">
-                {animal.stage}
+                {animal.stage || "Unknown"}
               </Badge>
             </div>
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Weight:</span>
-                <span className="font-medium text-foreground">{animal.weight} lbs</span>
+                <span className="font-medium text-foreground">{animal.weight || 0} lbs</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Lot:</span>
-                <span className="font-medium text-foreground">{animal.lot}</span>
+                <span className="font-medium text-foreground">{animal.lot || "N/A"}</span>
               </div>
               {animal.pasture && (
                 <div className="flex justify-between">
@@ -178,7 +184,7 @@ export function CattleGrid({ searchQuery, filters }: CattleGridProps) {
                       : "bg-red-100 text-red-800 hover:bg-red-100"
                 }`}
               >
-                {animal.healthStatus}
+                {animal.healthStatus || "Unknown"}
               </Badge>
             </div>
           </CardContent>
