@@ -135,18 +135,7 @@ const rolePermissions: Record<UserRole, Permission> = {
   },
 }
 
-// Default owner account
-const DEFAULT_OWNER: User = {
-  id: "user-owner-1",
-  name: "Owner",
-  email: "owner@ranch.com",
-  role: "owner",
-  permissions: rolePermissions.owner,
-  active: true,
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-}
-
+// No default users - start empty for production
 class UserRolesStore {
   private users: User[] = []
   private currentUserId: string | null = null
@@ -163,16 +152,15 @@ class UserRolesStore {
       const storedUsers = localStorage.getItem(USERS_STORAGE_KEY)
       const storedCurrentUser = localStorage.getItem(CURRENT_USER_KEY)
 
-      this.users = storedUsers ? JSON.parse(storedUsers) : [DEFAULT_OWNER]
-      this.currentUserId = storedCurrentUser || DEFAULT_OWNER.id
+      this.users = storedUsers ? JSON.parse(storedUsers) : []
+      this.currentUserId = storedCurrentUser || null
 
       if (!storedUsers) {
         this.save()
       }
     } catch (error) {
-      console.error("Failed to load user data:", error)
-      this.users = [DEFAULT_OWNER]
-      this.currentUserId = DEFAULT_OWNER.id
+      this.users = []
+      this.currentUserId = null
     }
   }
 

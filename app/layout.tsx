@@ -2,7 +2,8 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
-import { AppSidebar } from "@/components/app-sidebar"
+import { AuthProvider } from "@/contexts/auth-context"
+import { LayoutWrapper } from "@/components/layout-wrapper"
 import { Toaster } from "@/components/ui/toaster"
 import "./globals.css"
 
@@ -22,10 +23,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} antialiased`}>
-        <div className="flex h-screen overflow-hidden">
-          <AppSidebar />
-          <main className="flex-1 overflow-y-auto pt-14 lg:pt-0">{children}</main>
-        </div>
+        <AuthProvider>
+          <LayoutWrapper>{children}</LayoutWrapper>
+        </AuthProvider>
         <Toaster />
         <Analytics />
       </body>

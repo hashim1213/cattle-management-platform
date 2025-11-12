@@ -4,33 +4,33 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.99 0.005 240);
-  --foreground: oklch(0.20 0.01 240);
+  --background: oklch(0.97 0.015 60);
+  --foreground: oklch(0.20 0.01 45);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.20 0.01 240);
+  --card-foreground: oklch(0.20 0.01 45);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.20 0.01 240);
+  --popover-foreground: oklch(0.20 0.01 45);
   --primary: oklch(0.42 0.08 50);
   --primary-foreground: oklch(0.99 0.005 50);
   --secondary: oklch(0.52 0.06 50);
   --secondary-foreground: oklch(0.99 0.005 50);
-  --muted: oklch(0.97 0.005 240);
-  --muted-foreground: oklch(0.55 0.02 240);
+  --muted: oklch(0.95 0.012 55);
+  --muted-foreground: oklch(0.55 0.02 45);
   --accent: oklch(0.55 0.06 45);
   --accent-foreground: oklch(0.99 0.005 45);
   --destructive: oklch(0.55 0.22 25);
-  --destructive-foreground: oklch(0.99 0.005 240);
-  --border: oklch(0.92 0.01 240);
-  --input: oklch(0.92 0.01 240);
+  --destructive-foreground: oklch(0.99 0.005 60);
+  --border: oklch(0.90 0.015 55);
+  --input: oklch(0.90 0.015 55);
   --ring: oklch(0.42 0.08 50);
   --chart-1: oklch(0.50 0.08 140);
   --chart-2: oklch(0.60 0.08 200);
-  --chart-3: oklch(0.45 0.06 240);
+  --chart-3: oklch(0.45 0.06 50);
   --chart-4: oklch(0.65 0.06 180);
   --chart-5: oklch(0.55 0.07 160);
   --radius: 0.625rem;
   --sidebar: oklch(0.28 0.03 45);
-  --sidebar-foreground: oklch(0.99 0.005 240);
+  --sidebar-foreground: oklch(0.99 0.005 60);
   --sidebar-primary: oklch(0.50 0.08 45);
   --sidebar-primary-foreground: oklch(0.99 0.005 45);
   --sidebar-accent: oklch(0.38 0.05 45);
@@ -40,36 +40,36 @@
 }
 
 .dark {
-  --background: oklch(0.15 0.01 240);
-  --foreground: oklch(0.97 0.005 240);
-  --card: oklch(0.20 0.01 240);
-  --card-foreground: oklch(0.97 0.005 240);
-  --popover: oklch(0.20 0.01 240);
-  --popover-foreground: oklch(0.97 0.005 240);
+  --background: oklch(0.15 0.01 45);
+  --foreground: oklch(0.97 0.005 60);
+  --card: oklch(0.20 0.01 45);
+  --card-foreground: oklch(0.97 0.005 60);
+  --popover: oklch(0.20 0.01 45);
+  --popover-foreground: oklch(0.97 0.005 60);
   --primary: oklch(0.65 0.08 50);
-  --primary-foreground: oklch(0.15 0.01 240);
+  --primary-foreground: oklch(0.15 0.01 45);
   --secondary: oklch(0.40 0.05 50);
-  --secondary-foreground: oklch(0.97 0.005 240);
-  --muted: oklch(0.25 0.01 240);
-  --muted-foreground: oklch(0.70 0.02 240);
+  --secondary-foreground: oklch(0.97 0.005 60);
+  --muted: oklch(0.25 0.01 45);
+  --muted-foreground: oklch(0.70 0.02 55);
   --accent: oklch(0.60 0.08 45);
-  --accent-foreground: oklch(0.97 0.005 240);
+  --accent-foreground: oklch(0.97 0.005 60);
   --destructive: oklch(0.55 0.20 25);
-  --destructive-foreground: oklch(0.97 0.005 240);
-  --border: oklch(0.30 0.01 240);
-  --input: oklch(0.30 0.01 240);
+  --destructive-foreground: oklch(0.97 0.005 60);
+  --border: oklch(0.30 0.01 45);
+  --input: oklch(0.30 0.01 45);
   --ring: oklch(0.65 0.08 50);
   --chart-1: oklch(0.60 0.08 140);
   --chart-2: oklch(0.65 0.08 200);
-  --chart-3: oklch(0.55 0.06 240);
+  --chart-3: oklch(0.55 0.06 50);
   --chart-4: oklch(0.70 0.06 180);
   --chart-5: oklch(0.62 0.07 160);
   --sidebar: oklch(0.18 0.02 45);
-  --sidebar-foreground: oklch(0.97 0.005 240);
+  --sidebar-foreground: oklch(0.97 0.005 60);
   --sidebar-primary: oklch(0.62 0.08 45);
-  --sidebar-primary-foreground: oklch(0.97 0.005 240);
+  --sidebar-primary-foreground: oklch(0.97 0.005 60);
   --sidebar-accent: oklch(0.30 0.04 45);
-  --sidebar-accent-foreground: oklch(0.97 0.005 240);
+  --sidebar-accent-foreground: oklch(0.97 0.005 60);
   --sidebar-border: oklch(0.25 0.02 45);
   --sidebar-ring: oklch(0.62 0.08 45);
 }
@@ -77,7 +77,7 @@
 @theme inline {
   --font-sans: "Inter", system-ui, sans-serif;
 
-  --color-background: #fafafa;
+  --color-background: #F9F5F0;
   --color-foreground: #1a1a1a;
   --color-card: #ffffff;
   --color-card-foreground: #1a1a1a;
@@ -85,14 +85,14 @@
   --color-primary-foreground: #ffffff;
   --color-secondary: #8b6f47;
   --color-secondary-foreground: #ffffff;
-  --color-muted: #f7fafc;
+  --color-muted: #F3EDE5;
   --color-muted-foreground: #718096;
   --color-accent: #a67c52;
   --color-accent-foreground: #ffffff;
   --color-destructive: #dc2626;
   --color-destructive-foreground: #ffffff;
-  --color-border: #e2e8f0;
-  --color-input: #e2e8f0;
+  --color-border: #E8DFD5;
+  --color-input: #E8DFD5;
   --color-ring: #6b4423;
 
   /* Alert colors with cattle theme */

@@ -14,7 +14,9 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { EditCattleDialog } from "@/components/edit-cattle-dialog"
-import { dataStore, type Cattle } from "@/lib/data-store"
+import { CattleGrowthTimeline } from "@/components/cattle-growth-timeline"
+import { firebaseDataStore, type Cattle, type WeightRecord } from "@/lib/data-store-firebase"
+import { feedService, type FeedAllocationRecord } from "@/lib/feed/feed-service"
 import { usePenStore } from "@/hooks/use-pen-store"
 import { useToast } from "@/hooks/use-toast"
 
@@ -29,27 +31,41 @@ export default function CattleDetailPage() {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isAssignLocationOpen, setIsAssignLocationOpen] = useState(false)
   const [cattle, setCattle] = useState<Cattle | null>(null)
+  const [weightRecords, setWeightRecords] = useState<WeightRecord[]>([])
+  const [feedAllocations, setFeedAllocations] = useState<FeedAllocationRecord[]>([])
   const [refreshKey, setRefreshKey] = useState(0)
   const [selectedBarnId, setSelectedBarnId] = useState<string>("")
   const [selectedPenId, setSelectedPenId] = useState<string>("")
 
   useEffect(() => {
-    const foundCattle = dataStore.getCattle().find((c) => c.id === params.id)
-    if (foundCattle) {
-      setCattle(foundCattle)
-      setSelectedBarnId(foundCattle.barnId || "")
-      setSelectedPenId(foundCattle.penId || "")
+    const loadCattle = async () => {
+      const allCattle = await firebaseDataStore.getCattle()
+      const foundCattle = allCattle.find((c) => c.id === params.id)
+      if (foundCattle) {
+        setCattle(foundCattle)
+        setSelectedBarnId(foundCattle.barnId || "")
+        setSelectedPenId(foundCattle.penId || "")
+
+        // Load weight records
+        const weights = await firebaseDataStore.getWeightRecords(params.id as string)
+        setWeightRecords(weights)
+
+        // Load feed allocations (all allocations, filtered by pen in component)
+        const allocations = feedService.getAllocations()
+        setFeedAllocations(allocations)
+      }
     }
+    loadCattle()
   }, [params.id, refreshKey])
 
-  const handleAssignLocation = () => {
+  const handleAssignLocation = async () => {
     if (!cattle) return
 
     const oldPenId = cattle.penId
     const newPenId = selectedPenId
 
     // Update cattle with new location
-    dataStore.updateCattle(cattle.id, {
+    await firebaseDataStore.updateCattle(cattle.id, {
       barnId: selectedBarnId,
       penId: newPenId,
     })
@@ -81,7 +97,6 @@ export default function CattleDetailPage() {
   const mockCattle = {
     id: cattle.id,
     tagNumber: cattle.tagNumber,
-    name: "Big Red",
     breed: "Angus",
     sex: "steer",
     birthDate: "2023-03-15",
@@ -165,10 +180,7 @@ export default function CattleDetailPage() {
                 Back to Cattle Inventory
               </Link>
               <div className="flex items-center gap-3 mt-2">
-                <h1 className="text-2xl font-bold text-foreground">{cattle.name}</h1>
-                <Badge variant="outline" className="text-base">
-                  Tag #{cattle.tagNumber}
-                </Badge>
+                <h1 className="text-2xl font-bold text-foreground">Tag #{cattle.tagNumber}</h1>
                 <Badge
                   className={
                     cattle.status === "healthy"
@@ -355,13 +367,24 @@ export default function CattleDetailPage() {
         </Card>
 
         {/* Detailed Information Tabs */}
-        <Tabs defaultValue="details" className="w-full">
+        <Tabs defaultValue="growth" className="w-full">
           <TabsList>
+            <TabsTrigger value="growth">Growth & Performance</TabsTrigger>
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="weight">Weight History</TabsTrigger>
             <TabsTrigger value="health">Health Records</TabsTrigger>
             <TabsTrigger value="financial">Financial</TabsTrigger>
           </TabsList>
+
+          {/* Growth Tab - NEW */}
+          <TabsContent value="growth" className="mt-6">
+            <CattleGrowthTimeline
+              cattle={cattle}
+              weightRecords={weightRecords}
+              feedAllocations={feedAllocations}
+              targetWeight={1350}
+            />
+          </TabsContent>
 
           <TabsContent value="details" className="mt-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -373,10 +396,6 @@ export default function CattleDetailPage() {
                   <div className="flex justify-between py-2 border-b border-border">
                     <span className="text-muted-foreground">Tag Number:</span>
                     <span className="font-medium text-foreground">{cattle.tagNumber}</span>
-                  </div>
-                  <div className="flex justify-between py-2 border-b border-border">
-                    <span className="text-muted-foreground">Name:</span>
-                    <span className="font-medium text-foreground">{cattle.name}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-border">
                     <span className="text-muted-foreground">Breed:</span>

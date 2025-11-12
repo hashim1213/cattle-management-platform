@@ -61,24 +61,14 @@ export function EditCattleDialog({ cattle, open, onOpenChange, onSave }: EditCat
             </TabsList>
 
             <TabsContent value="basic" className="space-y-4 mt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="tagNumber">Tag Number *</Label>
-                  <Input
-                    id="tagNumber"
-                    value={formData.tagNumber}
-                    onChange={(e) => setFormData({ ...formData, tagNumber: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    value={formData.name || ""}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="tagNumber">Tag Number *</Label>
+                <Input
+                  id="tagNumber"
+                  value={formData.tagNumber}
+                  onChange={(e) => setFormData({ ...formData, tagNumber: e.target.value })}
+                  required
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">

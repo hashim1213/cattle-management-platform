@@ -34,101 +34,7 @@ export interface Barn {
 const PENS_STORAGE_KEY = "cattle-pens"
 const BARNS_STORAGE_KEY = "cattle-barns"
 
-// Default barns
-const DEFAULT_BARNS: Barn[] = [
-  {
-    id: "barn-1",
-    name: "Main Barn",
-    location: "North Field",
-    totalPens: 4,
-    totalCapacity: 120,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "barn-2",
-    name: "South Barn",
-    location: "South Field",
-    totalPens: 3,
-    totalCapacity: 90,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-]
-
-// Default pens
-const DEFAULT_PENS: Pen[] = [
-  {
-    id: "pen-1",
-    name: "Pen A",
-    barnId: "barn-1",
-    capacity: 30,
-    currentCount: 0,
-    location: { x: 50, y: 50, width: 150, height: 100 },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "pen-2",
-    name: "Pen B",
-    barnId: "barn-1",
-    capacity: 30,
-    currentCount: 0,
-    location: { x: 220, y: 50, width: 150, height: 100 },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "pen-3",
-    name: "Pen C",
-    barnId: "barn-1",
-    capacity: 30,
-    currentCount: 0,
-    location: { x: 50, y: 170, width: 150, height: 100 },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "pen-4",
-    name: "Pen D",
-    barnId: "barn-1",
-    capacity: 30,
-    currentCount: 0,
-    location: { x: 220, y: 170, width: 150, height: 100 },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "pen-5",
-    name: "Pen E",
-    barnId: "barn-2",
-    capacity: 30,
-    currentCount: 0,
-    location: { x: 50, y: 50, width: 150, height: 100 },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "pen-6",
-    name: "Pen F",
-    barnId: "barn-2",
-    capacity: 30,
-    currentCount: 0,
-    location: { x: 220, y: 50, width: 150, height: 100 },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "pen-7",
-    name: "Pen G",
-    barnId: "barn-2",
-    capacity: 30,
-    currentCount: 0,
-    location: { x: 135, y: 170, width: 150, height: 100 },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-]
+// No default data - clean slate for Supabase sync
 
 class PenStore {
   private pens: Pen[] = []
@@ -141,8 +47,8 @@ class PenStore {
 
   private loadData() {
     if (typeof window === "undefined") {
-      this.pens = DEFAULT_PENS
-      this.barns = DEFAULT_BARNS
+      this.pens = []
+      this.barns = []
       return
     }
 
@@ -150,15 +56,12 @@ class PenStore {
       const storedPens = localStorage.getItem(PENS_STORAGE_KEY)
       const storedBarns = localStorage.getItem(BARNS_STORAGE_KEY)
 
-      this.pens = storedPens ? JSON.parse(storedPens) : DEFAULT_PENS
-      this.barns = storedBarns ? JSON.parse(storedBarns) : DEFAULT_BARNS
-
-      if (!storedPens) this.save()
-      if (!storedBarns) this.save()
+      this.pens = storedPens ? JSON.parse(storedPens) : []
+      this.barns = storedBarns ? JSON.parse(storedBarns) : []
     } catch (error) {
       console.error("Failed to load pen/barn data:", error)
-      this.pens = DEFAULT_PENS
-      this.barns = DEFAULT_BARNS
+      this.pens = []
+      this.barns = []
     }
   }
 
@@ -322,8 +225,9 @@ class PenStore {
   }
 
   resetToDefault() {
-    this.pens = DEFAULT_PENS
-    this.barns = DEFAULT_BARNS
+    // Clear all pens and barns - no default data
+    this.pens = []
+    this.barns = []
     this.save()
   }
 }

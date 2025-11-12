@@ -1,423 +1,560 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Progress } from "@/components/ui/progress"
+import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
-import { usePenStore } from "@/hooks/use-pen-store"
-import { useTreatmentStore } from "@/hooks/use-treatment-store"
-import { useActivityStore } from "@/hooks/use-activity-store"
-import { useToast } from "@/hooks/use-toast"
-import { dataStore } from "@/lib/data-store"
-import { Syringe, AlertCircle, DollarSign } from "lucide-react"
-import type { TreatmentType, ApplicationMethod } from "@/lib/treatment-store"
+import { Cattle } from "@/lib/data-store"
+import {
+  TreatmentProtocol,
+  calculateWeightBasedDosage,
+  calculateTotalDrugRequirements,
+  estimateProtocolCost
+} from "@/lib/health/treatment-protocols"
+import { protocolService } from "@/lib/health/protocol-service"
+import { inventoryService } from "@/lib/inventory/inventory-service"
+import { healthService } from "@/lib/health/health-service"
+import {
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  Syringe,
+  Package,
+  DollarSign,
+  Calendar,
+  AlertCircle
+} from "lucide-react"
 
 interface BulkTreatmentDialogProps {
-  penId?: string
   open: boolean
-  onOpenChange: (open: boolean) => void
+  onClose: () => void
+  selectedCattle: Cattle[]
+  onComplete?: () => void
 }
 
-export function BulkTreatmentDialog({ penId, open, onOpenChange }: BulkTreatmentDialogProps) {
-  const { pens, barns, getPen } = usePenStore()
-  const { products, addTreatment } = useTreatmentStore()
-  const { log } = useActivityStore()
-  const { toast } = useToast()
+type Stage = "setup" | "confirm" | "processing" | "complete"
 
-  const [formData, setFormData] = useState({
-    penId: penId || "",
-    treatmentType: "dewormer" as TreatmentType,
-    productId: "",
-    customProductName: "",
-    manufacturer: "",
-    lotNumber: "",
-    dosage: "",
-    dosageUnit: "mL",
-    applicationMethod: "pour-on" as ApplicationMethod,
-    administeredBy: "Owner",
-    reason: "",
-    notes: "",
-    costPerHead: "",
-    withdrawalPeriodDays: "",
+interface ProcessingStats {
+  successful: number
+  failed: number
+  totalCost: number
+  errors: string[]
+}
+
+export function BulkTreatmentDialog({
+  open,
+  onClose,
+  selectedCattle,
+  onComplete
+}: BulkTreatmentDialogProps) {
+  const [stage, setStage] = useState<Stage>("setup")
+  const [selectedProtocol, setSelectedProtocol] = useState<TreatmentProtocol | null>(null)
+  const [notes, setNotes] = useState("")
+  const [inventoryCheck, setInventoryCheck] = useState<Record<string, { available: boolean; message: string }>>({})
+  const [processingProgress, setProcessingProgress] = useState(0)
+  const [processingStats, setProcessingStats] = useState<ProcessingStats>({
+    successful: 0,
+    failed: 0,
+    totalCost: 0,
+    errors: []
   })
 
-  const selectedPen = formData.penId ? getPen(formData.penId) : null
-  const headCount = selectedPen
-    ? dataStore.getCattle().filter((c) => c.penId === formData.penId && c.status === "Active").length
-    : 0
+  const protocols = protocolService.getAllProtocols()
 
-  const selectedProduct = products.find((p) => p.id === formData.productId)
+  // Calculate summary statistics
+  const totalAnimals = selectedCattle.length
+  const avgWeight = selectedCattle.reduce((sum, c) => sum + c.weight, 0) / totalAnimals
+  const totalWeight = selectedCattle.reduce((sum, c) => sum + c.weight, 0)
 
-  const totalCost = formData.costPerHead ? parseFloat(formData.costPerHead) * headCount : 0
+  // Reset state when dialog opens/closes
+  useEffect(() => {
+    if (open) {
+      setStage("setup")
+      setSelectedProtocol(null)
+      setNotes("")
+      setInventoryCheck({})
+      setProcessingProgress(0)
+      setProcessingStats({ successful: 0, failed: 0, totalCost: 0, errors: [] })
+    }
+  }, [open])
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  // Check inventory availability when protocol is selected
+  useEffect(() => {
+    if (selectedProtocol && selectedCattle.length > 0) {
+      checkInventoryAvailability()
+    }
+  }, [selectedProtocol, selectedCattle])
 
-    if (!selectedPen) return
+  const checkInventoryAvailability = async () => {
+    if (!selectedProtocol) return
 
-    const barn = barns.find((b) => b.id === selectedPen.barnId)
-    const productName = selectedProduct?.productName || formData.customProductName
-    const withdrawalDays = formData.withdrawalPeriodDays
-      ? parseInt(formData.withdrawalPeriodDays)
-      : selectedProduct?.withdrawalPeriodDays || 0
+    const requirements = calculateTotalDrugRequirements(
+      selectedProtocol,
+      selectedCattle.map(c => ({ weight: c.weight }))
+    )
 
-    const withdrawalDate = new Date()
-    withdrawalDate.setDate(withdrawalDate.getDate() + withdrawalDays)
+    const checks: Record<string, { available: boolean; message: string }> = {}
 
-    // Add treatment record
-    addTreatment({
-      penId: selectedPen.id,
-      barnId: selectedPen.barnId,
-      treatmentType: formData.treatmentType,
-      productName,
-      manufacturer: formData.manufacturer || selectedProduct?.manufacturer,
-      lotNumber: formData.lotNumber || undefined,
-      dosage: formData.dosage,
-      dosageUnit: formData.dosageUnit,
-      applicationMethod: formData.applicationMethod,
-      administeredBy: formData.administeredBy,
-      date: new Date().toISOString(),
-      cost: totalCost,
-      costPerHead: parseFloat(formData.costPerHead) || 0,
-      headCount,
-      reason: formData.reason,
-      notes: formData.notes || undefined,
-      withdrawalPeriodDays: withdrawalDays,
-      withdrawalDate: withdrawalDays > 0 ? withdrawalDate.toISOString() : undefined,
-    })
+    for (const [key, req] of Object.entries(requirements)) {
+      const availability = await inventoryService.checkAvailability(req.drugId, req.totalRequired)
 
-    // Log activity
-    log({
-      type: "health-check",
-      entityType: "pen",
-      entityId: selectedPen.id,
-      entityName: selectedPen.name,
-      title: `Bulk ${formData.treatmentType} treatment: ${productName}`,
-      description: `Applied ${productName} to ${headCount} head in ${selectedPen.name}. Withdrawal: ${withdrawalDays} days. Cost: $${totalCost.toFixed(2)}`,
-      performedBy: formData.administeredBy,
-    })
+      checks[key] = {
+        available: availability.available,
+        message: availability.available
+          ? `✓ ${req.drugName}: Need ${req.totalRequired.toFixed(1)}${req.unit}, have ${availability.currentQuantity.toFixed(1)}${req.unit}`
+          : `✗ ${req.drugName}: Need ${req.totalRequired.toFixed(1)}${req.unit}, have ${availability.currentQuantity.toFixed(1)}${req.unit} (short ${availability.shortfall.toFixed(1)}${req.unit})`
+      }
+    }
 
-    toast({
-      title: "Treatment logged",
-      description: `Successfully logged ${formData.treatmentType} treatment for ${headCount} cattle in ${selectedPen.name}`,
-    })
-
-    // Reset form
-    setFormData({
-      penId: penId || "",
-      treatmentType: "dewormer",
-      productId: "",
-      customProductName: "",
-      manufacturer: "",
-      lotNumber: "",
-      dosage: "",
-      dosageUnit: "mL",
-      applicationMethod: "pour-on",
-      administeredBy: "Owner",
-      reason: "",
-      notes: "",
-      costPerHead: "",
-      withdrawalPeriodDays: "",
-    })
-
-    onOpenChange(false)
+    setInventoryCheck(checks)
   }
 
+  const allInventoryAvailable = Object.values(inventoryCheck).every(check => check.available)
+  const estimatedCost = selectedProtocol ? estimateProtocolCost(selectedProtocol, totalAnimals) : 0
+
+  const handleContinueToConfirm = () => {
+    if (!selectedProtocol) return
+    if (!allInventoryAvailable) return
+    setStage("confirm")
+  }
+
+  const handleConfirmAndExecute = async () => {
+    if (!selectedProtocol) return
+
+    setStage("processing")
+    setProcessingProgress(0)
+
+    const stats: ProcessingStats = {
+      successful: 0,
+      failed: 0,
+      totalCost: 0,
+      errors: []
+    }
+
+    // Process in batches of 10 for smooth UX
+    const batchSize = 10
+    const totalBatches = Math.ceil(selectedCattle.length / batchSize)
+
+    for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+      const batchStart = batchIndex * batchSize
+      const batchEnd = Math.min(batchStart + batchSize, selectedCattle.length)
+      const batch = selectedCattle.slice(batchStart, batchEnd)
+
+      for (const animal of batch) {
+        try {
+          // Process each drug in the protocol
+          for (const drug of selectedProtocol.drugs) {
+            const dosage = calculateWeightBasedDosage(drug, animal.weight)
+
+            await healthService.recordTreatment({
+              cattleId: animal.id,
+              cattleTagNumber: animal.tagNumber,
+              drugName: drug.drugName,
+              drugInventoryId: drug.drugInventoryId,
+              dosageAmount: dosage,
+              dosageUnit: drug.dosageUnit,
+              administrationRoute: drug.administrationRoute,
+              withdrawalPeriod: drug.withdrawalPeriod,
+              cattleWeight: animal.weight,
+              notes: notes || `Bulk treatment: ${selectedProtocol.name}`,
+              recordedBy: "current-user",
+              eventType: drug.drugName.toLowerCase().includes("vaccine") ? "vaccination" : "antibiotic-treatment"
+            })
+          }
+
+          stats.successful++
+          stats.totalCost += selectedProtocol.estimatedCostPerHead
+        } catch (error) {
+          stats.failed++
+          stats.errors.push(`${animal.tagNumber}: ${(error as Error).message}`)
+        }
+      }
+
+      // Update progress after each batch
+      const processedCount = Math.min(batchEnd, selectedCattle.length)
+      setProcessingProgress((processedCount / selectedCattle.length) * 100)
+
+      // Update stats in real-time
+      setProcessingStats({ ...stats })
+
+      // Small delay between batches for UI smoothness
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+
+    // Move to complete stage
+    setProcessingStats(stats)
+    setStage("complete")
+  }
+
+  const handleClose = () => {
+    onClose()
+    if (stage === "complete" && onComplete) {
+      onComplete()
+    }
+  }
+
+  const maxWithdrawalPeriod = selectedProtocol
+    ? Math.max(...selectedProtocol.drugs.map(d => d.withdrawalPeriod))
+    : 0
+
+  const withdrawalDate = new Date()
+  withdrawalDate.setDate(withdrawalDate.getDate() + maxWithdrawalPeriod)
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Syringe className="h-5 w-5" />
-            Bulk Treatment Logging
+          <DialogTitle className="text-2xl flex items-center gap-2">
+            <Syringe className="h-6 w-6 text-primary" />
+            Bulk Treatment - {selectedCattle.length} Animals
           </DialogTitle>
-          <DialogDescription>
-            Apply medications, dewormers, or treatments to an entire pen of cattle
-          </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Pen Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="penId">Select Pen *</Label>
-            <Select
-              value={formData.penId}
-              onValueChange={(value) => setFormData({ ...formData, penId: value })}
-              required
-            >
-              <SelectTrigger id="penId">
-                <SelectValue placeholder="Choose a pen" />
-              </SelectTrigger>
-              <SelectContent>
-                {pens.map((pen) => {
-                  const barn = barns.find((b) => b.id === pen.barnId)
-                  return (
-                    <SelectItem key={pen.id} value={pen.id}>
-                      {pen.name} ({barn?.name}) - {pen.currentCount} head
-                    </SelectItem>
-                  )
-                })}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {selectedPen && (
-            <Card className="bg-muted/50">
-              <CardContent className="p-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Pen</p>
-                    <p className="font-semibold">{selectedPen.name}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Cattle Count</p>
-                    <Badge variant="secondary" className="font-semibold">
-                      {headCount} head
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Treatment Type */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="treatmentType">Treatment Type *</Label>
-              <Select
-                value={formData.treatmentType}
-                onValueChange={(value) => setFormData({ ...formData, treatmentType: value as TreatmentType })}
-              >
-                <SelectTrigger id="treatmentType">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="vaccination">Vaccination</SelectItem>
-                  <SelectItem value="dewormer">Dewormer</SelectItem>
-                  <SelectItem value="lice-treatment">Lice Treatment</SelectItem>
-                  <SelectItem value="antibiotic">Antibiotic</SelectItem>
-                  <SelectItem value="vitamin">Vitamin</SelectItem>
-                  <SelectItem value="pain-relief">Pain Relief</SelectItem>
-                  <SelectItem value="foot-care">Foot Care</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="applicationMethod">Application Method *</Label>
-              <Select
-                value={formData.applicationMethod}
-                onValueChange={(value) => setFormData({ ...formData, applicationMethod: value as ApplicationMethod })}
-              >
-                <SelectTrigger id="applicationMethod">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="injection">Injection</SelectItem>
-                  <SelectItem value="oral">Oral</SelectItem>
-                  <SelectItem value="topical">Topical</SelectItem>
-                  <SelectItem value="pour-on">Pour-On</SelectItem>
-                  <SelectItem value="bolus">Bolus</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Product Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="productId">Product (Optional - select from inventory)</Label>
-            <Select
-              value={formData.productId}
-              onValueChange={(value) => {
-                const product = products.find((p) => p.id === value)
-                if (product) {
-                  setFormData({
-                    ...formData,
-                    productId: value,
-                    customProductName: product.productName,
-                    manufacturer: product.manufacturer,
-                    treatmentType: product.treatmentType,
-                    withdrawalPeriodDays: product.withdrawalPeriodDays.toString(),
-                  })
-                }
-              }}
-            >
-              <SelectTrigger id="productId">
-                <SelectValue placeholder="Or enter custom product below" />
-              </SelectTrigger>
-              <SelectContent>
-                {products.map((product) => (
-                  <SelectItem key={product.id} value={product.id}>
-                    {product.productName} - {product.manufacturer} ({product.quantityOnHand} {product.unit} in stock)
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Product Details */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="productName">Product Name *</Label>
-              <Input
-                id="productName"
-                value={formData.customProductName}
-                onChange={(e) => setFormData({ ...formData, customProductName: e.target.value })}
-                placeholder="e.g., Ivermectin Pour-On"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="manufacturer">Manufacturer</Label>
-              <Input
-                id="manufacturer"
-                value={formData.manufacturer}
-                onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
-                placeholder="e.g., Boehringer Ingelheim"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="dosage">Dosage *</Label>
-              <Input
-                id="dosage"
-                value={formData.dosage}
-                onChange={(e) => setFormData({ ...formData, dosage: e.target.value })}
-                placeholder="e.g., 1 per 22 lbs"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="dosageUnit">Unit</Label>
-              <Input
-                id="dosageUnit"
-                value={formData.dosageUnit}
-                onChange={(e) => setFormData({ ...formData, dosageUnit: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="lotNumber">Lot Number</Label>
-              <Input
-                id="lotNumber"
-                value={formData.lotNumber}
-                onChange={(e) => setFormData({ ...formData, lotNumber: e.target.value })}
-                placeholder="Optional"
-              />
-            </div>
-          </div>
-
-          {/* Cost and Withdrawal */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="costPerHead">Cost Per Head *</Label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="costPerHead"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.costPerHead}
-                  onChange={(e) => setFormData({ ...formData, costPerHead: e.target.value })}
-                  className="pl-9"
-                  placeholder="0.00"
-                  required
-                />
+        {/* STAGE 1: SETUP */}
+        {stage === "setup" && (
+          <div className="space-y-6 py-4">
+            {/* Animals Summary */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-muted p-4 rounded-lg">
+                <div className="text-sm text-muted-foreground">Total Animals</div>
+                <div className="text-2xl font-bold">{totalAnimals}</div>
               </div>
-              {totalCost > 0 && (
-                <p className="text-sm text-muted-foreground">
-                  Total cost: <span className="font-semibold">${totalCost.toFixed(2)}</span>
-                </p>
-              )}
+              <div className="bg-muted p-4 rounded-lg">
+                <div className="text-sm text-muted-foreground">Avg Weight</div>
+                <div className="text-2xl font-bold">{avgWeight.toFixed(0)} lbs</div>
+              </div>
+              <div className="bg-muted p-4 rounded-lg">
+                <div className="text-sm text-muted-foreground">Total Weight</div>
+                <div className="text-2xl font-bold">{totalWeight.toFixed(0)} lbs</div>
+              </div>
+            </div>
+
+            {/* Protocol Selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Select Treatment Protocol *</label>
+              <Select
+                value={selectedProtocol?.id || ""}
+                onValueChange={(value) => {
+                  const protocol = protocols.find(p => p.id === value)
+                  setSelectedProtocol(protocol || null)
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a protocol..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {protocols.map(protocol => (
+                    <SelectItem key={protocol.id} value={protocol.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{protocol.name}</span>
+                        <Badge variant="outline">${protocol.estimatedCostPerHead}/head</Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Protocol Details */}
+            {selectedProtocol && (
+              <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+                <div>
+                  <h3 className="font-semibold text-lg">{selectedProtocol.name}</h3>
+                  <p className="text-sm text-muted-foreground">{selectedProtocol.description}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">Drugs in Protocol:</h4>
+                  {selectedProtocol.drugs.map((drug, idx) => (
+                    <div key={idx} className="text-sm bg-background p-3 rounded border">
+                      <div className="font-medium">{drug.drugName}</div>
+                      <div className="text-muted-foreground">
+                        {drug.dosageAmount}{drug.dosageUnit} {drug.dosageType === "weight-based" ? "(weight-based)" : "(fixed)"} · {drug.administrationRoute} · {drug.withdrawalPeriod} day withdrawal
+                      </div>
+                      {drug.notes && (
+                        <div className="text-xs text-muted-foreground mt-1">{drug.notes}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Inventory Check */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Inventory Availability Check
+                  </h4>
+                  {Object.entries(inventoryCheck).map(([key, check]) => (
+                    <div key={key} className="text-sm flex items-start gap-2">
+                      {check.available ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                      )}
+                      <span className={check.available ? "text-muted-foreground" : "text-destructive"}>
+                        {check.message}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {!allInventoryAvailable && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Insufficient Inventory</AlertTitle>
+                    <AlertDescription>
+                      You need to restock the items marked above before proceeding. Go to Inventory page to add more stock.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {/* Cost Estimate */}
+                <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg">
+                  <div className="flex items-center gap-2 font-medium">
+                    <DollarSign className="h-5 w-5" />
+                    Estimated Total Cost
+                  </div>
+                  <div className="text-xl font-bold">
+                    ${estimatedCost.toFixed(2)}
+                    <span className="text-sm font-normal text-muted-foreground ml-2">
+                      (${selectedProtocol.estimatedCostPerHead.toFixed(2)}/head)
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Notes */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Notes (Optional)</label>
+              <Textarea
+                placeholder="Add any additional notes about this treatment..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={3}
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleContinueToConfirm}
+                disabled={!selectedProtocol || !allInventoryAvailable}
+              >
+                Continue to Confirmation
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* STAGE 2: CONFIRM */}
+        {stage === "confirm" && selectedProtocol && (
+          <div className="space-y-6 py-4">
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Review Before Executing</AlertTitle>
+              <AlertDescription>
+                Please review the details below carefully. This operation cannot be undone.
+              </AlertDescription>
+            </Alert>
+
+            {/* What Will Happen */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-lg">What Will Happen:</h3>
+              <div className="space-y-2">
+                <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
+                  <Syringe className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                  <div>
+                    <div className="font-medium">Create {totalAnimals} Health Records</div>
+                    <div className="text-sm text-muted-foreground">
+                      One health record per animal with treatment details
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
+                  <Package className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                  <div>
+                    <div className="font-medium">Deduct Inventory</div>
+                    <div className="text-sm text-muted-foreground">
+                      {Object.entries(calculateTotalDrugRequirements(selectedProtocol, selectedCattle.map(c => ({ weight: c.weight })))).map(([_, req]) => (
+                        <div key={req.drugId}>
+                          - {req.drugName}: {req.totalRequired.toFixed(1)}{req.unit}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
+                  <DollarSign className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                  <div>
+                    <div className="font-medium">Total Cost: ${estimatedCost.toFixed(2)}</div>
+                    <div className="text-sm text-muted-foreground">
+                      ${selectedProtocol.estimatedCostPerHead.toFixed(2)} per head × {totalAnimals} animals
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
+                  <Calendar className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                  <div>
+                    <div className="font-medium">Withdrawal Period: {maxWithdrawalPeriod} days</div>
+                    <div className="text-sm text-muted-foreground">
+                      Safe to sell after: {withdrawalDate.toLocaleDateString()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Cannot Be Undone</AlertTitle>
+              <AlertDescription>
+                Once executed, health records will be created and inventory will be deducted. This action cannot be reversed.
+              </AlertDescription>
+            </Alert>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setStage("setup")}>
+                Back to Setup
+              </Button>
+              <Button onClick={handleConfirmAndExecute} variant="default">
+                Confirm &amp; Execute Treatment
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* STAGE 3: PROCESSING */}
+        {stage === "processing" && (
+          <div className="space-y-6 py-8 text-center">
+            <div className="flex justify-center">
+              <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            </div>
+
+            <div>
+              <h3 className="text-xl font-semibold mb-2">Processing Treatments...</h3>
+              <p className="text-muted-foreground">
+                {processingStats.successful} of {totalAnimals} animals treated
+              </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="withdrawalPeriod">Withdrawal Period (days)</Label>
-              <Input
-                id="withdrawalPeriod"
-                type="number"
-                min="0"
-                value={formData.withdrawalPeriodDays}
-                onChange={(e) => setFormData({ ...formData, withdrawalPeriodDays: e.target.value })}
-                placeholder="0"
-              />
-              {formData.withdrawalPeriodDays && parseInt(formData.withdrawalPeriodDays) > 0 && (
-                <div className="flex items-start gap-2 text-sm text-orange-600 bg-orange-50 p-2 rounded">
-                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                  <span>
-                    Withdrawal until:{" "}
-                    {new Date(
-                      Date.now() + parseInt(formData.withdrawalPeriodDays) * 24 * 60 * 60 * 1000
-                    ).toLocaleDateString()}
-                  </span>
+              <Progress value={processingProgress} className="h-2" />
+              <p className="text-sm text-muted-foreground">
+                {processingProgress.toFixed(0)}% Complete
+              </p>
+            </div>
+
+            <p className="text-sm text-muted-foreground">
+              Please wait... This may take a few moments for large groups.
+            </p>
+          </div>
+        )}
+
+        {/* STAGE 4: COMPLETE */}
+        {stage === "complete" && selectedProtocol && (
+          <div className="space-y-6 py-4">
+            <div className="text-center space-y-2">
+              <div className="flex justify-center">
+                <div className="rounded-full bg-green-100 p-3">
+                  <CheckCircle2 className="h-12 w-12 text-green-600" />
+                </div>
+              </div>
+              <h3 className="text-2xl font-bold">Treatment Complete!</h3>
+              <p className="text-muted-foreground">
+                Bulk treatment has been successfully applied to your cattle.
+              </p>
+            </div>
+
+            {/* Statistics */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                <div className="text-sm text-green-900 dark:text-green-100">Successful</div>
+                <div className="text-3xl font-bold text-green-600">{processingStats.successful}</div>
+              </div>
+
+              {processingStats.failed > 0 && (
+                <div className="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg border border-red-200 dark:border-red-800">
+                  <div className="text-sm text-red-900 dark:text-red-100">Failed</div>
+                  <div className="text-3xl font-bold text-red-600">{processingStats.failed}</div>
                 </div>
               )}
+
+              <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="text-sm text-blue-900 dark:text-blue-100">Total Cost</div>
+                <div className="text-2xl font-bold text-blue-600">
+                  ${processingStats.totalCost.toFixed(2)}
+                </div>
+              </div>
+
+              <div className="bg-purple-50 dark:bg-purple-950/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                <div className="text-sm text-purple-900 dark:text-purple-100">Cost per Head</div>
+                <div className="text-2xl font-bold text-purple-600">
+                  ${(processingStats.totalCost / processingStats.successful).toFixed(2)}
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* Additional Info */}
-          <div className="space-y-2">
-            <Label htmlFor="reason">Reason for Treatment *</Label>
-            <Input
-              id="reason"
-              value={formData.reason}
-              onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-              placeholder="e.g., Arrival processing, routine deworming"
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+            {/* What Was Done */}
             <div className="space-y-2">
-              <Label htmlFor="administeredBy">Administered By *</Label>
-              <Input
-                id="administeredBy"
-                value={formData.administeredBy}
-                onChange={(e) => setFormData({ ...formData, administeredBy: e.target.value })}
-                required
-              />
+              <h4 className="font-medium">What Was Completed:</h4>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <span>{processingStats.successful} health records created</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <span>Inventory automatically deducted</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <span>Transaction logs created</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <span>Withdrawal dates calculated ({maxWithdrawalPeriod} days)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Errors (if any) */}
+            {processingStats.errors.length > 0 && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Some Treatments Failed</AlertTitle>
+                <AlertDescription>
+                  <div className="mt-2 space-y-1 max-h-40 overflow-y-auto">
+                    {processingStats.errors.map((error, idx) => (
+                      <div key={idx} className="text-xs font-mono">
+                        {error}
+                      </div>
+                    ))}
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Actions */}
+            <div className="flex justify-end">
+              <Button onClick={handleClose} size="lg">
+                Done
+              </Button>
             </div>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes (Optional)</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              rows={2}
-              placeholder="Additional observations, reactions, etc."
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={!selectedPen || headCount === 0}>
-              <Syringe className="h-4 w-4 mr-2" />
-              Log Treatment for {headCount} Head
-            </Button>
-          </div>
-        </form>
+        )}
       </DialogContent>
     </Dialog>
   )

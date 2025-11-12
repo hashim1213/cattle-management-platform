@@ -14,17 +14,19 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Save, Plus } from "lucide-react"
-import type { Pen, Barn } from "@/lib/pen-store"
+import { usePenStore } from "@/hooks/use-pen-store"
+import { useActivityStore } from "@/hooks/use-activity-store"
+import type { Pen } from "@/lib/pen-store"
 
 interface ManagePenDialogProps {
   pen?: Pen | null
-  barns: Barn[]
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSave: (pen: Omit<Pen, "id" | "createdAt" | "updatedAt" | "currentCount">) => void
 }
 
-export function ManagePenDialog({ pen, barns, open, onOpenChange, onSave }: ManagePenDialogProps) {
+export function ManagePenDialog({ pen, open, onOpenChange }: ManagePenDialogProps) {
+  const { barns = [], addPen, updatePen } = usePenStore()
+  const { log } = useActivityStore()
   const [formData, setFormData] = useState({
     name: "",
     barnId: "",
@@ -66,7 +68,33 @@ export function ManagePenDialog({ pen, barns, open, onOpenChange, onSave }: Mana
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSave(formData)
+
+    if (pen) {
+      // Update existing pen
+      updatePen(pen.id, formData)
+      log({
+        type: "pen-updated",
+        entityType: "pen",
+        entityId: pen.id,
+        entityName: formData.name,
+        title: `Updated pen: ${formData.name}`,
+        description: `Modified pen details`,
+        performedBy: "Owner",
+      })
+    } else {
+      // Add new pen
+      addPen(formData)
+      log({
+        type: "pen-created",
+        entityType: "pen",
+        entityId: crypto.randomUUID(),
+        entityName: formData.name,
+        title: `Created pen: ${formData.name}`,
+        description: `Added new pen with capacity ${formData.capacity}`,
+        performedBy: "Owner",
+      })
+    }
+
     onOpenChange(false)
   }
 

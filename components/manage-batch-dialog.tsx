@@ -34,7 +34,7 @@ export function ManageBatchDialog({ batch, open, onOpenChange }: ManageBatchDial
     supplier: "",
     headCount: "",
     averagePurchaseWeight: "",
-    averagePurchasePrice: "",
+    purchasePricePerPound: "",
     notes: "",
   })
 
@@ -47,7 +47,7 @@ export function ManageBatchDialog({ batch, open, onOpenChange }: ManageBatchDial
         supplier: batch.supplier,
         headCount: batch.headCount.toString(),
         averagePurchaseWeight: batch.averagePurchaseWeight.toString(),
-        averagePurchasePrice: batch.averagePurchasePrice.toString(),
+        purchasePricePerPound: batch.purchasePricePerPound.toString(),
         notes: batch.notes || "",
       })
     } else {
@@ -58,7 +58,7 @@ export function ManageBatchDialog({ batch, open, onOpenChange }: ManageBatchDial
         supplier: "",
         headCount: "",
         averagePurchaseWeight: "",
-        averagePurchasePrice: "",
+        purchasePricePerPound: "",
         notes: "",
       })
     }
@@ -69,8 +69,8 @@ export function ManageBatchDialog({ batch, open, onOpenChange }: ManageBatchDial
 
     const headCount = parseInt(formData.headCount)
     const avgWeight = parseFloat(formData.averagePurchaseWeight)
-    const avgPrice = parseFloat(formData.averagePurchasePrice)
-    const totalInvestment = headCount * avgPrice
+    const pricePerPound = parseFloat(formData.purchasePricePerPound)
+    const totalInvestment = headCount * avgWeight * pricePerPound
 
     const batchData = {
       name: formData.name,
@@ -79,7 +79,7 @@ export function ManageBatchDialog({ batch, open, onOpenChange }: ManageBatchDial
       supplier: formData.supplier,
       headCount,
       averagePurchaseWeight: avgWeight,
-      averagePurchasePrice: avgPrice,
+      purchasePricePerPound: pricePerPound,
       totalInvestment,
       cattleIds: batch?.cattleIds || [],
       notes: formData.notes || undefined,
@@ -88,14 +88,14 @@ export function ManageBatchDialog({ batch, open, onOpenChange }: ManageBatchDial
     if (batch) {
       updateBatch(batch.id, batchData)
       toast({
-        title: "Batch Updated",
-        description: "The batch has been successfully updated.",
+        title: "Pen Group Updated",
+        description: "The pen group has been successfully updated.",
       })
     } else {
       addBatch(batchData)
       toast({
-        title: "Batch Created",
-        description: "The new batch has been successfully created.",
+        title: "Pen Group Created",
+        description: "The new pen group has been successfully created.",
       })
     }
 
@@ -106,9 +106,9 @@ export function ManageBatchDialog({ batch, open, onOpenChange }: ManageBatchDial
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{batch ? "Edit Batch" : "Create New Batch"}</DialogTitle>
+          <DialogTitle>{batch ? "Edit Pen Group" : "Create New Pen Group"}</DialogTitle>
           <DialogDescription>
-            {batch ? "Update batch information" : "Create a new purchase batch/group"}
+            {batch ? "Update pen group information" : "Create a new purchase pen group"}
           </DialogDescription>
         </DialogHeader>
 
@@ -116,7 +116,7 @@ export function ManageBatchDialog({ batch, open, onOpenChange }: ManageBatchDial
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Batch Name *</Label>
+                <Label htmlFor="name">Pen Group Name *</Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -192,15 +192,15 @@ export function ManageBatchDialog({ batch, open, onOpenChange }: ManageBatchDial
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="averagePurchasePrice">Avg Price ($) *</Label>
+                <Label htmlFor="purchasePricePerPound">Price per Pound ($/lb) *</Label>
                 <Input
-                  id="averagePurchasePrice"
+                  id="purchasePricePerPound"
                   type="number"
                   min="0"
                   step="0.01"
-                  value={formData.averagePurchasePrice}
+                  value={formData.purchasePricePerPound}
                   onChange={(e) =>
-                    setFormData({ ...formData, averagePurchasePrice: e.target.value })
+                    setFormData({ ...formData, purchasePricePerPound: e.target.value })
                   }
                   placeholder="0.00"
                   required
@@ -208,13 +208,14 @@ export function ManageBatchDialog({ batch, open, onOpenChange }: ManageBatchDial
               </div>
             </div>
 
-            {formData.headCount && formData.averagePurchasePrice && (
+            {formData.headCount && formData.averagePurchaseWeight && formData.purchasePricePerPound && (
               <div className="p-3 bg-muted rounded-lg">
                 <p className="text-sm font-medium">
                   Total Investment: $
                   {(
                     parseInt(formData.headCount || "0") *
-                    parseFloat(formData.averagePurchasePrice || "0")
+                    parseFloat(formData.averagePurchaseWeight || "0") *
+                    parseFloat(formData.purchasePricePerPound || "0")
                   ).toLocaleString()}
                 </p>
               </div>
@@ -226,7 +227,7 @@ export function ManageBatchDialog({ batch, open, onOpenChange }: ManageBatchDial
                 id="notes"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Additional notes about this batch..."
+                placeholder="Additional notes about this pen group..."
                 rows={3}
               />
             </div>
@@ -236,7 +237,7 @@ export function ManageBatchDialog({ batch, open, onOpenChange }: ManageBatchDial
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">{batch ? "Update" : "Create"} Batch</Button>
+            <Button type="submit">{batch ? "Update" : "Create"} Pen Group</Button>
           </DialogFooter>
         </form>
       </DialogContent>

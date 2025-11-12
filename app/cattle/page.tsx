@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, Search, Filter, Grid3x3, List, RefreshCw, ScanLine } from "lucide-react"
+import { Plus, Search, Filter, Grid3x3, List, ScanLine } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { CattleTable } from "@/components/cattle-table"
@@ -12,8 +12,6 @@ import { CattleFilters } from "@/components/cattle-filters"
 import { RFIDImageImportDialog } from "@/components/rfid-image-import-dialog"
 import Link from "next/link"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { dataStore } from "@/lib/data-store"
-import { generateComprehensiveSampleData } from "@/lib/sample-data-generator"
 import { useSearchParams } from "next/navigation"
 
 export default function CattlePage() {
@@ -27,7 +25,9 @@ export default function CattlePage() {
     status: "all",
     sex: "all",
     stage: "all",
-    lot: "all",
+    healthStatus: "all",
+    penId: "all",
+    barnId: "all",
   })
 
   // Handle URL parameters
@@ -38,13 +38,6 @@ export default function CattlePage() {
       setShowFilters(true)
     }
   }, [searchParams])
-
-  const handleResetData = () => {
-    if (confirm("Load comprehensive sample data? This will replace all current data with 100 cattle across 3 batches, complete with health records, tasks, and more.")) {
-      generateComprehensiveSampleData()
-      window.location.reload()
-    }
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -57,13 +50,8 @@ export default function CattlePage() {
                 ← Back to Dashboard
               </Link>
               <h1 className="text-xl sm:text-2xl font-bold text-foreground">Cattle Inventory</h1>
-              <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Manage your complete cattle records</p>
             </div>
             <div className="flex gap-2 flex-wrap">
-              <Button variant="outline" size="sm" onClick={handleResetData} className="hidden sm:flex">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Load Sample Data
-              </Button>
               <Button variant="outline" size="sm" onClick={() => setIsRFIDImportOpen(true)}>
                 <ScanLine className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Import RFID</span>

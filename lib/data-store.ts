@@ -1,13 +1,162 @@
-// Comprehensive data management system using localStorage
+// Comprehensive data management system using Supabase
+import { supabase, Database } from "./supabase"
 import { generateUniqueId } from "./id-generator"
+
+// Check if Supabase is configured
+const isSupabaseConfigured = (): boolean => {
+  return !!(
+    typeof window !== "undefined" &&
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  )
+}
+
+// Helper to get authenticated user ID
+async function getUserId(): Promise<string | null> {
+  if (!isSupabaseConfigured()) return null
+  const { data: { user } } = await supabase.auth.getUser()
+  return user?.id || null
+}
+
+// Mapping functions between camelCase and snake_case
+function dbToCattle(dbRow: Database['public']['Tables']['cattle']['Row']): Cattle {
+  return {
+    id: dbRow.id,
+    tagNumber: dbRow.tag_number,
+    name: dbRow.name || undefined,
+    breed: dbRow.breed,
+    sex: dbRow.sex as "Bull" | "Cow" | "Steer" | "Heifer",
+    birthDate: dbRow.birth_date,
+    purchaseDate: dbRow.purchase_date || undefined,
+    purchasePrice: dbRow.purchase_price || undefined,
+    purchaseWeight: dbRow.purchase_weight || undefined,
+    currentValue: dbRow.current_value || undefined,
+    weight: dbRow.weight,
+    dam: dbRow.dam || undefined,
+    sire: dbRow.sire || undefined,
+    lot: dbRow.lot,
+    pasture: dbRow.pasture || undefined,
+    penId: dbRow.pen_id || undefined,
+    barnId: dbRow.barn_id || undefined,
+    batchId: dbRow.batch_id || undefined,
+    status: dbRow.status as "Active" | "Sold" | "Deceased" | "Culled",
+    stage: dbRow.stage as "Calf" | "Weaned Calf" | "Yearling" | "Breeding" | "Finishing",
+    healthStatus: dbRow.health_status as "Healthy" | "Sick" | "Treatment" | "Quarantine",
+    pregnancyStatus: dbRow.pregnancy_status as "Open" | "Bred" | "Pregnant" | "Calved" | undefined,
+    expectedCalvingDate: dbRow.expected_calving_date || undefined,
+    lastVetVisit: dbRow.last_vet_visit || undefined,
+    notes: dbRow.notes || undefined,
+    colorMarkings: dbRow.color_markings || undefined,
+    hornStatus: dbRow.horn_status || undefined,
+    identificationMethod: dbRow.identification_method,
+    rfidTag: dbRow.rfid_tag || undefined,
+    brandNumber: dbRow.brand_number || undefined,
+    createdAt: dbRow.created_at,
+    updatedAt: dbRow.updated_at,
+  }
+}
+
+function cattleToDb(cattle: Omit<Cattle, "id" | "createdAt" | "updatedAt">, userId: string): Database['public']['Tables']['cattle']['Insert'] {
+  return {
+    tag_number: cattle.tagNumber,
+    name: cattle.name || null,
+    breed: cattle.breed,
+    sex: cattle.sex,
+    birth_date: cattle.birthDate,
+    purchase_date: cattle.purchaseDate || null,
+    purchase_price: cattle.purchasePrice || null,
+    purchase_weight: cattle.purchaseWeight || null,
+    current_value: cattle.currentValue || null,
+    weight: cattle.weight,
+    dam: cattle.dam || null,
+    sire: cattle.sire || null,
+    lot: cattle.lot,
+    pasture: cattle.pasture || null,
+    pen_id: cattle.penId || null,
+    barn_id: cattle.barnId || null,
+    batch_id: cattle.batchId || null,
+    status: cattle.status,
+    stage: cattle.stage,
+    health_status: cattle.healthStatus,
+    pregnancy_status: cattle.pregnancyStatus || null,
+    expected_calving_date: cattle.expectedCalvingDate || null,
+    last_vet_visit: cattle.lastVetVisit || null,
+    notes: cattle.notes || null,
+    color_markings: cattle.colorMarkings || null,
+    horn_status: cattle.hornStatus || null,
+    identification_method: cattle.identificationMethod,
+    rfid_tag: cattle.rfidTag || null,
+    brand_number: cattle.brandNumber || null,
+    days_on_feed: null,
+    projected_weight: null,
+    user_id: userId,
+  }
+}
+
+function dbToWeightRecord(dbRow: Database['public']['Tables']['weight_records']['Row']): WeightRecord {
+  return {
+    id: dbRow.id,
+    cattleId: dbRow.cattle_id,
+    date: dbRow.date,
+    weight: dbRow.weight,
+    notes: dbRow.notes || undefined,
+  }
+}
+
+function dbToHealthRecord(dbRow: Database['public']['Tables']['health_records']['Row']): HealthRecord {
+  return {
+    id: dbRow.id,
+    cattleId: dbRow.cattle_id,
+    date: dbRow.date,
+    type: dbRow.type as "Vaccination" | "Treatment" | "Checkup" | "Surgery" | "Other",
+    description: dbRow.description,
+    veterinarian: dbRow.veterinarian || undefined,
+    cost: dbRow.cost || undefined,
+    nextDueDate: dbRow.next_due_date || undefined,
+    notes: dbRow.notes || undefined,
+  }
+}
+
+function dbToFeedInventory(dbRow: Database['public']['Tables']['feed_inventory']['Row']): FeedInventory {
+  return {
+    id: dbRow.id,
+    name: dbRow.name,
+    type: dbRow.type,
+    quantity: dbRow.quantity,
+    unit: dbRow.unit,
+    costPerUnit: dbRow.cost_per_unit,
+    supplier: dbRow.supplier || undefined,
+    purchaseDate: dbRow.purchase_date,
+    expiryDate: dbRow.expiry_date || undefined,
+    location: dbRow.location || undefined,
+    notes: dbRow.notes || undefined,
+    dailyUsage: dbRow.daily_usage,
+    createdAt: dbRow.created_at,
+    updatedAt: dbRow.updated_at,
+  }
+}
+
+function dbToTransaction(dbRow: Database['public']['Tables']['transactions']['Row']): Transaction {
+  return {
+    id: dbRow.id,
+    date: dbRow.date,
+    type: dbRow.type as "Purchase" | "Sale" | "Feed" | "Veterinary" | "Equipment" | "Labor" | "Other",
+    category: dbRow.category || "",
+    amount: dbRow.amount,
+    description: dbRow.description,
+    cattleId: dbRow.cattle_id || undefined,
+    notes: undefined,
+    createdAt: dbRow.created_at,
+  }
+}
 
 export interface Cattle {
   id: string
-  tagNumber: string
+  tagNumber: string  // Visual tag number
   name?: string
   breed: string
-  sex: "Bull" | "Cow" | "Steer" | "Heifer"
-  birthDate: string
+  sex: "Bull" | "Cow" | "Steer" | "Heifer" | "Unknown"
+  birthDate?: string  // Optional - can be unknown for imported RFID cattle
   purchaseDate?: string
   purchasePrice?: number
   purchaseWeight?: number
@@ -22,7 +171,7 @@ export interface Cattle {
   barnId?: string
   batchId?: string // Purchase group/batch tracking
   status: "Active" | "Sold" | "Deceased" | "Culled"
-  stage: "Calf" | "Weaner" | "Yearling" | "Breeding" | "Finishing"
+  stage: "Calf" | "Weaned Calf" | "Yearling" | "Breeding" | "Finishing" | "receiving"
   healthStatus: "Healthy" | "Sick" | "Treatment" | "Quarantine"
   pregnancyStatus?: "Open" | "Bred" | "Pregnant" | "Calved"
   expectedCalvingDate?: string
@@ -31,7 +180,10 @@ export interface Cattle {
   colorMarkings?: string
   hornStatus?: string
   identificationMethod: string
-  rfidTag?: string
+  rfidTag?: string  // Electronic RFID tag - primary identifier for imported cattle
+  visualTag?: string  // Alternative to tagNumber for consistency
+  arrivalDate?: string  // For feedlot receiving
+  arrivalWeight?: number  // For feedlot receiving
   brandNumber?: string
   createdAt: string
   updatedAt: string
@@ -127,568 +279,25 @@ class DataStore {
   }
 
   private initializeData() {
+    // No sample data - clean slate for real data
     if (typeof window === "undefined") return
 
-    // Initialize with sample data if empty
-    if (!localStorage.getItem("cattle")) {
-      const sampleCattle: Cattle[] = [
-        // Bulls
-        {
-          id: "1",
-          tagNumber: "B001",
-          name: "Thunder",
-          breed: "Angus",
-          sex: "Bull",
-          birthDate: "2019-01-10",
-          purchaseDate: "2019-08-01",
-          purchasePrice: 2500,
-          currentValue: 3800,
-          weight: 2200,
-          lot: "Bull Pen",
-          pasture: "East Pasture",
-          status: "Active",
-          stage: "Breeding",
-          healthStatus: "Healthy",
-          lastVetVisit: "2025-08-20",
-          colorMarkings: "Black",
-          hornStatus: "Polled",
-          identificationMethod: "Ear Tag + RFID",
-          rfidTag: "RFID-B001",
-          brandNumber: "TH-001",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "2",
-          tagNumber: "B002",
-          name: "Maximus",
-          breed: "Hereford",
-          sex: "Bull",
-          birthDate: "2020-03-15",
-          purchaseDate: "2020-09-01",
-          purchasePrice: 2200,
-          currentValue: 3500,
-          weight: 2100,
-          lot: "Bull Pen",
-          pasture: "East Pasture",
-          status: "Active",
-          stage: "Breeding",
-          healthStatus: "Healthy",
-          lastVetVisit: "2025-09-10",
-          colorMarkings: "Red with white face",
-          hornStatus: "Horned",
-          identificationMethod: "Ear Tag",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        // Cows
-        {
-          id: "3",
-          tagNumber: "C001",
-          name: "Bessie",
-          breed: "Angus",
-          sex: "Cow",
-          birthDate: "2020-03-15",
-          purchaseDate: "2020-06-01",
-          purchasePrice: 1200,
-          currentValue: 1800,
-          weight: 1250,
-          dam: "Unknown",
-          sire: "Bull-001",
-          lot: "North Lot",
-          pasture: "North Pasture",
-          status: "Active",
-          stage: "Breeding",
-          healthStatus: "Healthy",
-          pregnancyStatus: "Pregnant",
-          expectedCalvingDate: "2026-02-15",
-          lastVetVisit: "2025-09-15",
-          colorMarkings: "Black",
-          hornStatus: "Polled",
-          identificationMethod: "Ear Tag + RFID",
-          rfidTag: "RFID-C001",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "4",
-          tagNumber: "C002",
-          name: "Daisy",
-          breed: "Hereford",
-          sex: "Cow",
-          birthDate: "2019-05-20",
-          purchaseDate: "2019-11-01",
-          purchasePrice: 1300,
-          currentValue: 1900,
-          weight: 1300,
-          lot: "North Lot",
-          pasture: "North Pasture",
-          status: "Active",
-          stage: "Breeding",
-          healthStatus: "Healthy",
-          pregnancyStatus: "Pregnant",
-          expectedCalvingDate: "2026-01-20",
-          lastVetVisit: "2025-10-05",
-          colorMarkings: "Red with white face",
-          hornStatus: "Polled",
-          identificationMethod: "Ear Tag",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "5",
-          tagNumber: "C003",
-          name: "Molly",
-          breed: "Angus",
-          sex: "Cow",
-          birthDate: "2020-06-10",
-          purchasePrice: 1250,
-          currentValue: 1850,
-          weight: 1280,
-          lot: "North Lot",
-          pasture: "North Pasture",
-          status: "Active",
-          stage: "Breeding",
-          healthStatus: "Healthy",
-          pregnancyStatus: "Bred",
-          lastVetVisit: "2025-10-12",
-          colorMarkings: "Black",
-          hornStatus: "Polled",
-          identificationMethod: "Ear Tag",
-          rfidTag: "RFID-C003",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "6",
-          tagNumber: "C004",
-          name: "Rosie",
-          breed: "Red Angus",
-          sex: "Cow",
-          birthDate: "2019-08-15",
-          purchasePrice: 1350,
-          currentValue: 1950,
-          weight: 1320,
-          lot: "South Lot",
-          pasture: "South Pasture",
-          status: "Active",
-          stage: "Breeding",
-          healthStatus: "Healthy",
-          pregnancyStatus: "Open",
-          lastVetVisit: "2025-09-28",
-          colorMarkings: "Red",
-          hornStatus: "Polled",
-          identificationMethod: "Ear Tag",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "7",
-          tagNumber: "C005",
-          name: "Bella",
-          breed: "Angus",
-          sex: "Cow",
-          birthDate: "2021-04-10",
-          purchasePrice: 1180,
-          currentValue: 1780,
-          weight: 1230,
-          lot: "South Lot",
-          pasture: "South Pasture",
-          status: "Active",
-          stage: "Breeding",
-          healthStatus: "Healthy",
-          pregnancyStatus: "Pregnant",
-          expectedCalvingDate: "2026-03-10",
-          lastVetVisit: "2025-10-18",
-          colorMarkings: "Black",
-          hornStatus: "Polled",
-          identificationMethod: "Ear Tag",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        // Heifers
-        {
-          id: "8",
-          tagNumber: "H001",
-          name: "Princess",
-          breed: "Angus",
-          sex: "Heifer",
-          birthDate: "2024-04-20",
-          weight: 680,
-          lot: "Heifer Pen",
-          pasture: "West Pasture",
-          status: "Active",
-          stage: "Yearling",
-          healthStatus: "Healthy",
-          lastVetVisit: "2025-10-01",
-          colorMarkings: "Black",
-          hornStatus: "Polled",
-          identificationMethod: "Ear Tag",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "9",
-          tagNumber: "H002",
-          name: "Ruby",
-          breed: "Red Angus",
-          sex: "Heifer",
-          birthDate: "2024-05-15",
-          weight: 650,
-          lot: "Heifer Pen",
-          pasture: "West Pasture",
-          status: "Active",
-          stage: "Yearling",
-          healthStatus: "Healthy",
-          lastVetVisit: "2025-10-01",
-          colorMarkings: "Red",
-          hornStatus: "Polled",
-          identificationMethod: "Ear Tag",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "10",
-          tagNumber: "H003",
-          breed: "Hereford",
-          sex: "Heifer",
-          birthDate: "2024-06-10",
-          weight: 620,
-          lot: "Heifer Pen",
-          pasture: "West Pasture",
-          status: "Active",
-          stage: "Yearling",
-          healthStatus: "Healthy",
-          lastVetVisit: "2025-10-01",
-          colorMarkings: "Red with white face",
-          hornStatus: "Polled",
-          identificationMethod: "Ear Tag",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        // Steers
-        {
-          id: "11",
-          tagNumber: "S001",
-          breed: "Angus",
-          sex: "Steer",
-          birthDate: "2024-03-15",
-          purchaseDate: "2024-09-01",
-          purchasePrice: 850,
-          currentValue: 1200,
-          weight: 920,
-          lot: "Feedlot A",
-          pasture: "North Pasture",
-          status: "Active",
-          stage: "Finishing",
-          healthStatus: "Healthy",
-          lastVetVisit: "2025-09-25",
-          colorMarkings: "Black",
-          hornStatus: "Polled",
-          identificationMethod: "Ear Tag",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "12",
-          tagNumber: "S002",
-          breed: "Hereford",
-          sex: "Steer",
-          birthDate: "2024-04-01",
-          purchaseDate: "2024-10-01",
-          purchasePrice: 800,
-          currentValue: 1150,
-          weight: 880,
-          lot: "Feedlot A",
-          pasture: "North Pasture",
-          status: "Active",
-          stage: "Finishing",
-          healthStatus: "Healthy",
-          lastVetVisit: "2025-10-02",
-          colorMarkings: "Red with white face",
-          hornStatus: "Polled",
-          identificationMethod: "Ear Tag",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "13",
-          tagNumber: "S003",
-          breed: "Angus",
-          sex: "Steer",
-          birthDate: "2024-02-20",
-          purchaseDate: "2024-08-15",
-          purchasePrice: 900,
-          currentValue: 1280,
-          weight: 1050,
-          lot: "Feedlot B",
-          pasture: "East Pasture",
-          status: "Active",
-          stage: "Finishing",
-          healthStatus: "Healthy",
-          lastVetVisit: "2025-09-18",
-          colorMarkings: "Black",
-          hornStatus: "Polled",
-          identificationMethod: "Ear Tag",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        // Calves
-        {
-          id: "14",
-          tagNumber: "CL001",
-          breed: "Angus",
-          sex: "Heifer",
-          birthDate: "2025-03-10",
-          weight: 420,
-          dam: "C001",
-          sire: "B001",
-          lot: "Calf Pen",
-          pasture: "South Pasture",
-          status: "Active",
-          stage: "Calf",
-          healthStatus: "Healthy",
-          lastVetVisit: "2025-10-10",
-          colorMarkings: "Black",
-          hornStatus: "Polled",
-          identificationMethod: "Ear Tag",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "15",
-          tagNumber: "CL002",
-          breed: "Angus",
-          sex: "Bull",
-          birthDate: "2025-02-28",
-          weight: 440,
-          dam: "C003",
-          sire: "B001",
-          lot: "Calf Pen",
-          pasture: "South Pasture",
-          status: "Active",
-          stage: "Calf",
-          healthStatus: "Healthy",
-          lastVetVisit: "2025-10-10",
-          colorMarkings: "Black",
-          hornStatus: "Polled",
-          identificationMethod: "Ear Tag",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "16",
-          tagNumber: "CL003",
-          breed: "Hereford",
-          sex: "Heifer",
-          birthDate: "2025-04-05",
-          weight: 390,
-          dam: "C002",
-          sire: "B002",
-          lot: "Calf Pen",
-          pasture: "South Pasture",
-          status: "Active",
-          stage: "Calf",
-          healthStatus: "Healthy",
-          lastVetVisit: "2025-10-10",
-          colorMarkings: "Red with white face",
-          hornStatus: "Polled",
-          identificationMethod: "Ear Tag",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "17",
-          tagNumber: "CL004",
-          breed: "Red Angus",
-          sex: "Bull",
-          birthDate: "2025-03-20",
-          weight: 410,
-          dam: "C004",
-          lot: "Calf Pen",
-          pasture: "South Pasture",
-          status: "Active",
-          stage: "Calf",
-          healthStatus: "Healthy",
-          lastVetVisit: "2025-10-10",
-          colorMarkings: "Red",
-          hornStatus: "Polled",
-          identificationMethod: "Ear Tag",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        // Weaners
-        {
-          id: "18",
-          tagNumber: "W001",
-          breed: "Angus",
-          sex: "Heifer",
-          birthDate: "2024-09-10",
-          weight: 550,
-          lot: "Weaner Pen",
-          pasture: "West Pasture",
-          status: "Active",
-          stage: "Weaner",
-          healthStatus: "Healthy",
-          lastVetVisit: "2025-10-08",
-          colorMarkings: "Black",
-          hornStatus: "Polled",
-          identificationMethod: "Ear Tag",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "19",
-          tagNumber: "W002",
-          breed: "Angus",
-          sex: "Steer",
-          birthDate: "2024-10-05",
-          weight: 530,
-          lot: "Weaner Pen",
-          pasture: "West Pasture",
-          status: "Active",
-          stage: "Weaner",
-          healthStatus: "Healthy",
-          lastVetVisit: "2025-10-08",
-          colorMarkings: "Black",
-          hornStatus: "Polled",
-          identificationMethod: "Ear Tag",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "20",
-          tagNumber: "W003",
-          breed: "Hereford",
-          sex: "Steer",
-          birthDate: "2024-09-25",
-          weight: 560,
-          lot: "Weaner Pen",
-          pasture: "West Pasture",
-          status: "Active",
-          stage: "Weaner",
-          healthStatus: "Healthy",
-          lastVetVisit: "2025-10-08",
-          colorMarkings: "Red with white face",
-          hornStatus: "Polled",
-          identificationMethod: "Ear Tag",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ]
-      localStorage.setItem("cattle", JSON.stringify(sampleCattle))
-    }
+    // Initialize all storage keys with empty arrays if they don't exist
+    const storageKeys = [
+      "cattle",
+      "weightRecords",
+      "healthRecords",
+      "feedUsage",
+      "feedInventory",
+      "pastures",
+      "transactions"
+    ]
 
-    if (!localStorage.getItem("feedInventory")) {
-      const sampleFeed: FeedInventory[] = [
-        {
-          id: "1",
-          name: "Corn Silage",
-          type: "Silage",
-          quantity: 5000,
-          unit: "lbs",
-          costPerUnit: 0.08,
-          supplier: "Local Farm Co-op",
-          purchaseDate: "2025-10-15",
-          location: "Silo 1",
-          dailyUsage: 1200,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "2",
-          name: "Alfalfa Hay",
-          type: "Hay",
-          quantity: 8000,
-          unit: "lbs",
-          costPerUnit: 0.12,
-          supplier: "Green Valley Hay",
-          purchaseDate: "2025-10-01",
-          location: "Barn 2",
-          dailyUsage: 800,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "3",
-          name: "Protein Supplement",
-          type: "Supplement",
-          quantity: 2000,
-          unit: "lbs",
-          costPerUnit: 0.45,
-          supplier: "Feed Supply Inc",
-          purchaseDate: "2025-10-20",
-          location: "Feed Room",
-          dailyUsage: 150,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ]
-      localStorage.setItem("feedInventory", JSON.stringify(sampleFeed))
-    }
-
-    if (!localStorage.getItem("pastures")) {
-      const samplePastures: Pasture[] = [
-        {
-          id: "1",
-          name: "North Pasture",
-          acres: 50,
-          grassType: "Fescue",
-          condition: "Good",
-          currentCattleCount: 45,
-          maxCapacity: 60,
-          lastRotationDate: "2025-09-01",
-          nextRotationDate: "2025-11-15",
-          soilTestDate: "2025-03-15",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "2",
-          name: "South Pasture",
-          acres: 35,
-          grassType: "Bermuda",
-          condition: "Excellent",
-          currentCattleCount: 30,
-          maxCapacity: 45,
-          lastRotationDate: "2025-10-01",
-          nextRotationDate: "2025-12-01",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "3",
-          name: "East Pasture",
-          acres: 25,
-          grassType: "Clover Mix",
-          condition: "Fair",
-          currentCattleCount: 20,
-          maxCapacity: 30,
-          lastRotationDate: "2025-08-15",
-          nextRotationDate: "2025-11-01",
-          notes: "Needs reseeding in spring",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ]
-      localStorage.setItem("pastures", JSON.stringify(samplePastures))
-    }
-
-    if (!localStorage.getItem("weightRecords")) {
-      localStorage.setItem("weightRecords", JSON.stringify([]))
-    }
-
-    if (!localStorage.getItem("healthRecords")) {
-      localStorage.setItem("healthRecords", JSON.stringify([]))
-    }
-
-    if (!localStorage.getItem("feedUsage")) {
-      localStorage.setItem("feedUsage", JSON.stringify([]))
-    }
-
-    if (!localStorage.getItem("transactions")) {
-      localStorage.setItem("transactions", JSON.stringify([]))
-    }
+    storageKeys.forEach(key => {
+      if (!localStorage.getItem(key)) {
+        localStorage.setItem(key, JSON.stringify([]))
+      }
+    })
   }
 
   // Cattle operations
@@ -703,8 +312,19 @@ class DataStore {
   }
 
   addCattle(cattle: Omit<Cattle, "id" | "createdAt" | "updatedAt">): Cattle {
+    // Auto-generate tagNumber from rfidTag if not provided
+    let tagNumber = cattle.tagNumber
+    if (!tagNumber && cattle.rfidTag) {
+      // Use last 4-6 digits of RFID as visual tag
+      tagNumber = cattle.rfidTag.slice(-4)
+    }
+    if (!tagNumber) {
+      tagNumber = `TAG-${Date.now().toString().slice(-6)}`
+    }
+
     const newCattle: Cattle = {
       ...cattle,
+      tagNumber,
       id: generateUniqueId("cattle"),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -970,7 +590,7 @@ class DataStore {
       calves: {
         count: calves.length,
         unweaned: calves.filter((c) => c.stage === "Calf").length,
-        weaned: calves.filter((c) => c.stage === "Weaner").length,
+        weaned: calves.filter((c) => c.stage === "Weaned Calf").length,
       },
     }
   }
@@ -989,6 +609,7 @@ class DataStore {
 
     this.initializeData()
   }
+
 }
 
 export const dataStore = DataStore.getInstance()

@@ -2,15 +2,72 @@
 
 export type FeedCategory =
   | "corn-silage"
-  | "hay"
+  | "haylage"
+  | "hay-alfalfa"
+  | "hay-grass"
+  | "hay-mixed"
   | "straw"
-  | "grain"
-  | "supplement"
-  | "mineral"
-  | "protein"
+  | "shell-corn"
+  | "barley"
+  | "oats"
+  | "grain-mix"
+  | "protein-supplement"
+  | "mineral-supplement"
+  | "vitamin-supplement"
+  | "distillers-grains"
+  | "wheat-middlings"
+  | "canola-meal"
   | "other"
 
 export type FeedSource = "self-produced" | "purchased" | "other"
+
+// Helper function to get display name for feed categories
+export function getFeedCategoryLabel(category: FeedCategory): string {
+  const labels: Record<FeedCategory, string> = {
+    "corn-silage": "Corn Silage",
+    "haylage": "Haylage",
+    "hay-alfalfa": "Alfalfa Hay",
+    "hay-grass": "Grass Hay",
+    "hay-mixed": "Mixed Hay",
+    "straw": "Straw",
+    "shell-corn": "Shell Corn",
+    "barley": "Barley",
+    "oats": "Oats",
+    "grain-mix": "Grain Mix",
+    "protein-supplement": "Protein Supplement",
+    "mineral-supplement": "Mineral Supplement",
+    "vitamin-supplement": "Vitamin Supplement",
+    "distillers-grains": "Distillers Grains (DDG)",
+    "wheat-middlings": "Wheat Middlings",
+    "canola-meal": "Canola Meal",
+    "other": "Other"
+  }
+  return labels[category] || category
+}
+
+// Get all feed categories with labels for dropdowns
+export function getFeedCategoryOptions(): Array<{ value: FeedCategory; label: string }> {
+  const categories: FeedCategory[] = [
+    "corn-silage",
+    "haylage",
+    "hay-alfalfa",
+    "hay-grass",
+    "hay-mixed",
+    "straw",
+    "shell-corn",
+    "barley",
+    "oats",
+    "grain-mix",
+    "protein-supplement",
+    "mineral-supplement",
+    "vitamin-supplement",
+    "distillers-grains",
+    "wheat-middlings",
+    "canola-meal",
+    "other"
+  ]
+  return categories.map(cat => ({ value: cat, label: getFeedCategoryLabel(cat) }))
+}
 
 // Enhanced feed inventory item
 export interface FeedInventoryItem {

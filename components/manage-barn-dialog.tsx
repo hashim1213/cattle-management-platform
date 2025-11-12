@@ -13,16 +13,19 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Save, Plus } from "lucide-react"
+import { usePenStore } from "@/hooks/use-pen-store"
+import { useActivityStore } from "@/hooks/use-activity-store"
 import type { Barn } from "@/lib/pen-store"
 
 interface ManageBarnDialogProps {
   barn?: Barn | null
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSave: (barn: Omit<Barn, "id" | "createdAt" | "updatedAt">) => void
 }
 
-export function ManageBarnDialog({ barn, open, onOpenChange, onSave }: ManageBarnDialogProps) {
+export function ManageBarnDialog({ barn, open, onOpenChange }: ManageBarnDialogProps) {
+  const { addBarn, updateBarn } = usePenStore()
+  const { log } = useActivityStore()
   const [formData, setFormData] = useState({
     name: "",
     location: "",
@@ -53,7 +56,33 @@ export function ManageBarnDialog({ barn, open, onOpenChange, onSave }: ManageBar
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSave(formData)
+
+    if (barn) {
+      // Update existing barn
+      updateBarn(barn.id, formData)
+      log({
+        type: "barn-updated",
+        entityType: "barn",
+        entityId: barn.id,
+        entityName: formData.name,
+        title: `Updated barn: ${formData.name}`,
+        description: `Modified barn details`,
+        performedBy: "Owner",
+      })
+    } else {
+      // Add new barn
+      addBarn(formData)
+      log({
+        type: "barn-created",
+        entityType: "barn",
+        entityId: crypto.randomUUID(),
+        entityName: formData.name,
+        title: `Created barn: ${formData.name}`,
+        description: `Added new barn at ${formData.location}`,
+        performedBy: "Owner",
+      })
+    }
+
     onOpenChange(false)
   }
 

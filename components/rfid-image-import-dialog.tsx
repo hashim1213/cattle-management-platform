@@ -20,19 +20,21 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { Camera, Upload, Loader2, CheckCircle2, XCircle } from "lucide-react"
+import { Camera, Upload, Loader2, CheckCircle2, XCircle, FileText } from "lucide-react"
 import Tesseract from "tesseract.js"
-import { dataStore } from "@/lib/data-store"
-import { usePenStore } from "@/hooks/use-pen-store"
-import { useBatchStore } from "@/hooks/use-batch-store"
+import { firebaseDataStore } from "@/lib/data-store-firebase"
+import { firebasePenStore, type Pen } from "@/lib/pen-store-firebase"
+import { firebaseBatchStore, type Batch } from "@/lib/batch-store-firebase"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { useEffect } from "react"
 
 interface RFIDImageImportDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   defaultPenId?: string
   defaultBatchId?: string
+  onSuccess?: () => void
 }
 
 export function RFIDImageImportDialog({
@@ -40,10 +42,11 @@ export function RFIDImageImportDialog({
   onOpenChange,
   defaultPenId,
   defaultBatchId,
+  onSuccess,
 }: RFIDImageImportDialogProps) {
   const { toast } = useToast()
-  const { pens } = usePenStore()
-  const { batches } = useBatchStore()
+  const [pens, setPens] = useState<Pen[]>([])
+  const [batches, setBatches] = useState<Batch[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -53,9 +56,18 @@ export function RFIDImageImportDialog({
   const [extractedText, setExtractedText] = useState("")
   const [parsedRFIDs, setParsedRFIDs] = useState<string[]>([])
   const [selectedPenId, setSelectedPenId] = useState(defaultPenId || "")
-  const [selectedBatchId, setSelectedBatchId] = useState(defaultBatchId || "")
+  const [selectedBatchId, setSelectedBatchId] = useState(defaultBatchId || "none")
   const [isCameraActive, setIsCameraActive] = useState(false)
   const [stream, setStream] = useState<MediaStream | null>(null)
+  const [isImporting, setIsImporting] = useState(false)
+
+  // Load pens and batches when dialog opens
+  useEffect(() => {
+    if (open) {
+      setPens(firebasePenStore.getPens())
+      setBatches(firebaseBatchStore.getBatches())
+    }
+  }, [open])
 
   const startCamera = async () => {
     try {
@@ -103,11 +115,152 @@ export function RFIDImageImportDialog({
     }
   }
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (file) {
+    if (!file) return
+
+    // Check if it's a PDF
+    if (file.type === "application/pdf") {
+      await processPDF(file)
+    } else {
       processImage(file)
     }
+  }
+
+  const processPDF = async (pdfFile: File) => {
+    setIsProcessing(true)
+    setStep("processing")
+
+    try {
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("PDF processing timed out after 60 seconds")), 60000)
+      })
+
+      const pdfPromise = async () => {
+        // Dynamically import pdfjs-dist only on client side
+        const pdfjsLib = await import("pdfjs-dist")
+
+        // Configure worker - try HTTPS first
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+
+        const arrayBuffer = await pdfFile.arrayBuffer()
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+
+        let fullText = ""
+
+        // Extract text from all pages
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const page = await pdf.getPage(pageNum)
+          const textContent = await page.getTextContent()
+          const pageText = textContent.items
+            .map((item: any) => item.str)
+            .join(" ")
+          fullText += pageText + "\n"
+        }
+
+        return fullText
+      }
+
+      const fullText = await Promise.race([pdfPromise(), timeoutPromise]) as string
+
+      setExtractedText(fullText)
+
+      // Parse RFID numbers from extracted text
+      const rfids = parseRFIDsFromText(fullText)
+
+      setParsedRFIDs(rfids)
+      setStep("review")
+
+      if (rfids.length === 0) {
+        toast({
+          title: "No RFID Numbers Found",
+          description: "Unable to detect RFID numbers in the PDF. Please try again or enter manually.",
+          variant: "destructive",
+        })
+      } else {
+        toast({
+          title: "PDF Processed",
+          description: `Found ${rfids.length} RFID number(s)`,
+        })
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || "Unknown error"
+      toast({
+        title: "PDF Processing Error",
+        description: `Failed to process PDF: ${errorMessage}. Please try uploading a different file or paste text manually.`,
+        variant: "destructive",
+      })
+      setStep("input")
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const parseRFIDsFromText = (text: string): string[] => {
+    const foundRFIDs: string[] = []
+
+    // Pattern 1: McCall Livestock format
+    // Example: "0124 000174878652 0000/00/00 NONE 25/10/20"
+    const mccallPattern = /(\d{4})\s+(\d{12})(?:\s+\d{4}\/\d{2}\/\d{2}\s+\w+\s+\d{2}\/\d{2}\/\d{2})?/g
+    let mccallMatches = text.matchAll(mccallPattern)
+    for (const match of mccallMatches) {
+      foundRFIDs.push(`${match[1]}${match[2]}`)
+    }
+
+    // Pattern 2: Standard 15-16 digit RFID tags
+    // Example: "840003123456789" or "8400031234567890"
+    const standardPattern = /\b\d{15,16}\b/g
+    const standardMatches = text.match(standardPattern)
+    if (standardMatches) {
+      foundRFIDs.push(...standardMatches)
+    }
+
+    // Pattern 3: RFID with dashes or spaces
+    // Example: "840-003-123456789" or "840 003 123456789"
+    const formattedPattern = /\b\d{3}[-\s]\d{3}[-\s]\d{9,10}\b/g
+    const formattedMatches = text.match(formattedPattern)
+    if (formattedMatches) {
+      foundRFIDs.push(...formattedMatches.map(m => m.replace(/[-\s]/g, "")))
+    }
+
+    // Pattern 4: Visual tags in tables (often 4-6 digits)
+    // Example: "1234" or "123456" in structured data
+    const visualTagPattern = /\b\d{4,6}\b/g
+    const visualMatches = text.match(visualTagPattern)
+    if (visualMatches && foundRFIDs.length === 0) {
+      // Only use visual tags if no RFID tags found
+      foundRFIDs.push(...visualMatches)
+    }
+
+    // Pattern 5: Canadian CCIA format
+    // Example: "CA 124 000174878652"
+    const cciaPattern = /(?:CA|CAN)?\s*(\d{3,4})\s+(\d{12})/gi
+    const cciaMatches = text.matchAll(cciaPattern)
+    for (const match of cciaMatches) {
+      foundRFIDs.push(`${match[1]}${match[2]}`)
+    }
+
+    // Pattern 6: Line-by-line numbers (when in structured list)
+    const lines = text.split('\n')
+    for (const line of lines) {
+      const trimmed = line.trim()
+      // If line starts with digits and has 10+ consecutive digits
+      const lineMatch = trimmed.match(/^\d{10,16}$/)
+      if (lineMatch) {
+        foundRFIDs.push(lineMatch[0])
+      }
+    }
+
+    // Remove duplicates and filter valid RFIDs
+    return Array.from(new Set(foundRFIDs)).filter((rfid) => {
+      // Must be at least 4 digits (for visual tags) or 10+ for electronic tags
+      const isValid = rfid.length >= 4 && /^\d+$/.test(rfid)
+      // Exclude common false positives like dates, page numbers
+      const notFalsePositive = !rfid.match(/^(19|20)\d{2}$/) && // Not a year
+                               !rfid.match(/^(0?[1-9]|1[0-2])(0?[1-9]|[12]\d|3[01])$/) // Not a date
+      return isValid && notFalsePositive
+    })
   }
 
   const processImage = async (imageFile: Blob) => {
@@ -115,7 +268,12 @@ export function RFIDImageImportDialog({
     setStep("processing")
 
     try {
-      const result = await Tesseract.recognize(imageFile, "eng", {
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("OCR processing timed out after 60 seconds")), 60000)
+      })
+
+      const ocrPromise = Tesseract.recognize(imageFile, "eng", {
         logger: (m) => {
           if (m.status === "recognizing text") {
             // Could show progress here
@@ -123,36 +281,13 @@ export function RFIDImageImportDialog({
         },
       })
 
+      const result = await Promise.race([ocrPromise, timeoutPromise]) as Tesseract.RecognizeResult
+
       const text = result.data.text
       setExtractedText(text)
 
-      // Parse RFID numbers from text
-      // Common RFID patterns:
-      // - 15-digit numeric: 840003123456789
-      // - Alphanumeric with spaces or dashes: 840-003-123456789 or 840 003 123456789
-      // - Visual tag numbers: 123, 456, etc.
-      const rfidPatterns = [
-        /\b\d{15}\b/g, // 15-digit RFID
-        /\b\d{3}[-\s]?\d{3}[-\s]?\d{9}\b/g, // 840-003-123456789 format
-        /\b[A-Z0-9]{10,20}\b/g, // Alphanumeric 10-20 chars
-        /\b\d{3,4}\b/g, // Visual tag numbers (3-4 digits)
-      ]
-
-      let foundRFIDs: string[] = []
-      for (const pattern of rfidPatterns) {
-        const matches = text.match(pattern)
-        if (matches) {
-          foundRFIDs = foundRFIDs.concat(
-            matches.map((m) => m.replace(/[-\s]/g, ""))
-          )
-        }
-      }
-
-      // Remove duplicates and filter out common false positives
-      const uniqueRFIDs = Array.from(new Set(foundRFIDs)).filter((rfid) => {
-        // Must be at least 3 digits
-        return rfid.length >= 3
-      })
+      // Parse RFID numbers from extracted text
+      const uniqueRFIDs = parseRFIDsFromText(text)
 
       setParsedRFIDs(uniqueRFIDs)
       setStep("review")
@@ -170,10 +305,11 @@ export function RFIDImageImportDialog({
           description: `Found ${uniqueRFIDs.length} RFID number(s)`,
         })
       }
-    } catch (error) {
+    } catch (error: any) {
+      const errorMessage = error?.message || "Unknown error"
       toast({
         title: "OCR Error",
-        description: "Failed to process image. Please try again.",
+        description: `Failed to process image: ${errorMessage}. Please try uploading a different image or paste text manually.`,
         variant: "destructive",
       })
       setStep("input")
@@ -187,7 +323,7 @@ export function RFIDImageImportDialog({
     setParsedRFIDs(lines)
   }
 
-  const handleImport = () => {
+  const handleImport = async () => {
     if (parsedRFIDs.length === 0) {
       toast({
         title: "No RFID Numbers",
@@ -216,51 +352,79 @@ export function RFIDImageImportDialog({
       return
     }
 
-    let successCount = 0
-    let duplicateCount = 0
+    setIsImporting(true)
 
-    parsedRFIDs.forEach((rfid) => {
-      // Check if cattle with this RFID already exists
-      const existingCattle = dataStore
-        .getCattle()
-        .find((c) => c.rfidTag === rfid)
+    try {
+      let successCount = 0
+      let duplicateCount = 0
 
-      if (existingCattle) {
-        duplicateCount++
-        return
+      // Get existing cattle to check for duplicates
+      const existingCattle = await firebaseDataStore.getCattle()
+
+      for (const rfid of parsedRFIDs) {
+        // Check if cattle with this RFID already exists
+        const isDuplicate = existingCattle.find((c) => c.rfidTag === rfid)
+
+        if (isDuplicate) {
+          duplicateCount++
+          continue
+        }
+
+        // Create new cattle entry
+        const cattleData = {
+          tagNumber: rfid.slice(-4), // Use last 4 digits as visual tag
+          rfidTag: rfid,
+          penId: selectedPenId,
+          barnId: pen.barnId,
+          batchId: selectedBatchId && selectedBatchId !== "none" ? selectedBatchId : undefined,
+          stage: "receiving" as const,
+          arrivalDate: new Date().toISOString().split("T")[0],
+          breed: "Unknown",
+          sex: "Unknown" as const,
+          weight: 0,
+          arrivalWeight: 0,
+          lot: "Imported",
+          status: "Active" as const,
+          healthStatus: "Healthy" as const,
+          identificationMethod: "RFID",
+          notes: "Imported via RFID scan on " + new Date().toLocaleDateString(),
+        }
+
+        await firebaseDataStore.addCattle(cattleData as any)
+        successCount++
       }
 
-      // Create new cattle entry
-      const cattleData = {
-        rfidTag: rfid,
-        visualTag: rfid.slice(-4), // Use last 4 digits as visual tag
-        penId: selectedPenId,
-        barnId: pen.barnId,
-        batchId: selectedBatchId || undefined,
-        stage: "receiving" as const,
-        arrivalDate: new Date().toISOString().split("T")[0],
-        breed: "Unknown",
-        sex: "Unknown" as const,
-        arrivalWeight: 0,
-        notes: "Imported via RFID image scan",
+      // Update pen count
+      await firebasePenStore.updatePen(selectedPenId, {
+        currentCount: pen.currentCount + successCount,
+      })
+
+      toast({
+        title: "Import Complete",
+        description: `Successfully imported ${successCount} cattle. ${
+          duplicateCount > 0 ? `${duplicateCount} duplicates skipped.` : ""
+        }`,
+      })
+
+      // Reset and close
+      setStep("input")
+      setExtractedText("")
+      setParsedRFIDs([])
+      onOpenChange(false)
+
+      // Call onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess()
       }
-
-      dataStore.addCattle(cattleData)
-      successCount++
-    })
-
-    toast({
-      title: "Import Complete",
-      description: `Successfully imported ${successCount} cattle. ${
-        duplicateCount > 0 ? `${duplicateCount} duplicates skipped.` : ""
-      }`,
-    })
-
-    // Reset and close
-    setStep("input")
-    setExtractedText("")
-    setParsedRFIDs([])
-    onOpenChange(false)
+    } catch (error) {
+      toast({
+        title: "Import Error",
+        description: "Failed to import cattle. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsImporting(false)
+    }
   }
 
   const handleClose = () => {
@@ -276,16 +440,24 @@ export function RFIDImageImportDialog({
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Import RFID Tags via Image</DialogTitle>
+            <DialogTitle>Import RFID Tags</DialogTitle>
             <DialogDescription>
-              Capture or upload an image of RFID tag numbers to bulk import
-              cattle
+              Upload a PDF, capture an image, or paste RFID tag data to bulk import cattle
             </DialogDescription>
           </DialogHeader>
 
           {step === "input" && (
             <div className="space-y-4 py-4">
               <div className="grid grid-cols-2 gap-3">
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  variant="outline"
+                  className="h-24 flex-col gap-2"
+                >
+                  <Upload className="h-6 w-6" />
+                  <span className="text-center">Upload PDF/Image</span>
+                </Button>
+
                 <Button
                   onClick={startCamera}
                   variant="outline"
@@ -295,21 +467,12 @@ export function RFIDImageImportDialog({
                   <Camera className="h-6 w-6" />
                   Capture Photo
                 </Button>
-
-                <Button
-                  onClick={() => fileInputRef.current?.click()}
-                  variant="outline"
-                  className="h-24 flex-col gap-2"
-                >
-                  <Upload className="h-6 w-6" />
-                  Upload Image
-                </Button>
               </div>
 
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,application/pdf"
                 className="hidden"
                 onChange={handleFileUpload}
               />
@@ -341,21 +504,25 @@ export function RFIDImageImportDialog({
               <canvas ref={canvasRef} className="hidden" />
 
               <div className="space-y-2">
-                <Label>Or Enter Manually</Label>
+                <Label>Or Paste RFID Data</Label>
                 <Textarea
-                  placeholder="Enter RFID numbers, one per line&#10;840003123456789&#10;840003123456790"
-                  rows={4}
+                  placeholder="Paste from any RFID report or enter tag numbers&#10;&#10;Supported formats:&#10;• McCall: 0124 000174878652 0000/00/00 NONE 25/10/20&#10;• Standard: 840003123456789&#10;• Formatted: 840-003-123456789&#10;• CCIA: CA 124 000174878652&#10;• Visual tags: 1234&#10;• One number per line"
+                  rows={6}
                   onChange={(e) => {
-                    const lines = e.target.value
-                      .split("\n")
-                      .map((line) => line.trim())
-                      .filter(Boolean)
-                    if (lines.length > 0) {
-                      setParsedRFIDs(lines)
+                    const text = e.target.value
+                    if (!text.trim()) return
+
+                    const foundRFIDs = parseRFIDsFromText(text)
+
+                    if (foundRFIDs.length > 0) {
+                      setParsedRFIDs(foundRFIDs)
                       setStep("review")
                     }
                   }}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Supports McCall, CCIA, standard RFID formats, and visual tags
+                </p>
               </div>
             </div>
           )}
@@ -433,16 +600,16 @@ export function RFIDImageImportDialog({
               </div>
 
               <div className="space-y-2">
-                <Label>Assign to Batch (Optional)</Label>
+                <Label>Assign to Pen Group (Optional)</Label>
                 <Select
                   value={selectedBatchId}
                   onValueChange={setSelectedBatchId}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="No batch" />
+                    <SelectValue placeholder="No pen group" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Batch</SelectItem>
+                    <SelectItem value="none">No Pen Group</SelectItem>
                     {batches.map((batch) => (
                       <SelectItem key={batch.id} value={batch.id}>
                         {batch.name}
@@ -470,14 +637,22 @@ export function RFIDImageImportDialog({
                     setExtractedText("")
                     setParsedRFIDs([])
                   }}
+                  disabled={isImporting}
                 >
                   Back
                 </Button>
                 <Button
                   onClick={handleImport}
-                  disabled={parsedRFIDs.length === 0 || !selectedPenId}
+                  disabled={parsedRFIDs.length === 0 || !selectedPenId || isImporting}
                 >
-                  Import {parsedRFIDs.length} Cattle
+                  {isImporting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Importing...
+                    </>
+                  ) : (
+                    `Import ${parsedRFIDs.length} Cattle`
+                  )}
                 </Button>
               </>
             )}

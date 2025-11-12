@@ -40,18 +40,8 @@ export interface FarmUser {
 const TASKS_STORAGE_KEY = "cattle-tasks"
 const USERS_STORAGE_KEY = "farm-users"
 
-// Default users
-const DEFAULT_USERS: FarmUser[] = [
-  {
-    id: "user-1",
-    name: "Owner",
-    role: "owner",
-    active: true,
-    createdAt: new Date().toISOString(),
-  },
-]
-
-// Default tasks
+// Start with empty data - users and tasks should be created through the application
+const DEFAULT_USERS: FarmUser[] = []
 const DEFAULT_TASKS: Task[] = []
 
 class TaskStore {

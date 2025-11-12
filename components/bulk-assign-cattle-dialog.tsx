@@ -219,9 +219,6 @@ export function BulkAssignCattleDialog({
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <span className="font-medium">Tag #{cattle.tagNumber}</span>
-                          {cattle.name && (
-                            <span className="text-sm text-muted-foreground">- {cattle.name}</span>
-                          )}
                         </div>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs">

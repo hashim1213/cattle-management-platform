@@ -6,7 +6,10 @@
       "Bash(npm install:*)",
       "Bash(npx shadcn@latest add sheet:*)",
       "Bash(npx shadcn@latest add progress:*)",
-      "Bash(npx shadcn@latest add:*)"
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(pkill:*)",
+      "Bash(cat:*)",
+      "Bash(firebase deploy:*)"
     ],
     "deny": [],
     "ask": []

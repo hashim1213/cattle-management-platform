@@ -9,9 +9,10 @@ import { MetricCard } from "@/components/metric-card"
 import { QuickEntryDialog } from "@/components/quick-entry-dialog"
 import { LifecycleSettingsDialog } from "@/components/lifecycle-settings-dialog"
 import { useLifecycleConfig } from "@/hooks/use-lifecycle-config"
+import { useFarmSettings } from "@/hooks/use-farm-settings"
 import Link from "next/link"
 import Image from "next/image"
-import { dataStore } from "@/lib/data-store"
+import { firebaseDataStore } from "@/lib/data-store-firebase"
 import { exportToCSV, generateCattleReport } from "@/lib/export-utils"
 import { useRouter } from "next/navigation"
 import {
@@ -98,7 +99,15 @@ export default function DashboardPage() {
   const [alerts, setAlerts] = useState<any[]>([])
   const [stageCounts, setStageCounts] = useState<Record<string, number>>({})
   const { stages, reorderStages } = useLifecycleConfig()
+  const { isSetupCompleted } = useFarmSettings()
   const router = useRouter()
+
+  // Redirect to onboarding if not completed
+  useEffect(() => {
+    if (!isSetupCompleted) {
+      router.push("/onboarding")
+    }
+  }, [isSetupCompleted, router])
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -120,67 +129,74 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
-    // Load analytics
-    const data = dataStore.getAnalytics()
-    setAnalytics(data)
+    const loadData = async () => {
+      try {
+        // Load analytics
+        const data = await firebaseDataStore.getAnalytics()
+        setAnalytics(data)
 
-    // Get all cattle data
-    const cattle = dataStore.getCattle()
-    const activeCattle = cattle.filter((c) => c.status === "Active")
+        // Get all cattle data
+        const cattle = await firebaseDataStore.getCattle()
+        const activeCattle = cattle.filter((c) => c.status === "Active")
 
-    // Calculate stage counts
-    const counts: Record<string, number> = {}
-    activeCattle.forEach((c) => {
-      counts[c.stage] = (counts[c.stage] || 0) + 1
-    })
-    setStageCounts(counts)
+        // Calculate stage counts
+        const counts: Record<string, number> = {}
+        activeCattle.forEach((c) => {
+          counts[c.stage] = (counts[c.stage] || 0) + 1
+        })
+        setStageCounts(counts)
 
-    // Generate alerts
-    const feed = dataStore.getFeedInventory()
-    const newAlerts = []
+        // Generate alerts
+        const newAlerts = []
 
-    // Feed inventory alerts
-    feed.forEach((f) => {
-      const daysRemaining = f.dailyUsage > 0 ? f.quantity / f.dailyUsage : 999
-      if (daysRemaining < 7) {
-        newAlerts.push({
-          id: `feed-${f.id}`,
-          severity: daysRemaining < 3 ? "danger" : "warning",
-          title: `Low ${f.name} Inventory`,
-          description: `${f.name} below 7 days supply`,
-          metric: `${Math.floor(daysRemaining)} days remaining`,
+        // Cost of gain alert
+        if (data.costPerHead > 1800) {
+          newAlerts.push({
+            id: "cost-high",
+            severity: "warning",
+            title: "High Cost Per Head",
+            description: "Current cost exceeds target",
+            metric: `$${data.costPerHead.toFixed(0)}`,
+          })
+        }
+
+        // Health status alert
+        const healthyCattle = cattle.filter((c) => c.healthStatus === "Healthy" && c.status === "Active")
+        if (healthyCattle.length > 0 && healthyCattle.length === cattle.filter((c) => c.status === "Active").length) {
+          newAlerts.push({
+            id: "health-good",
+            severity: "success",
+            title: "Cattle Health Good",
+            description: "All cattle healthy",
+            metric: `${healthyCattle.length} head`,
+          })
+        }
+
+        setAlerts(newAlerts)
+      } catch (error) {
+        console.error("Failed to load dashboard data:", error)
+        setAnalytics({
+          totalCattle: 0,
+          activeCattle: 0,
+          healthyCount: 0,
+          sickCount: 0,
+          avgWeight: 0,
+          avgDailyGain: 0,
+          totalValue: 0,
+          totalInventoryValue: 0,
+          costPerHead: 0,
+          bulls: { count: 0, herdSires: 0, herdSireProspects: 0 },
+          cows: { count: 0, pregnant: 0, open: 0, exposed: 0 },
+          calves: { count: 0, unweaned: 0, weaned: 0 },
         })
       }
-    })
-
-    // Cost of gain alert
-    if (data.costPerHead > 1800) {
-      newAlerts.push({
-        id: "cost-high",
-        severity: "warning",
-        title: "High Cost Per Head",
-        description: "Current cost exceeds target",
-        metric: `$${data.costPerHead.toFixed(0)}`,
-      })
     }
 
-    // Health status alert
-    const healthyCattle = cattle.filter((c) => c.healthStatus === "Healthy" && c.status === "Active")
-    if (healthyCattle.length === cattle.filter((c) => c.status === "Active").length) {
-      newAlerts.push({
-        id: "health-good",
-        severity: "success",
-        title: "Cattle Health Good",
-        description: "All cattle healthy",
-        metric: `${healthyCattle.length} head`,
-      })
-    }
-
-    setAlerts(newAlerts)
+    loadData()
   }, [])
 
-  const handleExportCattle = () => {
-    const cattle = dataStore.getCattle()
+  const handleExportCattle = async () => {
+    const cattle = await firebaseDataStore.getCattle()
     const report = generateCattleReport(cattle)
     exportToCSV(report, "cattle-inventory")
   }
@@ -228,7 +244,6 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between gap-2">
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-foreground">Dashboard</h1>
-              <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Comprehensive herd overview</p>
             </div>
             <div className="flex gap-2 flex-wrap">
               <Button variant="outline" size="sm" onClick={handleExportCattle} className="hidden sm:flex">
@@ -400,30 +415,30 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
             </Link>
-            <Link href="/feed">
+            <Link href="/health">
+              <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
+                <CardContent className="p-4 sm:p-6 text-center">
+                  <Package className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-primary" />
+                  <h3 className="font-semibold text-sm sm:text-base">Health</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Track health records</p>
+                </CardContent>
+              </Card>
+            </Link>
+            <Link href="/inventory">
               <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
                 <CardContent className="p-4 sm:p-6 text-center">
                   <Sprout className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-primary" />
-                  <h3 className="font-semibold text-sm sm:text-base">Feed Inventory</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Track feed levels</p>
+                  <h3 className="font-semibold text-sm sm:text-base">Inventory</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Manage supplies</p>
                 </CardContent>
               </Card>
             </Link>
-            <Link href="/pastures">
+            <Link href="/costs">
               <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
                 <CardContent className="p-4 sm:p-6 text-center">
-                  <MapPin className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-primary" />
-                  <h3 className="font-semibold text-sm sm:text-base">Pastures</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Manage grazing</p>
-                </CardContent>
-              </Card>
-            </Link>
-            <Link href="/reports">
-              <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
-                <CardContent className="p-4 sm:p-6 text-center">
-                  <FileText className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-primary" />
-                  <h3 className="font-semibold text-sm sm:text-base">Reports</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Generate reports</p>
+                  <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-primary" />
+                  <h3 className="font-semibold text-sm sm:text-base">Financial</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">View costs</p>
                 </CardContent>
               </Card>
             </Link>

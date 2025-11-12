@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button"
 import { MoreVertical, Edit, Trash2, Eye } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
-import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { dataStore, type Cattle } from "@/lib/data-store"
+import { usePenStore } from "@/hooks/use-pen-store"
 
 interface CattleGridProps {
   searchQuery: string
@@ -17,26 +17,15 @@ interface CattleGridProps {
     status: string
     sex: string
     stage: string
-    lot: string
-  }
-}
-
-function getCattleIcon(sex: string) {
-  switch (sex) {
-    case "Bull":
-      return "/images/bull.png"
-    case "Cow":
-      return "/images/cow.png"
-    case "Steer":
-    case "Heifer":
-      return "/images/calf.png"
-    default:
-      return "/images/cow.png"
+    healthStatus: string
+    penId: string
+    barnId: string
   }
 }
 
 export function CattleGrid({ searchQuery, filters }: CattleGridProps) {
   const [cattle, setCattle] = useState<Cattle[]>([])
+  const { pens = [] } = usePenStore()
   const router = useRouter()
 
   useEffect(() => {
@@ -46,7 +35,6 @@ export function CattleGrid({ searchQuery, filters }: CattleGridProps) {
   const filteredCattle = cattle.filter((animal) => {
     const matchesSearch = searchQuery
       ? animal.tagNumber.includes(searchQuery) ||
-        (animal.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
         animal.breed.toLowerCase().includes(searchQuery.toLowerCase()) ||
         animal.lot.toLowerCase().includes(searchQuery.toLowerCase())
       : true
@@ -54,9 +42,14 @@ export function CattleGrid({ searchQuery, filters }: CattleGridProps) {
     const matchesStatus = filters.status === "all" || animal.status === filters.status
     const matchesSex = filters.sex === "all" || animal.sex === filters.sex
     const matchesStage = filters.stage === "all" || animal.stage === filters.stage
-    const matchesLot = filters.lot === "all" || animal.lot === filters.lot
+    const matchesHealthStatus = filters.healthStatus === "all" || animal.healthStatus === filters.healthStatus
+    const matchesPen = filters.penId === "all" || animal.penId === filters.penId
 
-    return matchesSearch && matchesStatus && matchesSex && matchesStage && matchesLot
+    // For barn filter, check if the animal's pen belongs to the selected barn
+    const animalPen = pens.find(p => p.id === animal.penId)
+    const matchesBarn = filters.barnId === "all" || (animalPen && animalPen.barnId === filters.barnId)
+
+    return matchesSearch && matchesStatus && matchesSex && matchesStage && matchesHealthStatus && matchesPen && matchesBarn
   })
 
   return (
@@ -69,14 +62,11 @@ export function CattleGrid({ searchQuery, filters }: CattleGridProps) {
         >
           <CardHeader className="pb-3">
             <div className="flex items-start gap-3">
-              <div className="relative w-16 h-16 flex-shrink-0">
-                <Image src={getCattleIcon(animal.sex)} alt={animal.sex} fill className="object-contain" />
-              </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-bold text-lg text-foreground truncate">
-                  {animal.name || <span className="text-muted-foreground italic">No name</span>}
+                  Tag #{animal.tagNumber}
                 </h3>
-                <p className="text-sm text-muted-foreground">Tag #{animal.tagNumber}</p>
+                <p className="text-sm text-muted-foreground">{animal.breed} • {animal.sex}</p>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

@@ -11,12 +11,15 @@ export interface Batch {
   supplier: string
   headCount: number
   averagePurchaseWeight: number
-  averagePurchasePrice: number
+  purchasePricePerPound: number // $/lb (changed from per head to per pound)
   totalInvestment: number
   notes?: string
   cattleIds: string[] // Links to cattle in this batch
   createdAt: string
   updatedAt: string
+
+  // Legacy field for backward compatibility
+  averagePurchasePrice?: number // Deprecated: old per-head pricing
 }
 
 const BATCHES_STORAGE_KEY = "cattle-batches"
@@ -36,21 +39,26 @@ class BatchStore {
       const stored = localStorage.getItem(BATCHES_STORAGE_KEY)
       this.batches = stored ? JSON.parse(stored) : []
 
-      // Migrate old data: calculate totalInvestment if missing
+      // Migrate old data
       let needsSave = false
       this.batches = this.batches.map((batch) => {
-        if (batch.totalInvestment === undefined || batch.totalInvestment === null) {
+        const updated: any = { ...batch, cattleIds: batch.cattleIds || [] }
+
+        // Migrate from per-head to per-pound pricing
+        if (batch.averagePurchasePrice && !batch.purchasePricePerPound) {
           needsSave = true
-          return {
-            ...batch,
-            totalInvestment: batch.headCount * batch.averagePurchasePrice,
-            cattleIds: batch.cattleIds || [],
-          }
+          // Convert old per-head price to per-pound
+          updated.purchasePricePerPound = batch.averagePurchasePrice / batch.averagePurchaseWeight
         }
-        return {
-          ...batch,
-          cattleIds: batch.cattleIds || [],
+
+        // Calculate totalInvestment if missing (using new per-pound method)
+        if (updated.totalInvestment === undefined || updated.totalInvestment === null) {
+          needsSave = true
+          const pricePerPound = updated.purchasePricePerPound || 0
+          updated.totalInvestment = batch.headCount * batch.averagePurchaseWeight * pricePerPound
         }
+
+        return updated
       })
 
       if (needsSave) {
@@ -90,9 +98,10 @@ class BatchStore {
     return this.batches.find((b) => b.id === id)
   }
 
-  addBatch(batch: Omit<Batch, "id" | "createdAt" | "updatedAt" | "totalInvestment"> & { totalInvestment?: number }): Batch {
-    // Auto-calculate totalInvestment if not provided
-    const totalInvestment = batch.totalInvestment ?? (batch.headCount * batch.averagePurchasePrice)
+  addBatch(batch: Omit<Batch, "id" | "createdAt" | "updatedAt" | "totalInvestment" | "averagePurchasePrice"> & { totalInvestment?: number }): Batch {
+    // Auto-calculate totalInvestment if not provided (using per-pound pricing)
+    const totalInvestment = batch.totalInvestment ??
+      (batch.headCount * batch.averagePurchaseWeight * batch.purchasePricePerPound)
 
     const newBatch: Batch = {
       ...batch,

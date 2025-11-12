@@ -217,7 +217,7 @@ export function MortalityTrackingDialog({
               <SelectContent>
                 {availableCattle.map((cattle) => (
                   <SelectItem key={cattle.id} value={cattle.id}>
-                    Tag #{cattle.tagNumber} {cattle.name ? `- ${cattle.name}` : ""} ({cattle.breed} {cattle.sex})
+                    Tag #{cattle.tagNumber} ({cattle.breed} {cattle.sex})
                   </SelectItem>
                 ))}
               </SelectContent>

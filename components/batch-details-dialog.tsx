@@ -49,7 +49,9 @@ export function BatchDetailsDialog({ batchId, open, onOpenChange }: BatchDetails
     }
   })
 
-  const batchInvestment = batch.totalInvestment || (batch.headCount * batch.averagePurchasePrice) || 0
+  const batchInvestment = batch.totalInvestment ||
+    (batch.headCount * batch.averagePurchaseWeight * batch.purchasePricePerPound) ||
+    (batch.headCount * (batch.averagePurchasePrice || 0)) || 0
   const totalCosts = batchInvestment + totalFeedCost + totalTreatmentCost
   const currentProfitLoss = totalCurrentValue - totalCosts
   const roi = totalCosts > 0 ? ((currentProfitLoss / totalCosts) * 100) : 0
@@ -139,10 +141,10 @@ export function BatchDetailsDialog({ batchId, open, onOpenChange }: BatchDetails
             </Card>
           </div>
 
-          {/* Batch Stats */}
+          {/* Pen Group Stats */}
           <Card>
             <CardContent className="p-4">
-              <h3 className="font-semibold mb-3">Batch Statistics</h3>
+              <h3 className="font-semibold mb-3">Pen Group Statistics</h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div>
                   <p className="text-sm text-muted-foreground">Original Head Count</p>

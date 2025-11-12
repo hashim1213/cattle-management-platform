@@ -29,7 +29,6 @@ export function AddCattleDialog({ open, onOpenChange }: AddCattleDialogProps) {
   const [formData, setFormData] = useState({
     // Basic Info
     tagNumber: "",
-    name: "",
     breed: "",
     sex: "",
     birthDate: "",
@@ -62,12 +61,10 @@ export function AddCattleDialog({ open, onOpenChange }: AddCattleDialogProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("[v0] Adding cattle:", formData)
     onOpenChange(false)
     // Reset form
     setFormData({
       tagNumber: "",
-      name: "",
       breed: "",
       sex: "",
       birthDate: "",
@@ -108,26 +105,15 @@ export function AddCattleDialog({ open, onOpenChange }: AddCattleDialogProps) {
             </TabsList>
 
             <TabsContent value="basic" className="space-y-4 mt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="tagNumber">Tag Number *</Label>
-                  <Input
-                    id="tagNumber"
-                    placeholder="e.g., 1251"
-                    value={formData.tagNumber}
-                    onChange={(e) => setFormData({ ...formData, tagNumber: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    placeholder="e.g., Big Red"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="tagNumber">Tag Number *</Label>
+                <Input
+                  id="tagNumber"
+                  placeholder="e.g., 1251"
+                  value={formData.tagNumber}
+                  onChange={(e) => setFormData({ ...formData, tagNumber: e.target.value })}
+                  required
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">

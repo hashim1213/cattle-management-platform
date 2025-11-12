@@ -1,13 +1,27 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { penStore, type Pen, type Barn } from "@/lib/pen-store"
+import { firebasePenStore as penStore, type Pen, type Barn } from "@/lib/pen-store-firebase"
 
 export function usePenStore() {
-  const [pens, setPens] = useState<Pen[]>(penStore.getPens())
-  const [barns, setBarns] = useState<Barn[]>(penStore.getBarns())
+  const [pens, setPens] = useState<Pen[]>([])
+  const [barns, setBarns] = useState<Barn[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Load initial data
+    const loadData = async () => {
+      setLoading(true)
+      await penStore.loadBarns()
+      await penStore.loadPens()
+      setPens(penStore.getPens())
+      setBarns(penStore.getBarns())
+      setLoading(false)
+    }
+
+    loadData()
+
+    // Subscribe to changes
     const unsubscribe = penStore.subscribe(() => {
       setPens(penStore.getPens())
       setBarns(penStore.getBarns())
@@ -19,6 +33,7 @@ export function usePenStore() {
   return {
     pens,
     barns,
+    loading,
     getPens: (barnId?: string) => penStore.getPens(barnId),
     getPen: (id: string) => penStore.getPen(id),
     getBarn: (id: string) => penStore.getBarn(id),
@@ -32,6 +47,5 @@ export function usePenStore() {
     deleteBarn: (id: string) => penStore.deleteBarn(id),
     updatePenCount: (penId: string, delta: number) => penStore.updatePenCount(penId, delta),
     getPenAnalytics: (barnId?: string) => penStore.getPenAnalytics(barnId),
-    resetToDefault: () => penStore.resetToDefault(),
   }
 }

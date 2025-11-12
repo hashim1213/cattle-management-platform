@@ -16,7 +16,9 @@ import { dataStore, type Cattle } from "@/lib/data-store"
 import { usePenStore } from "@/hooks/use-pen-store"
 import { useActivityStore } from "@/hooks/use-activity-store"
 import { useCostCalculator } from "@/hooks/use-cost-calculator"
-import { Eye, DollarSign, TrendingUp, TrendingDown, Plus, Activity } from "lucide-react"
+import { useRationStore } from "@/hooks/use-ration-store"
+import { rationCalculator } from "@/lib/ration-calculator"
+import { Eye, DollarSign, TrendingUp, TrendingDown, Plus, Activity, Cookie, AlertCircle } from "lucide-react"
 import { ActivityLogItem } from "@/components/activity-log-item"
 
 interface PenDetailsDialogProps {
@@ -31,6 +33,7 @@ export function PenDetailsDialog({ penId, open, onOpenChange, onAssignCattle }: 
   const { getPen, barns } = usePenStore()
   const { getEntityActivities } = useActivityStore()
   const { calculatePenCosts } = useCostCalculator()
+  const { getPenAssignment, activeRations } = useRationStore()
 
   if (!penId) return null
 
@@ -39,6 +42,21 @@ export function PenDetailsDialog({ penId, open, onOpenChange, onAssignCattle }: 
 
   const barn = barns.find((b) => b.id === pen.barnId)
   const cattle = dataStore.getCattle().filter((c) => c.penId === penId && c.status === "Active")
+
+  // Get current ration assignment
+  const rationAssignment = getPenAssignment(penId)
+  const currentRation = rationAssignment
+    ? activeRations.find(r => r.id === rationAssignment.rationId)
+    : null
+
+  // Calculate days remaining for feeds used by this pen
+  const penFeedStatus = currentRation
+    ? rationCalculator.calculateInventoryStatus().filter(status =>
+        currentRation.ingredients.some(ing => ing.feedId === status.feedId)
+      )
+    : []
+
+  const lowFeedAlerts = penFeedStatus.filter(s => s.status === "low" || s.status === "critical")
 
   // Use automated cost calculation
   const penCosts = calculatePenCosts(penId)
@@ -142,6 +160,108 @@ export function PenDetailsDialog({ penId, open, onOpenChange, onAssignCattle }: 
             </Card>
           </div>
 
+          {/* Current Ration */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Cookie className="h-4 w-4" />
+                <h3 className="font-semibold text-sm">Feed Ration</h3>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  onOpenChange(false)
+                  router.push("/rations")
+                }}
+              >
+                {currentRation ? "Change" : "Assign"} Ration
+              </Button>
+            </div>
+
+            {currentRation ? (
+              <div className="space-y-3">
+                <Card>
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <p className="font-semibold">{currentRation.name}</p>
+                        <Badge variant="outline" className="text-xs capitalize mt-1">
+                          {currentRation.stage}
+                        </Badge>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold">
+                          {currentRation.totalLbsPerHead.toFixed(2)} lbs/head/day
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          ${(currentRation.kpis.costPerHead * cattle.length).toFixed(2)}/day
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Ingredient Breakdown */}
+                    <div className="space-y-2 pt-3 border-t">
+                      <p className="text-xs font-medium text-muted-foreground">Ingredients:</p>
+                      {currentRation.ingredients.map((ingredient) => (
+                        <div key={ingredient.id} className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">{ingredient.feedName}</span>
+                          <span className="font-medium">
+                            {ingredient.amountLbs.toFixed(2)} lbs ({ingredient.percentage.toFixed(1)}%)
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Target KPIs */}
+                    <div className="grid grid-cols-2 gap-2 pt-3 border-t mt-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Target ADG</p>
+                        <p className="text-sm font-semibold">{currentRation.kpis.targetADG.toFixed(2)} lbs</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Feed:Gain</p>
+                        <p className="text-sm font-semibold">{currentRation.kpis.targetFeedConversion.toFixed(2)}:1</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Low Feed Alerts */}
+                {lowFeedAlerts.length > 0 && (
+                  <Card className="border-amber-500">
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <AlertCircle className="h-4 w-4 text-amber-600" />
+                        <p className="text-sm font-semibold text-amber-600">Low Feed Inventory</p>
+                      </div>
+                      <div className="space-y-2">
+                        {lowFeedAlerts.map((alert) => (
+                          <div key={alert.feedId} className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">{alert.feedName}</span>
+                            <Badge variant={alert.status === "critical" ? "destructive" : "default"} className="text-xs">
+                              {alert.daysRemaining.toFixed(1)} days
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <Cookie className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">No ration assigned to this pen</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Assign a ration to track feed consumption and performance
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
           {/* Cattle List */}
           <div className="space-y-2">
             <h3 className="font-semibold text-sm">Cattle in this Pen</h3>
@@ -166,9 +286,6 @@ export function PenDetailsDialog({ penId, open, onOpenChange, onAssignCattle }: 
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <span className="font-semibold">Tag #{animal.tagNumber}</span>
-                            {animal.name && (
-                              <span className="text-sm text-muted-foreground">- {animal.name}</span>
-                            )}
                           </div>
                           <div className="flex items-center gap-2 mt-1">
                             <Badge variant="outline" className="text-xs">

@@ -31,7 +31,6 @@ export function AddFeedDialog({ open, onOpenChange }: AddFeedDialogProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     // TODO: Add feed to database
-    console.log("[v0] Adding feed:", formData)
     onOpenChange(false)
     // Reset form
     setFormData({
