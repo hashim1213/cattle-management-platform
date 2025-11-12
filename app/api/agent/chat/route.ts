@@ -2,10 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import OpenAI from "openai"
 import { actionExecutor } from "@/lib/agent/action-executor"
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
-
 const SYSTEM_PROMPT = `You are a helpful Farm Assistant for a cattle management platform. You help farmers manage their ENTIRE cattle operation through natural conversation. You have FULL CONTROL over all aspects of the farm.
 
 CAPABILITIES - You can manage everything:
@@ -246,6 +242,10 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
+
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
 
     // Call OpenAI
     const completion = await openai.chat.completions.create({

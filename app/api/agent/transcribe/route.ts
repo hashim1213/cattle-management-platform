@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import OpenAI from "openai"
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
-
 export async function POST(request: NextRequest) {
   try {
     if (!process.env.OPENAI_API_KEY) {
@@ -13,6 +9,10 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
+
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
 
     const formData = await request.formData()
     const audioFile = formData.get("audio") as File

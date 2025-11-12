@@ -7,6 +7,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { AlertCard } from "@/components/alert-card"
 import { MetricCard } from "@/components/metric-card"
 import { LifecycleSettingsDialog } from "@/components/lifecycle-settings-dialog"
+import { FeedMetricsCard } from "@/components/feed-metrics-card"
+import { PenUtilizationCard } from "@/components/pen-utilization-card"
 import { useLifecycleConfig } from "@/hooks/use-lifecycle-config"
 import { useFarmSettings } from "@/hooks/use-farm-settings"
 import Link from "next/link"
@@ -409,6 +411,15 @@ export default function DashboardPage() {
             {metrics.map((metric, index) => (
               <MetricCard key={index} {...metric} />
             ))}
+          </div>
+        </section>
+
+        {/* Feed & Pen Management */}
+        <section>
+          <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-foreground">Operations Overview</h2>
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-2">
+            <FeedMetricsCard />
+            <PenUtilizationCard />
           </div>
         </section>
 
