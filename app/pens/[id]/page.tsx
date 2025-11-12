@@ -38,18 +38,32 @@ export default function PenDetailPage() {
 
   useEffect(() => {
     const loadPenData = async () => {
-      const penData = getPen(params.id as string)
-      if (penData) {
-        setPen(penData)
-        const barnData = barns.find(b => b.id === penData.barnId)
-        setBarn(barnData)
+      try {
+        console.log("Loading pen detail page data...")
+        const penData = getPen(params.id as string)
+        console.log("Pen data:", penData)
 
-        // Load cattle in this pen
-        const allCattle = await firebaseDataStore.getCattle()
-        const penCattle = allCattle.filter(c => c.penId === params.id)
-        setCattle(penCattle)
+        if (penData) {
+          setPen(penData)
+          const barnData = barns.find(b => b.id === penData.barnId)
+          setBarn(barnData)
+
+          // Load cattle in this pen
+          const allCattle = await firebaseDataStore.getCattle()
+          console.log(`Total cattle loaded: ${allCattle.length}`)
+          const penCattle = allCattle.filter(c => c.penId === params.id)
+          console.log(`Cattle in this pen: ${penCattle.length}`)
+          setCattle(penCattle)
+        } else {
+          console.error("Pen not found:", params.id)
+        }
+      } catch (error) {
+        console.error("Error loading pen data:", error)
+        // Set empty state on error
+        setCattle([])
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
 
     loadPenData()
@@ -80,13 +94,13 @@ export default function PenDetailPage() {
   }
 
   // Calculate total value from cattle
-  const calculatedTotalValue = cattle.reduce((sum, c) => {
+  const calculatedTotalValue = Array.isArray(cattle) ? cattle.reduce((sum, c) => {
     const marketPricePerPound = 1.65
     const cattleValue = c.currentValue || (c.weight * marketPricePerPound)
     return sum + cattleValue
-  }, 0)
+  }, 0) : 0
 
-  const displayTotalValue = pen?.totalValue || calculatedTotalValue
+  const displayTotalValue = pen?.totalValue ?? calculatedTotalValue
 
   if (loading || !pen) {
     return (
@@ -128,11 +142,23 @@ export default function PenDetailPage() {
                 )}
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setIsFeedDialogOpen(true)}>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    console.log("Record Feed button clicked")
+                    setIsFeedDialogOpen(true)
+                  }}
+                >
                   <Wheat className="h-4 w-4 mr-2" />
                   Record Feed
                 </Button>
-                <Button variant="outline" onClick={() => setIsMedicationDialogOpen(true)}>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    console.log("Record Meds button clicked")
+                    setIsMedicationDialogOpen(true)
+                  }}
+                >
                   <Syringe className="h-4 w-4 mr-2" />
                   Record Meds
                 </Button>
@@ -207,6 +233,7 @@ export default function PenDetailPage() {
                       size="sm"
                       variant="outline"
                       onClick={() => {
+                        console.log("Update Value button clicked")
                         setPenValue(displayTotalValue.toString())
                         setIsValueDialogOpen(true)
                       }}
@@ -277,7 +304,10 @@ export default function PenDetailPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => router.push(`/cattle/${c.id}`)}
+                              onClick={() => {
+                                console.log("View cattle button clicked:", c.id)
+                                router.push(`/cattle/${c.id}`)
+                              }}
                             >
                               View
                             </Button>
@@ -293,23 +323,27 @@ export default function PenDetailPage() {
         </div>
       </div>
 
-      <PenFeedDialog
-        open={isFeedDialogOpen}
-        onOpenChange={setIsFeedDialogOpen}
-        pen={pen}
-        onSuccess={() => {
-          // Refresh data if needed
-        }}
-      />
+      {pen && (
+        <>
+          <PenFeedDialog
+            open={isFeedDialogOpen}
+            onOpenChange={setIsFeedDialogOpen}
+            pen={pen}
+            onSuccess={() => {
+              // Refresh data if needed
+            }}
+          />
 
-      <PenMedicationDialog
-        open={isMedicationDialogOpen}
-        onOpenChange={setIsMedicationDialogOpen}
-        pen={pen}
-        onSuccess={() => {
-          // Refresh data if needed
-        }}
-      />
+          <PenMedicationDialog
+            open={isMedicationDialogOpen}
+            onOpenChange={setIsMedicationDialogOpen}
+            pen={pen}
+            onSuccess={() => {
+              // Refresh data if needed
+            }}
+          />
+        </>
+      )}
 
       {/* Update Pen Value Dialog */}
       <Dialog open={isValueDialogOpen} onOpenChange={setIsValueDialogOpen}>
