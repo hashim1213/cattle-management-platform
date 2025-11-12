@@ -67,7 +67,8 @@ export default function PenDetailPage() {
     }
 
     loadPenData()
-  }, [params.id, pens, barns])
+    // Only reload when pen ID changes or when pens/barns length changes (not reference)
+  }, [params.id, pens.length, barns.length, getPen])
 
   const handleUpdatePenValue = async () => {
     if (!pen) {
@@ -301,16 +302,17 @@ export default function PenDetailPage() {
                             </Badge>
                           </td>
                           <td className="p-3">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                console.log("View cattle button clicked:", c.id)
-                                router.push(`/cattle/${c.id}`)
-                              }}
-                            >
-                              View
-                            </Button>
+                            <Link href={`/cattle/${c.id}`}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  console.log("View cattle button clicked:", c.id)
+                                }}
+                              >
+                                View
+                              </Button>
+                            </Link>
                           </td>
                         </tr>
                       ))}
