@@ -12,7 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent } from "@/components/ui/card"
-import { dataStore, type Cattle } from "@/lib/data-store"
+import { dataStore, type Cattle } from "@/lib/data-store-firebase"
 import { usePenStore } from "@/hooks/use-pen-store"
 import { useActivityStore } from "@/hooks/use-activity-store"
 import { useCostCalculator } from "@/hooks/use-cost-calculator"

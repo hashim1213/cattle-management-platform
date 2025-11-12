@@ -28,7 +28,7 @@ export default function HealthOverviewPage() {
       try {
         const [cattleData, healthData] = await Promise.all([
           firebaseDataStore.getCattle(),
-          firebaseDataStore.getHealthRecords()
+          firebaseDataStore.getAllHealthRecords()
         ])
         setCattle(cattleData)
         setHealthRecords(healthData)

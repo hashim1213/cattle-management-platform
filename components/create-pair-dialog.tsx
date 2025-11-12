@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { usePairsStore } from "@/hooks/use-pairs-store"
-import { dataStore } from "@/lib/data-store"
+import { dataStore } from "@/lib/data-store-firebase"
 import { useToast } from "@/hooks/use-toast"
 
 interface CreatePairDialogProps {

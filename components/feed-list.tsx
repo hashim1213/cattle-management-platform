@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Package, AlertTriangle, CheckCircle2, Minus, Plus } from "lucide-react"
-import { type FeedInventory } from "@/lib/data-store"
+import { type FeedInventory } from "@/lib/data-store-firebase"
 
 interface FeedListProps {
   feedInventory: FeedInventory[]

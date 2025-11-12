@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Save, Plus } from "lucide-react"
 import { usePenStore } from "@/hooks/use-pen-store"
 import { useActivityStore } from "@/hooks/use-activity-store"
-import type { Barn } from "@/lib/pen-store"
+import type { Barn } from "@/lib/pen-store-firebase"
 
 interface ManageBarnDialogProps {
   barn?: Barn | null

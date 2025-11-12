@@ -8,7 +8,7 @@ import { MoreVertical, Edit, Trash2, Eye } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { dataStore, type Cattle } from "@/lib/data-store"
+import { dataStore, type Cattle } from "@/lib/data-store-firebase"
 import { usePenStore } from "@/hooks/use-pen-store"
 
 interface CattleGridProps {

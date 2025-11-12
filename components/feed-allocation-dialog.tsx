@@ -21,7 +21,7 @@ import { useEnhancedFeedStore } from "@/hooks/use-enhanced-feed-store"
 import { usePenStore } from "@/hooks/use-pen-store"
 import { useActivityStore } from "@/hooks/use-activity-store"
 import { useToast } from "@/hooks/use-toast"
-import { dataStore } from "@/lib/data-store"
+import { dataStore } from "@/lib/data-store-firebase"
 import { Wheat, Plus, Trash2, DollarSign, Users, Scale } from "lucide-react"
 
 interface FeedAllocationDialogProps {
