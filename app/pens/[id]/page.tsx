@@ -113,42 +113,46 @@ export default function PenDetailPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-background p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
+      <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
           {/* Header */}
-          <div>
+          <div className="space-y-4">
             <Link
               href="/pens"
-              className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-2"
+              className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-2 touch-manipulation inline-flex min-h-[44px] items-center"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to Pens
             </Link>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-3">
-                  <Grid3x3 className="h-8 w-8 text-muted-foreground" />
-                  <h1 className="text-3xl font-bold">{pen.name}</h1>
-                  <Badge variant={utilizationRate > 80 ? "destructive" : utilizationRate > 50 ? "default" : "secondary"}>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                  <Grid3x3 className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground flex-shrink-0" />
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold truncate">{pen.name}</h1>
+                  <Badge
+                    variant={utilizationRate > 80 ? "destructive" : utilizationRate > 50 ? "default" : "secondary"}
+                    className="text-xs sm:text-sm px-2 sm:px-3 py-1"
+                  >
                     {utilizationRate.toFixed(0)}% Full
                   </Badge>
                 </div>
                 {barn && (
-                  <p className="text-muted-foreground mt-1">
+                  <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">
                     {barn.name} • {barn.location}
                   </p>
                 )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap sm:flex-nowrap">
                 <Button
                   variant="outline"
                   onClick={() => {
                     console.log("Record Feed button clicked")
                     setIsFeedDialogOpen(true)
                   }}
+                  className="touch-manipulation min-h-[44px] flex-1 sm:flex-none"
                 >
-                  <Wheat className="h-4 w-4 mr-2" />
-                  Record Feed
+                  <Wheat className="h-5 w-5 sm:h-4 sm:w-4 sm:mr-2" />
+                  <span className="sm:inline">Feed</span>
                 </Button>
                 <Button
                   variant="outline"
@@ -156,16 +160,17 @@ export default function PenDetailPage() {
                     console.log("Record Meds button clicked")
                     setIsMedicationDialogOpen(true)
                   }}
+                  className="touch-manipulation min-h-[44px] flex-1 sm:flex-none"
                 >
-                  <Syringe className="h-4 w-4 mr-2" />
-                  Record Meds
+                  <Syringe className="h-5 w-5 sm:h-4 sm:w-4 sm:mr-2" />
+                  <span className="sm:inline">Meds</span>
                 </Button>
               </div>
             </div>
           </div>
 
           {/* Pen Info Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Capacity</CardTitle>
@@ -225,7 +230,7 @@ export default function PenDetailPage() {
                         : `Calculated from ${cattle.length} cattle`}
                     </p>
                   </div>
-                  <div className="flex flex-col gap-2 items-end">
+                  <div className="flex flex-col gap-2 items-end flex-shrink-0">
                     <DollarSign className="h-5 w-5 text-green-600" />
                     <Button
                       size="sm"
@@ -235,6 +240,7 @@ export default function PenDetailPage() {
                         setPenValue(displayTotalValue.toString())
                         setIsValueDialogOpen(true)
                       }}
+                      className="touch-manipulation min-h-[40px] px-4"
                     >
                       Update
                     </Button>
@@ -261,60 +267,64 @@ export default function PenDetailPage() {
                   <p className="text-sm mt-1">Assign cattle to this pen to see them here</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-muted/50 border-b">
-                      <tr>
-                        <th className="text-left p-3 text-sm font-semibold">Tag Number</th>
-                        <th className="text-left p-3 text-sm font-semibold">Breed</th>
-                        <th className="text-left p-3 text-sm font-semibold">Sex</th>
-                        <th className="text-left p-3 text-sm font-semibold">Weight</th>
-                        <th className="text-left p-3 text-sm font-semibold">Stage</th>
-                        <th className="text-left p-3 text-sm font-semibold">Health</th>
-                        <th className="text-left p-3 text-sm font-semibold">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {cattle.map((c) => (
-                        <tr key={c.id} className="hover:bg-muted/30">
-                          <td className="p-3">
-                            <Link
-                              href={`/cattle/${c.id}`}
-                              className="font-medium text-primary hover:underline"
-                            >
-                              #{c.tagNumber}
-                            </Link>
-                          </td>
-                          <td className="p-3 text-sm">{c.breed}</td>
-                          <td className="p-3 text-sm">{c.sex}</td>
-                          <td className="p-3 text-sm">{c.weight} lbs</td>
-                          <td className="p-3">
-                            <Badge variant="outline">{c.stage}</Badge>
-                          </td>
-                          <td className="p-3">
-                            <Badge
-                              variant={c.healthStatus === "Healthy" ? "default" : "destructive"}
-                            >
-                              {c.healthStatus}
-                            </Badge>
-                          </td>
-                          <td className="p-3">
-                            <Link href={`/cattle/${c.id}`}>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  console.log("View cattle button clicked:", c.id)
-                                }}
-                              >
-                                View
-                              </Button>
-                            </Link>
-                          </td>
+                <div className="overflow-x-auto -mx-4 sm:mx-0">
+                  <div className="inline-block min-w-full align-middle">
+                    <table className="min-w-full">
+                      <thead className="bg-muted/50 border-b">
+                        <tr>
+                          <th className="text-left px-3 py-3 text-sm font-semibold whitespace-nowrap">Tag Number</th>
+                          <th className="text-left px-3 py-3 text-sm font-semibold whitespace-nowrap hidden sm:table-cell">Breed</th>
+                          <th className="text-left px-3 py-3 text-sm font-semibold whitespace-nowrap hidden md:table-cell">Sex</th>
+                          <th className="text-left px-3 py-3 text-sm font-semibold whitespace-nowrap">Weight</th>
+                          <th className="text-left px-3 py-3 text-sm font-semibold whitespace-nowrap hidden lg:table-cell">Stage</th>
+                          <th className="text-left px-3 py-3 text-sm font-semibold whitespace-nowrap">Health</th>
+                          <th className="text-left px-3 py-3 text-sm font-semibold whitespace-nowrap">Actions</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y">
+                        {cattle.map((c) => (
+                          <tr key={c.id} className="hover:bg-muted/30">
+                            <td className="px-3 py-3">
+                              <Link
+                                href={`/cattle/${c.id}`}
+                                className="font-medium text-primary hover:underline touch-manipulation inline-block min-h-[44px] flex items-center"
+                              >
+                                #{c.tagNumber}
+                              </Link>
+                            </td>
+                            <td className="px-3 py-3 text-sm hidden sm:table-cell">{c.breed}</td>
+                            <td className="px-3 py-3 text-sm hidden md:table-cell">{c.sex}</td>
+                            <td className="px-3 py-3 text-sm whitespace-nowrap">{c.weight} lbs</td>
+                            <td className="px-3 py-3 hidden lg:table-cell">
+                              <Badge variant="outline" className="whitespace-nowrap">{c.stage}</Badge>
+                            </td>
+                            <td className="px-3 py-3">
+                              <Badge
+                                variant={c.healthStatus === "Healthy" ? "default" : "destructive"}
+                                className="whitespace-nowrap"
+                              >
+                                {c.healthStatus}
+                              </Badge>
+                            </td>
+                            <td className="px-3 py-3">
+                              <Link href={`/cattle/${c.id}`}>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    console.log("View cattle button clicked:", c.id)
+                                  }}
+                                  className="touch-manipulation min-h-[40px] px-3"
+                                >
+                                  View
+                                </Button>
+                              </Link>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </CardContent>

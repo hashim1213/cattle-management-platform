@@ -45,9 +45,9 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   // For protected routes, show with sidebar if authenticated
   if (user) {
     return (
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex h-screen overflow-hidden safe-top safe-bottom">
         <AppSidebar />
-        <main className="flex-1 overflow-y-auto pt-14 lg:pt-0">{children}</main>
+        <main className="flex-1 overflow-y-auto pt-14 lg:pt-0 pb-safe">{children}</main>
       </div>
     )
   }
