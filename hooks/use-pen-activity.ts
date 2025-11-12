@@ -11,6 +11,9 @@ export function usePenActivity() {
       try {
         await penActivityStore.loadFeedActivities()
         await penActivityStore.loadMedicationActivities()
+        // Initial load
+        setFeedActivities(penActivityStore.getAllFeedActivities())
+        setMedicationActivities(penActivityStore.getAllMedicationActivities())
       } catch (error) {
         console.error("Error loading pen activities:", error)
       } finally {
@@ -22,8 +25,8 @@ export function usePenActivity() {
 
     // Subscribe to changes
     const unsubscribe = penActivityStore.subscribe(() => {
-      setFeedActivities([...penActivityStore.getFeedActivitiesByPen("")]) // Empty string returns all
-      setMedicationActivities([...penActivityStore.getMedicationActivitiesByPen("")])
+      setFeedActivities(penActivityStore.getAllFeedActivities())
+      setMedicationActivities(penActivityStore.getAllMedicationActivities())
     })
 
     return () => unsubscribe()

@@ -126,6 +126,11 @@ class PenActivityStore {
     }
   }
 
+  getAllFeedActivities(): PenFeedActivity[] {
+    return [...this.feedActivities]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  }
+
   getFeedActivitiesByPen(penId: string): PenFeedActivity[] {
     return this.feedActivities
       .filter((a) => a.penId === penId)
@@ -204,6 +209,11 @@ class PenActivityStore {
     } catch (error) {
       throw new Error("Failed to delete medication activity")
     }
+  }
+
+  getAllMedicationActivities(): PenMedicationActivity[] {
+    return [...this.medicationActivities]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   }
 
   getMedicationActivitiesByPen(penId: string): PenMedicationActivity[] {
