@@ -31,6 +31,7 @@ export interface Cattle {
   purchaseWeight?: number
   currentValue?: number
   weight: number
+  targetWeight?: number
   dam?: string
   sire?: string
   lot: string

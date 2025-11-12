@@ -37,6 +37,11 @@ export default function CattleDetailPage() {
   const [selectedBarnId, setSelectedBarnId] = useState<string>("")
   const [selectedPenId, setSelectedPenId] = useState<string>("")
 
+  // Weight record form state
+  const [weightDate, setWeightDate] = useState<string>(new Date().toISOString().split('T')[0])
+  const [weightValue, setWeightValue] = useState<string>("")
+  const [weightNotes, setWeightNotes] = useState<string>("")
+
   useEffect(() => {
     const loadCattle = async () => {
       const allCattle = await firebaseDataStore.getCattle()
@@ -57,6 +62,50 @@ export default function CattleDetailPage() {
     }
     loadCattle()
   }, [params.id, refreshKey])
+
+  const handleAddWeight = async () => {
+    if (!cattle || !weightValue) {
+      toast({
+        title: "Error",
+        description: "Please enter a weight value.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      // Add weight record to Firestore
+      await firebaseDataStore.addWeightRecord(cattle.id, {
+        date: weightDate,
+        weight: Number(weightValue),
+        notes: weightNotes || undefined,
+      })
+
+      // Update cattle's current weight
+      await firebaseDataStore.updateCattle(cattle.id, {
+        weight: Number(weightValue),
+      })
+
+      // Reset form and close dialog
+      setWeightValue("")
+      setWeightNotes("")
+      setWeightDate(new Date().toISOString().split('T')[0])
+      setIsAddWeightOpen(false)
+      setRefreshKey(prev => prev + 1)
+
+      toast({
+        title: "Weight recorded",
+        description: "Weight record has been added successfully.",
+      })
+    } catch (error) {
+      console.error("Failed to add weight record:", error)
+      toast({
+        title: "Error",
+        description: "Failed to add weight record.",
+        variant: "destructive",
+      })
+    }
+  }
 
   const handleAssignLocation = async () => {
     if (!cattle) return
@@ -94,44 +143,48 @@ export default function CattleDetailPage() {
     )
   }
 
-  const mockCattle = {
-    id: cattle.id,
-    tagNumber: cattle.tagNumber,
-    breed: "Angus",
-    sex: "steer",
-    birthDate: "2023-03-15",
-    purchaseDate: "2024-01-15",
-    purchaseWeight: 785,
-    currentWeight: 1245,
-    purchasePrice: 1650,
-    currentValue: 2490,
-    targetSaleWeight: 1350,
-    targetSalePrice: 2700,
-    lotNumber: "LOT-A",
-    status: "healthy",
-    dailyGain: 2.8,
-    daysOnFeed: 165,
-    stage: "finishing",
-    earTag: "1247",
-    brand: "BR",
-    colorMarkings: "Black with white face",
-    hornStatus: "Polled",
-    dam: "Tag #1100",
-    sire: "Tag #2050",
-    conceptionMethod: "Natural Breeding",
-    notes: "Excellent weight gain, ready for market soon",
-    readyForSale: true,
-    estimatedDaysToTarget: 38,
-  }
+  // Calculate days on feed
+  const daysOnFeed = cattle.purchaseDate || cattle.arrivalDate
+    ? Math.floor((new Date().getTime() - new Date(cattle.purchaseDate || cattle.arrivalDate!).getTime()) / (1000 * 60 * 60 * 24))
+    : 0
 
-  const weightHistory = [
-    { date: "2024-01-15", weight: 785, gain: 0 },
-    { date: "2024-02-15", weight: 872, gain: 2.8 },
-    { date: "2024-03-15", weight: 955, gain: 2.8 },
-    { date: "2024-04-15", weight: 1042, gain: 2.9 },
-    { date: "2024-05-15", weight: 1128, gain: 2.9 },
-    { date: "2024-06-15", weight: 1245, gain: 3.9 },
-  ]
+  // Calculate daily gain
+  const startWeight = cattle.purchaseWeight || cattle.arrivalWeight || 0
+  const currentWeight = cattle.weight || 0
+  const dailyGain = daysOnFeed > 0 ? (currentWeight - startWeight) / daysOnFeed : 0
+
+  // Calculate current value (market price per pound * current weight)
+  const marketPricePerPound = 1.65
+  const currentValue = currentWeight * marketPricePerPound
+
+  // Calculate target values
+  const targetWeight = cattle.targetWeight || 0
+  const targetValue = targetWeight * marketPricePerPound
+  const estimatedDaysToTarget = dailyGain > 0 && targetWeight > currentWeight
+    ? Math.ceil((targetWeight - currentWeight) / dailyGain)
+    : 0
+  const readyForSale = targetWeight > 0 && currentWeight >= targetWeight
+
+  // Get current pen info
+  const currentPen = cattle.penId ? getPen(cattle.penId) : null
+  const currentBarn = cattle.barnId ? barns.find(b => b.id === cattle.barnId) : null
+
+  // Convert weight records to weight history with daily gain calculations
+  const sortedWeightRecords = [...weightRecords].sort((a, b) =>
+    new Date(a.date).getTime() - new Date(b.date).getTime()
+  )
+
+  const weightHistory = sortedWeightRecords.map((record, index) => {
+    if (index === 0) {
+      return { date: record.date, weight: record.weight, gain: 0, notes: record.notes }
+    }
+    const prevRecord = sortedWeightRecords[index - 1]
+    const daysBetween = Math.floor(
+      (new Date(record.date).getTime() - new Date(prevRecord.date).getTime()) / (1000 * 60 * 60 * 24)
+    )
+    const gain = daysBetween > 0 ? (record.weight - prevRecord.weight) / daysBetween : 0
+    return { date: record.date, weight: record.weight, gain, notes: record.notes }
+  })
 
   const healthRecords = [
     {
@@ -183,14 +236,14 @@ export default function CattleDetailPage() {
                 <h1 className="text-2xl font-bold text-foreground">Tag #{cattle.tagNumber}</h1>
                 <Badge
                   className={
-                    cattle.status === "healthy"
+                    cattle.healthStatus === "Healthy"
                       ? "bg-green-100 text-green-800 hover:bg-green-100"
                       : "bg-amber-100 text-amber-800 hover:bg-amber-100"
                   }
                 >
-                  {cattle.status === "healthy" ? "Healthy" : "Needs Attention"}
+                  {cattle.healthStatus}
                 </Badge>
-                {cattle.readyForSale && (
+                {readyForSale && (
                   <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Ready for Sale</Badge>
                 )}
               </div>
@@ -235,7 +288,7 @@ export default function CattleDetailPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Daily Gain</p>
-                  <p className="text-2xl font-bold text-foreground">{cattle.dailyGain} lbs</p>
+                  <p className="text-2xl font-bold text-foreground">{dailyGain.toFixed(2)} lbs</p>
                   <p className="text-xs text-muted-foreground mt-1">Per day average</p>
                 </div>
                 <TrendingUp className="h-5 w-5 text-green-600" />
@@ -261,8 +314,8 @@ export default function CattleDetailPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Current Value</p>
-                  <p className="text-2xl font-bold text-foreground">${cattle.currentValue}</p>
-                  <p className="text-xs text-green-600 mt-1">+${cattle.currentValue - cattle.purchasePrice} gain</p>
+                  <p className="text-2xl font-bold text-foreground">${currentValue.toFixed(0)}</p>
+                  <p className="text-xs text-green-600 mt-1">+${((cattle.purchasePrice || 0) > 0 ? (currentValue - (cattle.purchasePrice || 0)).toFixed(0) : 0)} gain</p>
                 </div>
                 <DollarSign className="h-5 w-5 text-amber-600" />
               </div>
@@ -307,7 +360,7 @@ export default function CattleDetailPage() {
           </CardContent>
         </Card>
 
-        {cattle.readyForSale && (
+        {readyForSale && (
           <Card className="mb-6 border-blue-200 bg-blue-50">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -316,15 +369,15 @@ export default function CattleDetailPage() {
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div>
                       <p className="text-muted-foreground">Target Weight</p>
-                      <p className="font-semibold text-foreground">{cattle.targetSaleWeight} lbs</p>
+                      <p className="font-semibold text-foreground">{targetWeight} lbs</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Est. Days to Target</p>
-                      <p className="font-semibold text-foreground">{cattle.estimatedDaysToTarget} days</p>
+                      <p className="font-semibold text-foreground">{estimatedDaysToTarget} days</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Target Sale Price</p>
-                      <p className="font-semibold text-foreground">${cattle.targetSalePrice}</p>
+                      <p className="font-semibold text-foreground">${targetValue.toFixed(0)}</p>
                     </div>
                   </div>
                 </div>
@@ -521,17 +574,33 @@ export default function CattleDetailPage() {
                     <div className="space-y-4 py-4">
                       <div className="space-y-2">
                         <Label htmlFor="weight-date">Date</Label>
-                        <Input id="weight-date" type="date" />
+                        <Input
+                          id="weight-date"
+                          type="date"
+                          value={weightDate}
+                          onChange={(e) => setWeightDate(e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="weight">Weight (lbs)</Label>
-                        <Input id="weight" type="number" placeholder="1245" />
+                        <Input
+                          id="weight"
+                          type="number"
+                          placeholder="1245"
+                          value={weightValue}
+                          onChange={(e) => setWeightValue(e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="weight-notes">Notes (optional)</Label>
-                        <Textarea id="weight-notes" placeholder="Any observations..." />
+                        <Textarea
+                          id="weight-notes"
+                          placeholder="Any observations..."
+                          value={weightNotes}
+                          onChange={(e) => setWeightNotes(e.target.value)}
+                        />
                       </div>
-                      <Button className="w-full">Save Weight Record</Button>
+                      <Button className="w-full" onClick={handleAddWeight}>Save Weight Record</Button>
                     </div>
                   </DialogContent>
                 </Dialog>
@@ -673,9 +742,9 @@ export default function CattleDetailPage() {
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground mb-1">Current Value</p>
-                        <p className="text-2xl font-bold text-foreground">${cattle.currentValue}</p>
+                        <p className="text-2xl font-bold text-foreground">${currentValue.toFixed(0)}</p>
                         <p className="text-xs text-muted-foreground">
-                          ${(cattle.currentValue / cattle.currentWeight).toFixed(2)}/lb
+                          ${(currentWeight > 0 ? (currentValue / currentWeight).toFixed(2) : "0.00")}/lb
                         </p>
                       </div>
                     </div>
@@ -683,18 +752,18 @@ export default function CattleDetailPage() {
                       <div>
                         <p className="text-sm text-muted-foreground mb-1">Total Gain</p>
                         <p className="text-2xl font-bold text-green-600">
-                          +${cattle.currentValue - cattle.purchasePrice}
+                          +${((cattle.purchasePrice || 0) > 0 ? (currentValue - (cattle.purchasePrice || 0)).toFixed(0) : 0)}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {(((cattle.currentValue - cattle.purchasePrice) / cattle.purchasePrice) * 100).toFixed(1)}%
+                          {((cattle.purchasePrice || 0) > 0 ? (((currentValue - (cattle.purchasePrice || 0)) / (cattle.purchasePrice || 1)) * 100).toFixed(1) : 0)}%
                           increase
                         </p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground mb-1">Target Sale Price</p>
-                        <p className="text-2xl font-bold text-foreground">${cattle.targetSalePrice}</p>
+                        <p className="text-2xl font-bold text-foreground">${targetValue.toFixed(0)}</p>
                         <p className="text-xs text-muted-foreground">
-                          ${(cattle.targetSalePrice / cattle.targetSaleWeight).toFixed(2)}/lb
+                          ${(targetWeight > 0 ? (targetValue / targetWeight).toFixed(2) : "0.00")}/lb
                         </p>
                       </div>
                     </div>
@@ -736,8 +805,8 @@ export default function CattleDetailPage() {
                       <span className="font-semibold text-foreground">Projected Profit:</span>
                       <span className="font-bold text-green-600">
                         $
-                        {cattle.targetSalePrice -
-                          (cattle.purchasePrice + 485 + healthRecords.reduce((sum, r) => sum + r.cost, 0) + 125)}
+                        {targetValue.toFixed(0) -
+                          ((cattle.purchasePrice || 0) + 485 + healthRecords.reduce((sum, r) => sum + r.cost, 0) + 125)}
                       </span>
                     </div>
                   </div>

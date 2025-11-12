@@ -15,8 +15,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { useLifecycleConfig } from "@/hooks/use-lifecycle-config"
-import { dataStore, type Cattle } from "@/lib/data-store"
+import { firebaseDataStore, type Cattle } from "@/lib/data-store-firebase"
 import { Save } from "lucide-react"
+import { toast } from "sonner"
 
 interface EditCattleDialogProps {
   cattle: Cattle
@@ -33,14 +34,19 @@ export function EditCattleDialog({ cattle, open, onOpenChange, onSave }: EditCat
     setFormData(cattle)
   }, [cattle, open])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Update cattle in data store
-    dataStore.updateCattle(formData.id, formData)
-
-    onSave?.()
-    onOpenChange(false)
+    try {
+      // Update cattle in Firebase
+      await firebaseDataStore.updateCattle(formData.id, formData)
+      toast.success("Cattle updated successfully")
+      onSave?.()
+      onOpenChange(false)
+    } catch (error) {
+      console.error("Failed to update cattle:", error)
+      toast.error("Failed to update cattle")
+    }
   }
 
   return (
@@ -144,7 +150,7 @@ export function EditCattleDialog({ cattle, open, onOpenChange, onSave }: EditCat
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="weight">Weight (lbs)</Label>
+                  <Label htmlFor="weight">Current Weight (lbs)</Label>
                   <Input
                     id="weight"
                     type="number"
@@ -153,13 +159,24 @@ export function EditCattleDialog({ cattle, open, onOpenChange, onSave }: EditCat
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lot">Lot</Label>
+                  <Label htmlFor="targetWeight">Target Weight (lbs)</Label>
                   <Input
-                    id="lot"
-                    value={formData.lot}
-                    onChange={(e) => setFormData({ ...formData, lot: e.target.value })}
+                    id="targetWeight"
+                    type="number"
+                    value={formData.targetWeight || ""}
+                    onChange={(e) => setFormData({ ...formData, targetWeight: Number(e.target.value) || undefined })}
+                    placeholder="1400"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="lot">Lot</Label>
+                <Input
+                  id="lot"
+                  value={formData.lot}
+                  onChange={(e) => setFormData({ ...formData, lot: e.target.value })}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
