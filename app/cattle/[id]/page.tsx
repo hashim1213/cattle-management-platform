@@ -435,15 +435,45 @@ export default function CattleDetailPage() {
           </Card>
         )}
 
-        {/* Detailed Information Tabs */}
+        {/* Detailed Information Tabs - Mobile Optimized */}
         <Tabs defaultValue="growth" className="w-full">
-          <TabsList>
-            <TabsTrigger value="growth">Growth & Performance</TabsTrigger>
-            <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="weight">Weight History</TabsTrigger>
-            <TabsTrigger value="health">Health Records</TabsTrigger>
-            <TabsTrigger value="financial">Financial</TabsTrigger>
-          </TabsList>
+          <div className="-mx-4 sm:mx-0 px-4 sm:px-0 overflow-x-auto pb-2 sm:pb-0">
+            <TabsList className="inline-flex w-auto min-w-full sm:w-full">
+              <TabsTrigger
+                value="growth"
+                className="flex-1 sm:flex-initial whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 touch-manipulation min-h-[44px]"
+              >
+                <span className="hidden lg:inline">Growth & Performance</span>
+                <span className="lg:hidden">Growth</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="details"
+                className="flex-1 sm:flex-initial whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 touch-manipulation min-h-[44px]"
+              >
+                Details
+              </TabsTrigger>
+              <TabsTrigger
+                value="weight"
+                className="flex-1 sm:flex-initial whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 touch-manipulation min-h-[44px]"
+              >
+                <span className="hidden lg:inline">Weight History</span>
+                <span className="lg:hidden">Weight</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="health"
+                className="flex-1 sm:flex-initial whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 touch-manipulation min-h-[44px]"
+              >
+                <span className="hidden lg:inline">Health Records</span>
+                <span className="lg:hidden">Health</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="financial"
+                className="flex-1 sm:flex-initial whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 touch-manipulation min-h-[44px]"
+              >
+                Financial
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Growth Tab - NEW */}
           <TabsContent value="growth" className="mt-6">
