@@ -31,6 +31,7 @@ export interface Cattle {
   purchaseWeight?: number
   currentValue?: number
   weight: number
+  targetWeight?: number
   dam?: string
   sire?: string
   lot: string
@@ -224,6 +225,28 @@ class FirebaseDataStore {
   }
 
   // HEALTH RECORDS
+  async getAllHealthRecords(): Promise<HealthRecord[]> {
+    const userId = this.getUserId()
+    if (!userId) return []
+
+    try {
+      const allCattle = await this.getCattle()
+      const allRecords: HealthRecord[] = []
+
+      for (const cattle of allCattle) {
+        const records = await this.getHealthRecords(cattle.id)
+        allRecords.push(...records)
+      }
+
+      return allRecords.sort((a, b) =>
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      )
+    } catch (error) {
+      console.error("Error loading all health records:", error)
+      return []
+    }
+  }
+
   async getHealthRecords(cattleId: string): Promise<HealthRecord[]> {
     const userId = this.getUserId()
     if (!userId) return []

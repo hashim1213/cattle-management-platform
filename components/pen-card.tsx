@@ -1,10 +1,11 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Grid3x3, TrendingUp, TrendingDown, ScanLine, Wheat, Syringe } from "lucide-react"
+import { Grid3x3, TrendingUp, TrendingDown, ScanLine, Wheat, Syringe, Eye } from "lucide-react"
 import { type Pen, type Barn } from "@/lib/pen-store-firebase"
 import { Progress } from "@/components/ui/progress"
 import { RFIDImageImportDialog } from "@/components/rfid-image-import-dialog"
@@ -17,6 +18,7 @@ interface PenCardProps {
 }
 
 export function PenCard({ pen, barn }: PenCardProps) {
+  const router = useRouter()
   const [isImportOpen, setIsImportOpen] = useState(false)
   const [isFeedDialogOpen, setIsFeedDialogOpen] = useState(false)
   const [isMedicationDialogOpen, setIsMedicationDialogOpen] = useState(false)
@@ -69,6 +71,14 @@ export function PenCard({ pen, barn }: PenCardProps) {
           )}
 
           <div className="mt-4 pt-3 border-t space-y-2">
+            <Button
+              size="sm"
+              className="w-full"
+              onClick={() => router.push(`/pens/${pen.id}`)}
+            >
+              <Eye className="h-3 w-3 mr-2" />
+              View Cattle ({pen.currentCount})
+            </Button>
             <div className="grid grid-cols-2 gap-2">
               <Button
                 variant="outline"

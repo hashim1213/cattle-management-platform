@@ -1,10 +1,10 @@
 // Export utilities for generating CSV reports for cattle, financial, and pasture data
 
-import { dataStore } from "./data-store"
+import { firebaseDataStore as dataStore } from "./data-store-firebase"
 import { treatmentStore } from "./treatment-store"
 import { enhancedFeedStore } from "./enhanced-feed-store"
 import { costCalculator } from "./cost-calculator"
-import { penStore } from "./pen-store"
+import { firebasePenStore as penStore } from "./pen-store-firebase"
 
 // Convert array of objects to CSV
 function arrayToCSV(data: any[], headers: string[]): string {

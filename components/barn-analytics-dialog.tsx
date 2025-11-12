@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { dataStore } from "@/lib/data-store"
+import { dataStore } from "@/lib/data-store-firebase"
 import { usePenStore } from "@/hooks/use-pen-store"
 import { DollarSign, TrendingUp, TrendingDown, Activity, Package } from "lucide-react"
 

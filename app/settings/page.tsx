@@ -13,7 +13,8 @@ import { useAuth } from "@/contexts/auth-context"
 import { Settings as SettingsIcon, Bell, Database, Save, User, MapPin, Home } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { doc, getDoc, updateDoc } from "firebase/firestore"
-import { db } from "@/lib/firebase"
+import { db, auth as firebaseAuth } from "@/lib/firebase"
+import { updateProfile } from "firebase/auth"
 
 interface UserProfile {
   displayName: string
@@ -96,6 +97,14 @@ export default function SettingsPage() {
         enablePastures,
         enableRations,
       })
+
+      // Update Firebase Auth profile if display name changed
+      if (firebaseAuth.currentUser && displayName && displayName !== user.displayName) {
+        await updateProfile(firebaseAuth.currentUser, {
+          displayName: displayName,
+        })
+        console.log("Firebase Auth profile updated with new display name")
+      }
 
       // Update user profile in Firestore
       const profileRef = doc(db, "userProfiles", user.uid)

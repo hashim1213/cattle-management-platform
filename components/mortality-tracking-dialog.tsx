@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { dataStore, type Cattle } from "@/lib/data-store"
+import { dataStore, type Cattle } from "@/lib/data-store-firebase"
 import { useTreatmentStore } from "@/hooks/use-treatment-store"
 import { usePenStore } from "@/hooks/use-pen-store"
 import { useActivityStore } from "@/hooks/use-activity-store"

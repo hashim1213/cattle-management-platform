@@ -1,7 +1,7 @@
 // Automated Cost Calculation Engine
 // Calculates Cost Per Head, Cost Per Pen, Cost of Gain, and Break-Even Prices
 
-import { dataStore, type Cattle } from "./data-store"
+import { firebaseDataStore as dataStore, type Cattle } from "./data-store-firebase"
 import { treatmentStore } from "./treatment-store"
 import { enhancedFeedStore } from "./enhanced-feed-store"
 

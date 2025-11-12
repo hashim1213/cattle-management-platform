@@ -17,15 +17,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useLifecycleConfig } from "@/hooks/use-lifecycle-config"
 import { usePenStore } from "@/hooks/use-pen-store"
+import { firebaseDataStore } from "@/lib/data-store-firebase"
+import { toast } from "sonner"
 
 interface AddCattleDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onSuccess?: () => void
 }
 
-export function AddCattleDialog({ open, onOpenChange }: AddCattleDialogProps) {
+export function AddCattleDialog({ open, onOpenChange, onSuccess }: AddCattleDialogProps) {
   const { stages } = useLifecycleConfig()
   const { barns, pens, getPen, updatePenCount } = usePenStore()
+  const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     // Basic Info
     tagNumber: "",
@@ -46,6 +50,7 @@ export function AddCattleDialog({ open, onOpenChange }: AddCattleDialogProps) {
     purchaseDate: "",
     purchaseWeight: "",
     purchasePrice: "",
+    currentValue: "",
     lotNumber: "",
 
     // Breeding Info
@@ -59,33 +64,83 @@ export function AddCattleDialog({ open, onOpenChange }: AddCattleDialogProps) {
     notes: "",
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    onOpenChange(false)
-    // Reset form
-    setFormData({
-      tagNumber: "",
-      breed: "",
-      sex: "",
-      birthDate: "",
-      stage: "",
-      barnId: "",
-      penId: "",
-      earTag: "",
-      brand: "",
-      electronicId: "",
-      tattoo: "",
-      purchaseDate: "",
-      purchaseWeight: "",
-      purchasePrice: "",
-      lotNumber: "",
-      dam: "",
-      sire: "",
-      conceptionMethod: "",
-      colorMarkings: "",
-      hornStatus: "",
-      notes: "",
-    })
+    setLoading(true)
+
+    try {
+      // Create cattle object
+      const newCattle = {
+        tagNumber: formData.tagNumber,
+        breed: formData.breed,
+        sex: formData.sex as any,
+        birthDate: formData.birthDate || undefined,
+        stage: formData.stage as any,
+        barnId: formData.barnId || undefined,
+        penId: formData.penId || undefined,
+        rfidTag: formData.electronicId || undefined,
+        visualTag: formData.earTag || undefined,
+        brandNumber: formData.brand || undefined,
+        purchaseDate: formData.purchaseDate,
+        purchasePrice: formData.purchasePrice ? Number(formData.purchasePrice) : undefined,
+        purchaseWeight: formData.purchaseWeight ? Number(formData.purchaseWeight) : undefined,
+        currentValue: formData.currentValue ? Number(formData.currentValue) : undefined,
+        weight: formData.purchaseWeight ? Number(formData.purchaseWeight) : 0,
+        lot: formData.lotNumber,
+        dam: formData.dam || undefined,
+        sire: formData.sire || undefined,
+        colorMarkings: formData.colorMarkings || undefined,
+        hornStatus: formData.hornStatus || undefined,
+        notes: formData.notes || undefined,
+        status: "Active" as any,
+        healthStatus: "Healthy" as any,
+        identificationMethod: formData.electronicId ? "RFID" : formData.earTag ? "Visual Tag" : "Manual",
+      }
+
+      // Save to Firestore
+      await firebaseDataStore.addCattle(newCattle)
+
+      // Update pen count if pen was selected
+      if (formData.penId) {
+        updatePenCount(formData.penId, 1)
+      }
+
+      toast.success("Cattle added successfully")
+
+      // Reset form
+      setFormData({
+        tagNumber: "",
+        breed: "",
+        sex: "",
+        birthDate: "",
+        stage: "",
+        barnId: "",
+        penId: "",
+        earTag: "",
+        brand: "",
+        electronicId: "",
+        tattoo: "",
+        purchaseDate: "",
+        purchaseWeight: "",
+        purchasePrice: "",
+        currentValue: "",
+        lotNumber: "",
+        dam: "",
+        sire: "",
+        conceptionMethod: "",
+        colorMarkings: "",
+        hornStatus: "",
+        notes: "",
+      })
+
+      onSuccess?.()
+      onOpenChange(false)
+    } catch (error) {
+      console.error("Error adding cattle:", error)
+      toast.error("Failed to add cattle")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -347,6 +402,20 @@ export function AddCattleDialog({ open, onOpenChange }: AddCattleDialogProps) {
                   />
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="currentValue">Current Value ($)</Label>
+                <Input
+                  id="currentValue"
+                  type="number"
+                  placeholder="Optional - Leave empty for auto-calculation"
+                  value={formData.currentValue}
+                  onChange={(e) => setFormData({ ...formData, currentValue: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enter current market value or leave empty for automatic calculation
+                </p>
+              </div>
             </TabsContent>
 
             <TabsContent value="breeding" className="space-y-4 mt-4">
@@ -401,10 +470,12 @@ export function AddCattleDialog({ open, onOpenChange }: AddCattleDialogProps) {
           </Tabs>
 
           <DialogFooter className="mt-6">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
               Cancel
             </Button>
-            <Button type="submit">Add Cattle</Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Adding..." : "Add Cattle"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

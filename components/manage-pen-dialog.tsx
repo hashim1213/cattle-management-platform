@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Save, Plus } from "lucide-react"
 import { usePenStore } from "@/hooks/use-pen-store"
 import { useActivityStore } from "@/hooks/use-activity-store"
-import type { Pen } from "@/lib/pen-store"
+import type { Pen } from "@/lib/pen-store-firebase"
 
 interface ManagePenDialogProps {
   pen?: Pen | null
