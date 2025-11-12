@@ -228,65 +228,79 @@ export default function HealthOverviewPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="container mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                <Heart className="h-5 w-5 text-red-600" />
+      {/* Header - Mobile optimized */}
+      <header className="border-b border-border bg-card/95 backdrop-blur-md sticky top-0 z-40 lg:static">
+        <div className="w-full px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <Heart className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">Health Overview</h1>
-              </div>
+              <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">Health Overview</h1>
             </div>
-            <div className="flex gap-2 flex-wrap">
-              <Button variant="outline" size="sm" onClick={() => setCreateProtocolOpen(true)}>
+            <div className="flex gap-2 flex-shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCreateProtocolOpen(true)}
+                className="hidden md:flex touch-manipulation min-h-[44px]"
+              >
                 <FileText className="h-4 w-4 mr-2" />
-                Create Protocol
+                Protocol
               </Button>
-              <Button variant="outline" onClick={() => setAddTreatmentOpen(true)}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setAddTreatmentOpen(true)}
+                className="hidden sm:flex touch-manipulation min-h-[44px]"
+              >
                 <Syringe className="h-4 w-4 mr-2" />
-                Add Treatment
+                Add
               </Button>
-              <Button onClick={handleBulkTreatment} disabled={selectedCattle.length === 0}>
-                <Syringe className="h-4 w-4 mr-2" />
-                Bulk Treatment ({selectedCattle.length})
+              <Button
+                size="sm"
+                onClick={handleBulkTreatment}
+                disabled={selectedCattle.length === 0}
+                className="touch-manipulation min-h-[44px] px-3"
+              >
+                <Syringe className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Bulk ({selectedCattle.length})</span>
+                <span className="sm:hidden">{selectedCattle.length}</span>
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <main className="w-full px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-safe">
         {/* Health Score & Key Metrics */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="col-span-full md:col-span-1">
-            <CardContent className="p-6">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <Card className="sm:col-span-2 lg:col-span-1 touch-manipulation">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Overall Health Score</p>
-                  <p className={`text-4xl font-bold mt-2 ${getHealthScoreColor(stats.healthScore)}`}>
+                  <p className="text-xs sm:text-sm font-medium text-muted-foreground">Overall Health Score</p>
+                  <p className={`text-3xl sm:text-4xl font-bold mt-1 sm:mt-2 ${getHealthScoreColor(stats.healthScore)}`}>
                     {stats.healthScore}/100
                   </p>
                 </div>
-                <div className={`w-16 h-16 rounded-full ${stats.healthScore >= 80 ? "bg-green-100" : stats.healthScore >= 60 ? "bg-yellow-100" : "bg-red-100"} flex items-center justify-center`}>
-                  <Heart className={`h-8 w-8 ${stats.healthScore >= 80 ? "text-green-600" : stats.healthScore >= 60 ? "text-yellow-600" : "text-red-600"}`} />
+                <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full ${stats.healthScore >= 80 ? "bg-green-100" : stats.healthScore >= 60 ? "bg-yellow-100" : "bg-red-100"} flex items-center justify-center flex-shrink-0`}>
+                  <Heart className={`h-6 w-6 sm:h-8 sm:w-8 ${stats.healthScore >= 80 ? "text-green-600" : stats.healthScore >= 60 ? "text-yellow-600" : "text-red-600"}`} />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                  <TrendingDown className="h-5 w-5 text-red-600" />
+          <Card className="touch-manipulation">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                  <TrendingDown className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Mortality Rate</p>
-                  <p className="text-2xl font-bold mt-1">{stats.mortalityRate.toFixed(2)}%</p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm font-medium text-muted-foreground">Mortality Rate</p>
+                  <p className="text-xl sm:text-2xl font-bold mt-0.5 sm:mt-1">{stats.mortalityRate.toFixed(2)}%</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
                     {stats.deceasedCattle} total deaths
                   </p>
                 </div>
@@ -294,16 +308,16 @@ export default function HealthOverviewPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                  <AlertCircle className="h-5 w-5 text-amber-600" />
+          <Card className="touch-manipulation">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                  <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Health Issues</p>
-                  <p className="text-2xl font-bold mt-1">{stats.cattleWithIssues}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm font-medium text-muted-foreground">Health Issues</p>
+                  <p className="text-xl sm:text-2xl font-bold mt-0.5 sm:mt-1">{stats.cattleWithIssues}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
                     {((stats.cattleWithIssues / stats.totalCattle) * 100).toFixed(1)}% of herd
                   </p>
                 </div>
@@ -311,16 +325,16 @@ export default function HealthOverviewPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                  <Activity className="h-5 w-5 text-green-600" />
+          <Card className="touch-manipulation">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                  <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Healthy Cattle</p>
-                  <p className="text-2xl font-bold mt-1">{stats.healthyCattle}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm font-medium text-muted-foreground">Healthy Cattle</p>
+                  <p className="text-xl sm:text-2xl font-bold mt-0.5 sm:mt-1">{stats.healthyCattle}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
                     {((stats.healthyCattle / stats.totalCattle) * 100).toFixed(1)}% of herd
                   </p>
                 </div>
@@ -330,7 +344,7 @@ export default function HealthOverviewPage() {
         </div>
 
         {/* Mortality Analysis & Health Trends */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>Mortality Breakdown</CardTitle>
@@ -449,34 +463,27 @@ export default function HealthOverviewPage() {
                   return (
                     <div
                       key={animal.id}
-                      className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                        isSelected ? "bg-primary/10 border-primary" : "hover:bg-accent/50"
+                      className={`flex items-start gap-2 sm:gap-3 p-3 border rounded-lg cursor-pointer transition-colors touch-manipulation ${
+                        isSelected ? "bg-primary/10 border-primary" : "hover:bg-accent/50 active:bg-accent"
                       }`}
                       onClick={() => handleSelectCattle(animal)}
                     >
                       <Checkbox
                         checked={isSelected}
                         onCheckedChange={() => handleSelectCattle(animal)}
+                        className="mt-1"
                       />
-                      <div className="flex-1 grid grid-cols-4 gap-4">
-                        <div>
-                          <p className="text-sm text-muted-foreground">Tag Number</p>
-                          <p className="font-semibold">{animal.tagNumber}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Breed</p>
-                          <p className="font-medium">{animal.breed}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Weight</p>
-                          <p className="font-medium">{animal.weight} lbs</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Health Status</p>
-                          <Badge variant={animal.healthStatus === "Healthy" ? "outline" : "destructive"}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-base truncate">{animal.tagNumber}</p>
+                            <p className="text-sm text-muted-foreground truncate">{animal.breed}</p>
+                          </div>
+                          <Badge variant={animal.healthStatus === "Healthy" ? "outline" : "destructive"} className="flex-shrink-0">
                             {animal.healthStatus}
                           </Badge>
                         </div>
+                        <p className="text-sm text-muted-foreground">{animal.weight} lbs</p>
                       </div>
                     </div>
                   )

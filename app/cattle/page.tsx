@@ -41,25 +41,25 @@ export default function CattlePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card sticky top-0 z-40 lg:static backdrop-blur-sm bg-card/95">
-        <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-5">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <Link href="/" className="text-sm text-muted-foreground hover:text-foreground mb-1 sm:mb-2 block touch-manipulation">
-                ← Back to Dashboard
+      {/* Header - Mobile optimized */}
+      <header className="border-b border-border bg-card/95 backdrop-blur-md sticky top-0 z-40 lg:static">
+        <div className="w-full px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <Link href="/" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground mb-1 block touch-manipulation inline-flex items-center">
+                ← Back
               </Link>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground truncate">Cattle Inventory</h1>
+              <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">Cattle Inventory</h1>
             </div>
             <div className="flex gap-2 flex-shrink-0">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setIsRFIDImportOpen(true)}
-                className="touch-manipulation min-h-[44px] px-3 sm:px-4"
+                className="touch-manipulation min-h-[44px] px-2 sm:px-4"
               >
                 <ScanLine className="h-5 w-5 sm:mr-2" />
-                <span className="hidden sm:inline">Import RFID</span>
+                <span className="hidden md:inline">Import</span>
               </Button>
               <Button
                 size="sm"
@@ -67,28 +67,29 @@ export default function CattlePage() {
                 className="touch-manipulation min-h-[44px] px-3 sm:px-4"
               >
                 <Plus className="h-5 w-5 sm:mr-2" />
-                <span className="hidden sm:inline">Add Cattle</span>
+                <span className="hidden sm:inline">Add</span>
+                <span className="sm:hidden">New</span>
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
+      <main className="w-full px-4 sm:px-6 py-4 sm:py-6 pb-safe">
         <CattleStats />
 
-        {/* Search, Filter, and View Controls */}
-        <div className="flex flex-col gap-3 sm:gap-4 mb-6 mt-6">
-          <div className="relative flex-1">
+        {/* Search, Filter, and View Controls - Mobile optimized */}
+        <div className="flex flex-col gap-3 mb-4 mt-4 sm:mt-6">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
             <Input
-              placeholder="Search by tag, name, breed, or lot..."
+              placeholder="Search by tag, name, breed..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 pr-4 h-12 text-base touch-manipulation"
             />
           </div>
-          <div className="flex gap-2 sm:gap-3">
+          <div className="flex gap-2">
             <Button
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
@@ -97,15 +98,15 @@ export default function CattlePage() {
               <Filter className="h-5 w-5 mr-2" />
               Filters
             </Button>
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "table" | "grid")}>
-              <TabsList className="touch-manipulation h-[44px]">
-                <TabsTrigger value="table" className="min-w-[60px] sm:min-w-[80px]">
-                  <List className="h-5 w-5 sm:mr-1" />
-                  <span className="hidden sm:inline">Table</span>
+            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "table" | "grid")} className="flex-1 sm:flex-none">
+              <TabsList className="touch-manipulation h-[44px] w-full grid grid-cols-2">
+                <TabsTrigger value="table" className="text-sm">
+                  <List className="h-5 w-5 mr-1" />
+                  List
                 </TabsTrigger>
-                <TabsTrigger value="grid" className="min-w-[60px] sm:min-w-[80px]">
-                  <Grid3x3 className="h-5 w-5 sm:mr-1" />
-                  <span className="hidden sm:inline">Grid</span>
+                <TabsTrigger value="grid" className="text-sm">
+                  <Grid3x3 className="h-5 w-5 mr-1" />
+                  Grid
                 </TabsTrigger>
               </TabsList>
             </Tabs>

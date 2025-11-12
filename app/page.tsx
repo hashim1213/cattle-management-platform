@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { TrendingUp, Package, DollarSign, Plus, Download, Sprout, MapPin, FileText } from "lucide-react"
+import { TrendingUp, Package, DollarSign, Plus, Download, Sprout, MapPin, FileText, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { AlertCard } from "@/components/alert-card"
@@ -238,22 +238,27 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="container mx-auto px-3 sm:px-6 py-3 sm:py-4">
+      {/* Header - Mobile optimized */}
+      <header className="border-b border-border bg-card/95 backdrop-blur-md sticky top-0 z-40 lg:static">
+        <div className="w-full px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-2">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-foreground">Dashboard</h1>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">Dashboard</h1>
             </div>
-            <div className="flex gap-2 flex-wrap">
-              <Button variant="outline" size="sm" onClick={handleExportCattle} className="hidden sm:flex">
+            <div className="flex gap-2 flex-shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportCattle}
+                className="hidden md:flex touch-manipulation min-h-[44px]"
+              >
                 <Download className="h-4 w-4 mr-2" />
                 Export Data
               </Button>
               <QuickEntryDialog />
               <Link href="/cattle">
-                <Button size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
+                <Button size="sm" className="touch-manipulation min-h-[44px] px-3 sm:px-4">
+                  <Plus className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline">Add Cattle</span>
                   <span className="sm:hidden">Add</span>
                 </Button>
@@ -263,15 +268,15 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
+      <main className="w-full px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-safe">
         {/* Production Lifecycle */}
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-foreground">Production Lifecycle</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-foreground">Production Lifecycle</h2>
             <LifecycleSettingsDialog />
           </div>
           <Card>
-            <CardContent className="p-4 sm:p-8">
+            <CardContent className="p-3 sm:p-6 overflow-x-auto">
               {stages.length > 0 ? (
                 <DndContext
                   sensors={sensors}
@@ -279,9 +284,9 @@ export default function DashboardPage() {
                   onDragEnd={handleDragEnd}
                 >
                   <SortableContext items={stages.map((s) => s.id)} strategy={horizontalListSortingStrategy}>
-                    <div className="flex flex-wrap gap-3 sm:gap-4 justify-center items-center">
+                    <div className="flex gap-2 sm:gap-4 justify-start sm:justify-center items-center min-w-min pb-2">
                       {stages.map((stage, index) => (
-                        <div key={stage.id} className="flex items-center gap-2 sm:gap-4">
+                        <div key={stage.id} className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
                           <SortableStage
                             stage={stage}
                             count={stageCounts[stage.name] || 0}
@@ -290,7 +295,7 @@ export default function DashboardPage() {
 
                           {index < stages.length - 1 && (
                             <svg
-                              className="w-4 h-4 sm:w-6 sm:h-6 text-muted-foreground flex-shrink-0 hidden sm:block"
+                              className="w-3 h-3 sm:w-6 sm:h-6 text-muted-foreground flex-shrink-0"
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
@@ -321,57 +326,57 @@ export default function DashboardPage() {
         {/* Herd Overview */}
         <section>
           <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-foreground">Herd Overview</h2>
-          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-4xl font-bold text-primary mb-2">{analytics.bulls.count}</p>
-                    <p className="text-lg font-semibold text-foreground mb-2">Active Bulls</p>
-                    <div className="text-sm text-muted-foreground space-y-1">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-3">
+            <Card className="touch-manipulation">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-3xl sm:text-4xl font-bold text-primary mb-1 sm:mb-2">{analytics.bulls.count}</p>
+                    <p className="text-base sm:text-lg font-semibold text-foreground mb-1 sm:mb-2">Active Bulls</p>
+                    <div className="text-sm text-muted-foreground space-y-0.5">
                       <p>{analytics.bulls.herdSires} herd sires</p>
                       <p>{analytics.bulls.herdSireProspects} prospects</p>
                     </div>
                   </div>
-                  <div className="relative w-20 h-20">
+                  <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0">
                     <Image src="/images/bull.png" alt="Bull" fill className="object-contain opacity-70" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-4xl font-bold text-primary mb-2">{analytics.cows.count}</p>
-                    <p className="text-lg font-semibold text-foreground mb-2">Active Cows</p>
-                    <div className="text-sm text-muted-foreground space-y-1">
+            <Card className="touch-manipulation">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-3xl sm:text-4xl font-bold text-primary mb-1 sm:mb-2">{analytics.cows.count}</p>
+                    <p className="text-base sm:text-lg font-semibold text-foreground mb-1 sm:mb-2">Active Cows</p>
+                    <div className="text-sm text-muted-foreground space-y-0.5">
                       <p>{analytics.cows.pregnant} pregnant</p>
                       <p>
                         {analytics.cows.open} open, {analytics.cows.exposed} exposed
                       </p>
                     </div>
                   </div>
-                  <div className="relative w-20 h-20">
+                  <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0">
                     <Image src="/images/cow.png" alt="Cow" fill className="object-contain opacity-70" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-4xl font-bold text-primary mb-2">{analytics.calves.count}</p>
-                    <p className="text-lg font-semibold text-foreground mb-2">Active Calves</p>
-                    <div className="text-sm text-muted-foreground space-y-1">
+            <Card className="touch-manipulation">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-3xl sm:text-4xl font-bold text-primary mb-1 sm:mb-2">{analytics.calves.count}</p>
+                    <p className="text-base sm:text-lg font-semibold text-foreground mb-1 sm:mb-2">Active Calves</p>
+                    <div className="text-sm text-muted-foreground space-y-0.5">
                       <p>{analytics.calves.unweaned} unweaned</p>
                       <p>{analytics.calves.weaned} weaned</p>
                     </div>
                   </div>
-                  <div className="relative w-20 h-20">
+                  <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0">
                     <Image src="/images/calf.png" alt="Calf" fill className="object-contain opacity-70" />
                   </div>
                 </div>
@@ -406,39 +411,39 @@ export default function DashboardPage() {
         <section>
           <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-foreground">Quick Actions</h2>
           <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
-            <Link href="/cattle">
-              <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
-                <CardContent className="p-4 sm:p-6 text-center">
-                  <Package className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-primary" />
+            <Link href="/cattle" className="touch-manipulation">
+              <Card className="hover:bg-muted/50 active:bg-muted transition-colors cursor-pointer h-full">
+                <CardContent className="p-4 sm:p-6 text-center min-h-[100px] flex flex-col items-center justify-center">
+                  <Package className="h-7 w-7 sm:h-8 sm:w-8 mx-auto mb-2 text-primary flex-shrink-0" />
                   <h3 className="font-semibold text-sm sm:text-base">Manage Cattle</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">View & edit herd</p>
+                  <p className="text-xs text-muted-foreground hidden md:block mt-1">View & edit herd</p>
                 </CardContent>
               </Card>
             </Link>
-            <Link href="/health">
-              <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
-                <CardContent className="p-4 sm:p-6 text-center">
-                  <Package className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-primary" />
+            <Link href="/health" className="touch-manipulation">
+              <Card className="hover:bg-muted/50 active:bg-muted transition-colors cursor-pointer h-full">
+                <CardContent className="p-4 sm:p-6 text-center min-h-[100px] flex flex-col items-center justify-center">
+                  <Heart className="h-7 w-7 sm:h-8 sm:w-8 mx-auto mb-2 text-primary flex-shrink-0" />
                   <h3 className="font-semibold text-sm sm:text-base">Health</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Track health records</p>
+                  <p className="text-xs text-muted-foreground hidden md:block mt-1">Track health records</p>
                 </CardContent>
               </Card>
             </Link>
-            <Link href="/inventory">
-              <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
-                <CardContent className="p-4 sm:p-6 text-center">
-                  <Sprout className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-primary" />
+            <Link href="/inventory" className="touch-manipulation">
+              <Card className="hover:bg-muted/50 active:bg-muted transition-colors cursor-pointer h-full">
+                <CardContent className="p-4 sm:p-6 text-center min-h-[100px] flex flex-col items-center justify-center">
+                  <Sprout className="h-7 w-7 sm:h-8 sm:w-8 mx-auto mb-2 text-primary flex-shrink-0" />
                   <h3 className="font-semibold text-sm sm:text-base">Inventory</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Manage supplies</p>
+                  <p className="text-xs text-muted-foreground hidden md:block mt-1">Manage supplies</p>
                 </CardContent>
               </Card>
             </Link>
-            <Link href="/costs">
-              <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
-                <CardContent className="p-4 sm:p-6 text-center">
-                  <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-primary" />
+            <Link href="/costs" className="touch-manipulation">
+              <Card className="hover:bg-muted/50 active:bg-muted transition-colors cursor-pointer h-full">
+                <CardContent className="p-4 sm:p-6 text-center min-h-[100px] flex flex-col items-center justify-center">
+                  <DollarSign className="h-7 w-7 sm:h-8 sm:w-8 mx-auto mb-2 text-primary flex-shrink-0" />
                   <h3 className="font-semibold text-sm sm:text-base">Financial</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">View costs</p>
+                  <p className="text-xs text-muted-foreground hidden md:block mt-1">View costs</p>
                 </CardContent>
               </Card>
             </Link>

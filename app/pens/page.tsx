@@ -70,31 +70,41 @@ export default function PensPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+      {/* Header - Mobile optimized */}
+      <header className="border-b border-border bg-card/95 backdrop-blur-md sticky top-0 z-40 lg:static">
+        <div className="w-full px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-2">
-            <div>
-              <Link href="/" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground mb-1 block">
-                ← Back to Dashboard
+            <div className="min-w-0 flex-1">
+              <Link href="/" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground mb-1 block touch-manipulation">
+                ← Back
               </Link>
-              <h1 className="text-xl sm:text-2xl font-bold text-foreground">Pens & Barns</h1>
+              <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">Pens & Barns</h1>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setIsAddBarnOpen(true)}>
-                <Warehouse className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Add Barn</span>
+            <div className="flex gap-2 flex-shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsAddBarnOpen(true)}
+                className="touch-manipulation min-h-[44px] px-2 sm:px-4"
+              >
+                <Warehouse className="h-5 w-5 sm:mr-2" />
+                <span className="hidden sm:inline">Barn</span>
               </Button>
-              <Button size="sm" onClick={() => setIsAddPenOpen(true)}>
-                <Plus className="h-4 w-4 sm:mr-2" />
+              <Button
+                size="sm"
+                onClick={() => setIsAddPenOpen(true)}
+                className="touch-manipulation min-h-[44px] px-3 sm:px-4"
+              >
+                <Plus className="h-5 w-5 sm:mr-2" />
                 <span className="hidden sm:inline">Add Pen</span>
+                <span className="sm:hidden">Pen</span>
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+      <main className="w-full px-4 sm:px-6 py-4 sm:py-6 pb-safe">
         {loading ? (
           <Card>
             <CardContent className="p-12 flex items-center justify-center">

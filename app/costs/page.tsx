@@ -229,23 +229,23 @@ export default function CostsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <Link href="/" className="text-sm text-muted-foreground hover:text-foreground mb-1 block">
-                ← Back to Dashboard
+      {/* Header - Mobile optimized */}
+      <header className="border-b border-border bg-card/95 backdrop-blur-md sticky top-0 z-40 lg:static">
+        <div className="w-full px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <Link href="/" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground mb-1 block touch-manipulation">
+                ← Back
               </Link>
-              <h1 className="text-2xl font-bold text-foreground">Cost Tracking</h1>
+              <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">Cost Tracking</h1>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 space-y-6">
+      <main className="w-full px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-safe">
         {/* Cost Metrics */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {costMetrics.map((metric, index) => {
             const Icon = metric.icon
             const trendColors = {
@@ -256,18 +256,18 @@ export default function CostsPage() {
             const TrendIcon = metric.trend === "up" ? TrendingUp : metric.trend === "down" ? TrendingDown : Calculator
 
             return (
-              <Card key={index}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Icon className="h-5 w-5 text-primary" />
+              <Card key={index} className="touch-manipulation">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex items-center justify-between mb-3 sm:mb-4">
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
                     <TrendIcon className={`h-4 w-4 ${trendColors[metric.trend]}`} />
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">{metric.title}</p>
-                    <p className="text-2xl font-bold text-foreground">{metric.value}</p>
-                    <p className="text-xs text-muted-foreground">{metric.change}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">{metric.title}</p>
+                    <p className="text-xl sm:text-2xl font-bold text-foreground">{metric.value}</p>
+                    <p className="text-xs text-muted-foreground truncate">{metric.change}</p>
                   </div>
                 </CardContent>
               </Card>

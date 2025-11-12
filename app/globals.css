@@ -147,6 +147,8 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    /* Prevent rubber-band scrolling on iOS */
+    overscroll-behavior-y: none;
   }
 
   /* iOS Safe Area Support */
@@ -169,20 +171,47 @@
     padding-top: env(safe-area-inset-top);
   }
 
-  /* Better touch targets for mobile */
+  /* Better touch targets for mobile - minimum 44px for iOS */
   .touch-manipulation {
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
 
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
   /* Prevent text size adjustment on iOS */
   html {
+    -webkit-text-size-adjust: 100%;
+    /* Prevent zoom on input focus - handled by proper font sizing */
     -webkit-text-size-adjust: 100%;
   }
 
   /* Smooth scrolling for iOS */
   * {
     -webkit-overflow-scrolling: touch;
+  }
+
+  /* Mobile-first container max width to prevent content from being too wide */
+  .container {
+    max-width: 100%;
+  }
+
+  /* Prevent horizontal scroll on mobile */
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  /* Mobile sticky headers should account for top bar */
+  @media (max-width: 1024px) {
+    .sticky-mobile {
+      position: sticky;
+      top: 56px; /* Height of mobile top bar */
+      z-index: 30;
+    }
   }
 }
 
