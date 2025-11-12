@@ -52,17 +52,25 @@ interface ChatMessage {
 interface ChatRequest {
   messages: ChatMessage[]
   conversationId?: string
+  userId?: string
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body: ChatRequest = await request.json()
-    const { messages, conversationId } = body
+    const { messages, conversationId, userId } = body
 
     if (!messages || messages.length === 0) {
       return NextResponse.json(
         { error: "Messages are required" },
         { status: 400 }
+      )
+    }
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: "User ID is required" },
+        { status: 401 }
       )
     }
 
@@ -100,25 +108,25 @@ export async function POST(request: NextRequest) {
           // Execute the action
           switch (actionData.action) {
             case "addMedication":
-              actionResult = await actionExecutor.addMedication(actionData.params)
+              actionResult = await actionExecutor.addMedication(userId, actionData.params)
               break
             case "updatePen":
-              actionResult = await actionExecutor.updatePen(actionData.params)
+              actionResult = await actionExecutor.updatePen(userId, actionData.params)
               break
             case "logActivity":
-              actionResult = await actionExecutor.logActivity(actionData.params)
+              actionResult = await actionExecutor.logActivity(userId, actionData.params)
               break
             case "addHealthRecord":
-              actionResult = await actionExecutor.addHealthRecord(actionData.params)
+              actionResult = await actionExecutor.addHealthRecord(userId, actionData.params)
               break
             case "getCattleInfo":
-              actionResult = await actionExecutor.getCattleInfo(actionData.params)
+              actionResult = await actionExecutor.getCattleInfo(userId, actionData.params)
               break
             case "getPenInfo":
-              actionResult = await actionExecutor.getPenInfo(actionData.params.penId)
+              actionResult = await actionExecutor.getPenInfo(userId, actionData.params.penId)
               break
             case "getInventoryInfo":
-              actionResult = await actionExecutor.getInventoryInfo(actionData.params.itemName)
+              actionResult = await actionExecutor.getInventoryInfo(userId, actionData.params.itemName)
               break
             default:
               actionResult = {

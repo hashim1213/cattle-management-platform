@@ -119,12 +119,17 @@ export default function AgentPage() {
     setIsLoading(true)
 
     try {
+      if (!user?.uid) {
+        throw new Error("You must be logged in to use the Farm Assistant")
+      }
+
       const response = await fetch("/api/agent/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: updatedMessages.map(m => ({ role: m.role, content: m.content })),
-          conversationId: currentConversationId
+          conversationId: currentConversationId,
+          userId: user.uid
         })
       })
 

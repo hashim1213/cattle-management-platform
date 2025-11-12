@@ -54,15 +54,10 @@ export interface AddHealthRecordParams {
 }
 
 class AgentActionExecutor {
-  private getUserId(): string | null {
-    return auth.currentUser?.uid || null
-  }
-
   /**
    * Add medication to inventory
    */
-  async addMedication(params: AddMedicationParams): Promise<ActionResult> {
-    const userId = this.getUserId()
+  async addMedication(userId: string, params: AddMedicationParams): Promise<ActionResult> {
     if (!userId) {
       return {
         success: false,
@@ -135,8 +130,7 @@ class AgentActionExecutor {
   /**
    * Update pen information
    */
-  async updatePen(params: UpdatePenParams): Promise<ActionResult> {
-    const userId = this.getUserId()
+  async updatePen(userId: string, params: UpdatePenParams): Promise<ActionResult> {
     if (!userId) {
       return {
         success: false,
@@ -175,8 +169,7 @@ class AgentActionExecutor {
   /**
    * Log activity for a pen
    */
-  async logActivity(params: LogActivityParams): Promise<ActionResult> {
-    const userId = this.getUserId()
+  async logActivity(userId: string, params: LogActivityParams): Promise<ActionResult> {
     if (!userId) {
       return {
         success: false,
@@ -221,8 +214,7 @@ class AgentActionExecutor {
   /**
    * Add health record and deduct inventory
    */
-  async addHealthRecord(params: AddHealthRecordParams): Promise<ActionResult> {
-    const userId = this.getUserId()
+  async addHealthRecord(userId: string, params: AddHealthRecordParams): Promise<ActionResult> {
     if (!userId) {
       return {
         success: false,
@@ -364,8 +356,7 @@ class AgentActionExecutor {
   /**
    * Get cattle information
    */
-  async getCattleInfo(searchParams: { tagNumber?: string; penId?: string; cattleId?: string }): Promise<ActionResult> {
-    const userId = this.getUserId()
+  async getCattleInfo(userId: string, searchParams: { tagNumber?: string; penId?: string; cattleId?: string }): Promise<ActionResult> {
     if (!userId) {
       return {
         success: false,
@@ -425,8 +416,7 @@ class AgentActionExecutor {
   /**
    * Get pen information
    */
-  async getPenInfo(penId?: string): Promise<ActionResult> {
-    const userId = this.getUserId()
+  async getPenInfo(userId: string, penId?: string): Promise<ActionResult> {
     if (!userId) {
       return {
         success: false,
@@ -467,8 +457,7 @@ class AgentActionExecutor {
   /**
    * Get inventory information
    */
-  async getInventoryInfo(itemName?: string): Promise<ActionResult> {
-    const userId = this.getUserId()
+  async getInventoryInfo(userId: string, itemName?: string): Promise<ActionResult> {
     if (!userId) {
       return {
         success: false,
