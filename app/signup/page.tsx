@@ -96,7 +96,7 @@ export default function SignupPage() {
         location: location.trim(),
         farmSize: farmSize.trim() || "",
         otherFarmingActivities: otherFarmingActivities.trim() || "",
-        onboardingCompleted: false,
+        onboardingCompleted: true, // Skip onboarding for now
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
@@ -104,8 +104,8 @@ export default function SignupPage() {
       await setDoc(doc(db, "userProfiles", userId), profileData)
       console.log("User profile saved successfully")
 
-      // Redirect new users to onboarding
-      router.push("/onboarding")
+      // Redirect new users directly to dashboard (onboarding disabled)
+      router.push("/")
     } catch (error: any) {
       console.error("Signup error:", error)
       setError(error.message || "Failed to create account")

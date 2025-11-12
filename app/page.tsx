@@ -102,12 +102,12 @@ export default function DashboardPage() {
   const { isSetupCompleted } = useFarmSettings()
   const router = useRouter()
 
-  // Redirect to onboarding if not completed
-  useEffect(() => {
-    if (!isSetupCompleted) {
-      router.push("/onboarding")
-    }
-  }, [isSetupCompleted, router])
+  // Onboarding disabled for now - users go straight to dashboard
+  // useEffect(() => {
+  //   if (!isSetupCompleted) {
+  //     router.push("/onboarding")
+  //   }
+  // }, [isSetupCompleted, router])
 
   const sensors = useSensors(
     useSensor(PointerSensor),
