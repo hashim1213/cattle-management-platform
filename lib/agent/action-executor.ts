@@ -364,7 +364,7 @@ class AgentActionExecutor {
   /**
    * Get cattle information
    */
-  async getCattleInfo(query: { tagNumber?: string; penId?: string; cattleId?: string }): Promise<ActionResult> {
+  async getCattleInfo(searchParams: { tagNumber?: string; penId?: string; cattleId?: string }): Promise<ActionResult> {
     const userId = this.getUserId()
     if (!userId) {
       return {
@@ -377,24 +377,24 @@ class AgentActionExecutor {
     try {
       let cattleQuery
 
-      if (query.cattleId) {
-        const docRef = doc(db, `users/${userId}/cattle`, query.cattleId)
+      if (searchParams.cattleId) {
+        const docRef = doc(db, `users/${userId}/cattle`, searchParams.cattleId)
         const snapshot = await getDocs(collection(db, `users/${userId}/cattle`))
-        const cattle = snapshot.docs.find(doc => doc.id === query.cattleId)
+        const cattle = snapshot.docs.find(doc => doc.id === searchParams.cattleId)
         return {
           success: true,
           message: "Cattle information retrieved",
           data: cattle ? { id: cattle.id, ...cattle.data() } : null
         }
-      } else if (query.tagNumber) {
+      } else if (searchParams.tagNumber) {
         cattleQuery = query(
           collection(db, `users/${userId}/cattle`),
-          where("tagNumber", "==", query.tagNumber)
+          where("tagNumber", "==", searchParams.tagNumber)
         )
-      } else if (query.penId) {
+      } else if (searchParams.penId) {
         cattleQuery = query(
           collection(db, `users/${userId}/cattle`),
-          where("penId", "==", query.penId)
+          where("penId", "==", searchParams.penId)
         )
       } else {
         return {
