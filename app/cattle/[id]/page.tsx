@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { EditCattleDialog } from "@/components/edit-cattle-dialog"
 import { CattleGrowthTimeline } from "@/components/cattle-growth-timeline"
-import { firebaseDataStore, type Cattle, type WeightRecord } from "@/lib/data-store-firebase"
+import { firebaseDataStore, type Cattle, type WeightRecord, type HealthRecord } from "@/lib/data-store-firebase"
 import { feedService, type FeedAllocationRecord } from "@/lib/feed/feed-service"
 import { usePenStore } from "@/hooks/use-pen-store"
 import { useToast } from "@/hooks/use-toast"
@@ -33,6 +33,7 @@ export default function CattleDetailPage() {
   const [isAssignLocationOpen, setIsAssignLocationOpen] = useState(false)
   const [cattle, setCattle] = useState<Cattle | null>(null)
   const [weightRecords, setWeightRecords] = useState<WeightRecord[]>([])
+  const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([])
   const [feedAllocations, setFeedAllocations] = useState<FeedAllocationRecord[]>([])
   const [refreshKey, setRefreshKey] = useState(0)
   const [selectedBarnId, setSelectedBarnId] = useState<string>("")
@@ -58,6 +59,10 @@ export default function CattleDetailPage() {
         // Load weight records
         const weights = await firebaseDataStore.getWeightRecords(params.id as string)
         setWeightRecords(weights)
+
+        // Load health records
+        const health = await firebaseDataStore.getHealthRecords(params.id as string)
+        setHealthRecords(health)
 
         // Load feed allocations (all allocations, filtered by pen in component)
         const allocations = feedService.getAllocations()
@@ -229,37 +234,10 @@ export default function CattleDetailPage() {
     return { date: record.date, weight: record.weight, gain, notes: record.notes }
   })
 
-  const healthRecords = [
-    {
-      date: "2024-06-01",
-      type: "Vaccination",
-      description: "Annual booster - IBR, BVD, PI3, BRSV",
-      vet: "Dr. Smith",
-      cost: 45,
-      nextVisit: "2025-06-01",
-    },
-    {
-      date: "2024-04-15",
-      type: "Checkup",
-      description: "Routine health check - all vitals normal",
-      vet: "Dr. Johnson",
-      cost: 75,
-      nextVisit: null,
-    },
-    {
-      date: "2024-02-01",
-      type: "Treatment",
-      description: "Minor foot issue resolved with antibiotics",
-      vet: "Dr. Smith",
-      cost: 120,
-      nextVisit: "2024-02-15",
-    },
-  ]
-
-  const lastVetVisit = healthRecords[0]
-  const daysUntilNextVisit = lastVetVisit.nextVisit
-    ? Math.ceil((new Date(lastVetVisit.nextVisit).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-    : null
+  // Sort health records by date (most recent first)
+  const sortedHealthRecords = [...healthRecords].sort((a, b) =>
+    new Date(b.date).getTime() - new Date(a.date).getTime()
+  )
 
   return (
     <div className="min-h-screen bg-background">
@@ -316,9 +294,9 @@ export default function CattleDetailPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Current Weight</p>
-                  <p className="text-2xl font-bold text-foreground">{cattle.currentWeight} lbs</p>
+                  <p className="text-2xl font-bold text-foreground">{currentWeight} lbs</p>
                   <p className="text-xs text-green-600 mt-1">
-                    +{cattle.currentWeight - cattle.purchaseWeight} lbs total
+                    +{currentWeight - startWeight} lbs total
                   </p>
                 </div>
                 <Activity className="h-5 w-5 text-primary" />
@@ -444,38 +422,6 @@ export default function CattleDetailPage() {
             </CardContent>
           </Card>
         )}
-
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">Last Vet Visit</h3>
-                <div className="grid grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Date</p>
-                    <p className="font-semibold text-foreground">{lastVetVisit.date}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Type</p>
-                    <p className="font-semibold text-foreground">{lastVetVisit.type}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Veterinarian</p>
-                    <p className="font-semibold text-foreground">{lastVetVisit.vet}</p>
-                  </div>
-                  {daysUntilNextVisit && (
-                    <div>
-                      <p className="text-muted-foreground">Next Visit</p>
-                      <p className="font-semibold text-foreground">
-                        {daysUntilNextVisit > 0 ? `In ${daysUntilNextVisit} days` : "Overdue"}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Detailed Information Tabs */}
         <Tabs defaultValue="growth" className="w-full">
@@ -736,24 +682,35 @@ export default function CattleDetailPage() {
                 </Dialog>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {healthRecords.map((record, index) => (
-                    <div key={index} className="flex gap-4 p-4 border border-border rounded-lg">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge variant="outline">{record.type}</Badge>
-                          <span className="text-sm text-muted-foreground">{record.date}</span>
-                          <span className="text-sm font-medium text-foreground ml-auto">${record.cost}</span>
+                {sortedHealthRecords.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>No health records yet.</p>
+                    <p className="text-sm mt-2">Add your first health record to track veterinary care.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {sortedHealthRecords.map((record) => (
+                      <div key={record.id} className="flex gap-4 p-4 border border-border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline">{record.type}</Badge>
+                            <span className="text-sm text-muted-foreground">{record.date}</span>
+                            {record.cost && (
+                              <span className="text-sm font-medium text-foreground ml-auto">${record.cost}</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-foreground mb-1">{record.description}</p>
+                          {record.veterinarian && (
+                            <p className="text-xs text-muted-foreground">Veterinarian: {record.veterinarian}</p>
+                          )}
+                          {record.notes && (
+                            <p className="text-xs text-muted-foreground mt-1">Notes: {record.notes}</p>
+                          )}
                         </div>
-                        <p className="text-sm text-foreground mb-1">{record.description}</p>
-                        <p className="text-xs text-muted-foreground">Veterinarian: {record.vet}</p>
-                        {record.nextVisit && (
-                          <p className="text-xs text-blue-600 mt-1">Next visit: {record.nextVisit}</p>
-                        )}
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -846,7 +803,7 @@ export default function CattleDetailPage() {
                     <div className="flex justify-between py-2 border-b border-border">
                       <span className="text-muted-foreground">Health Costs:</span>
                       <span className="font-medium text-foreground">
-                        ${healthRecords.reduce((sum, r) => sum + r.cost, 0)}
+                        ${healthRecords.reduce((sum, r) => sum + (r.cost || 0), 0)}
                       </span>
                     </div>
                     <div className="flex justify-between py-2 border-b border-border">
@@ -856,7 +813,7 @@ export default function CattleDetailPage() {
                     <div className="flex justify-between py-3 bg-muted/50 px-2 rounded">
                       <span className="font-semibold text-foreground">Total Investment:</span>
                       <span className="font-bold text-foreground">
-                        ${cattle.purchasePrice + 485 + healthRecords.reduce((sum, r) => sum + r.cost, 0) + 125}
+                        ${cattle.purchasePrice + 485 + healthRecords.reduce((sum, r) => sum + (r.cost || 0), 0) + 125}
                       </span>
                     </div>
                     <div className="flex justify-between py-3 bg-green-50 px-2 rounded">
@@ -864,7 +821,7 @@ export default function CattleDetailPage() {
                       <span className="font-bold text-green-600">
                         $
                         {targetValue.toFixed(0) -
-                          ((cattle.purchasePrice || 0) + 485 + healthRecords.reduce((sum, r) => sum + r.cost, 0) + 125)}
+                          ((cattle.purchasePrice || 0) + 485 + healthRecords.reduce((sum, r) => sum + (r.cost || 0), 0) + 125)}
                       </span>
                     </div>
                   </div>

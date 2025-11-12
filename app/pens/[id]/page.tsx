@@ -26,7 +26,7 @@ import { toast } from "sonner"
 export default function PenDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const { getPen, barns, updatePen } = usePenStore()
+  const { getPen, barns, updatePen, pens } = usePenStore()
   const [pen, setPen] = useState<any>(null)
   const [barn, setBarn] = useState<any>(null)
   const [cattle, setCattle] = useState<Cattle[]>([])
@@ -53,7 +53,7 @@ export default function PenDetailPage() {
     }
 
     loadPenData()
-  }, [params.id, getPen, barns])
+  }, [params.id, pens, barns])
 
   const handleUpdatePenValue = async () => {
     if (!pen) {
@@ -67,12 +67,6 @@ export default function PenDetailPage() {
 
       setPenValue("")
       setIsValueDialogOpen(false)
-
-      // Reload pen data
-      const updatedPen = getPen(params.id as string)
-      if (updatedPen) {
-        setPen(updatedPen)
-      }
 
       toast.success(
         valueToSet

@@ -139,21 +139,42 @@ class FirebasePenStore {
 
     try {
       const docRef = doc(db, `users/${userId}/barns`, id)
+
+      // Prepare update data with timestamp
+      const updateDataWithTimestamp = {
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      }
+
       // Filter out undefined values for Firestore
       const updateData = Object.fromEntries(
-        Object.entries({
-          ...updates,
-          updatedAt: new Date().toISOString(),
-        }).filter(([_, v]) => v !== undefined)
+        Object.entries(updateDataWithTimestamp).filter(([_, v]) => v !== undefined)
       )
+
       await updateDoc(docRef, updateData)
 
+      // Update local state
       const index = this.barns.findIndex((b) => b.id === id)
       if (index !== -1) {
-        this.barns[index] = { ...this.barns[index], ...updates }
+        const updatedBarn = { ...this.barns[index] }
+
+        // Apply updates, removing fields that are explicitly set to undefined
+        Object.entries(updates).forEach(([key, value]) => {
+          if (value === undefined) {
+            delete (updatedBarn as any)[key]
+          } else {
+            (updatedBarn as any)[key] = value
+          }
+        })
+
+        // Update timestamp
+        updatedBarn.updatedAt = updateDataWithTimestamp.updatedAt
+
+        this.barns[index] = updatedBarn
         this.notifyListeners()
       }
     } catch (error) {
+      console.error("Error updating barn:", error)
       throw new Error("Failed to update barn")
     }
   }
@@ -243,21 +264,42 @@ class FirebasePenStore {
 
     try {
       const docRef = doc(db, `users/${userId}/pens`, id)
+
+      // Prepare update data with timestamp
+      const updateDataWithTimestamp = {
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      }
+
       // Filter out undefined values for Firestore
       const updateData = Object.fromEntries(
-        Object.entries({
-          ...updates,
-          updatedAt: new Date().toISOString(),
-        }).filter(([_, v]) => v !== undefined)
+        Object.entries(updateDataWithTimestamp).filter(([_, v]) => v !== undefined)
       )
+
       await updateDoc(docRef, updateData)
 
+      // Update local state
       const index = this.pens.findIndex((p) => p.id === id)
       if (index !== -1) {
-        this.pens[index] = { ...this.pens[index], ...updates }
+        const updatedPen = { ...this.pens[index] }
+
+        // Apply updates, removing fields that are explicitly set to undefined
+        Object.entries(updates).forEach(([key, value]) => {
+          if (value === undefined) {
+            delete (updatedPen as any)[key]
+          } else {
+            (updatedPen as any)[key] = value
+          }
+        })
+
+        // Update timestamp
+        updatedPen.updatedAt = updateDataWithTimestamp.updatedAt
+
+        this.pens[index] = updatedPen
         this.notifyListeners()
       }
     } catch (error) {
+      console.error("Error updating pen:", error)
       throw new Error("Failed to update pen")
     }
   }
