@@ -9,10 +9,12 @@ import { firebasePenStore } from "@/lib/pen-store-firebase"
 import { AddBarnDialog } from "@/components/add-barn-dialog"
 import { AddPenDialog } from "@/components/add-pen-dialog"
 import { PenCard } from "@/components/pen-card"
+import { useAuth } from "@/contexts/auth-context"
 import Link from "next/link"
 import type { Barn, Pen } from "@/lib/pen-store-firebase"
 
 export default function PensPage() {
+  const { user, loading: authLoading } = useAuth()
   const [barns, setBarns] = useState<Barn[]>([])
   const [pens, setPens] = useState<Pen[]>([])
   const [isAddBarnOpen, setIsAddBarnOpen] = useState(false)
@@ -28,6 +30,7 @@ export default function PensPage() {
       setBarns(firebasePenStore.getBarns())
       setPens(firebasePenStore.getPens())
     } catch (error) {
+      console.error("Error loading data:", error)
       setBarns([])
       setPens([])
     } finally {
@@ -37,16 +40,23 @@ export default function PensPage() {
 
   useEffect(() => {
     setMounted(true)
-    loadData()
 
-    // Subscribe to store changes
-    const unsubscribe = firebasePenStore.subscribe(() => {
-      setBarns(firebasePenStore.getBarns())
-      setPens(firebasePenStore.getPens())
-    })
+    // Only load data once auth is ready
+    if (!authLoading && user) {
+      loadData()
 
-    return () => unsubscribe()
-  }, [])
+      // Subscribe to store changes
+      const unsubscribe = firebasePenStore.subscribe(() => {
+        setBarns(firebasePenStore.getBarns())
+        setPens(firebasePenStore.getPens())
+      })
+
+      return () => unsubscribe()
+    } else if (!authLoading && !user) {
+      // Auth is ready but no user is logged in
+      setLoading(false)
+    }
+  }, [authLoading, user])
 
   const analytics = mounted ? firebasePenStore.getPenAnalytics() : {
     totalPens: 0,

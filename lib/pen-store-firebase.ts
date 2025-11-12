@@ -11,6 +11,7 @@ import {
   updateDoc,
   deleteDoc,
 } from "firebase/firestore"
+import { onAuthStateChanged } from "firebase/auth"
 import { db, auth } from "@/lib/firebase"
 
 export interface Pen {
@@ -45,9 +46,24 @@ class FirebasePenStore {
   private pens: Pen[] = []
   private barns: Barn[] = []
   private listeners: Set<() => void> = new Set()
+  private authReady: boolean = false
+  private authReadyPromise: Promise<void>
 
   constructor() {
-    // Data will be loaded when user is authenticated
+    // Wait for auth to be ready
+    this.authReadyPromise = new Promise((resolve) => {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        this.authReady = true
+        unsubscribe()
+        resolve()
+      })
+    })
+  }
+
+  private async waitForAuth(): Promise<void> {
+    if (!this.authReady) {
+      await this.authReadyPromise
+    }
   }
 
   private getUserId(): string | null {
@@ -67,6 +83,7 @@ class FirebasePenStore {
 
   // BARNS
   async loadBarns() {
+    await this.waitForAuth()
     const userId = this.getUserId()
     if (!userId) return
 
@@ -75,6 +92,7 @@ class FirebasePenStore {
       this.barns = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Barn))
       this.notifyListeners()
     } catch (error) {
+      console.error("Error loading barns:", error)
       this.barns = []
     }
   }
@@ -84,8 +102,9 @@ class FirebasePenStore {
   }
 
   async addBarn(barn: Omit<Barn, "id" | "createdAt" | "updatedAt">): Promise<Barn> {
+    await this.waitForAuth()
     const userId = this.getUserId()
-    if (!userId) throw new Error("Not authenticated")
+    if (!userId) throw new Error("Not authenticated. Please log in and try again.")
 
     const now = new Date().toISOString()
     const id = `barn_${Date.now()}_${Math.random().toString(36).substring(7)}`
@@ -99,13 +118,17 @@ class FirebasePenStore {
 
     try {
       const docRef = doc(db, `users/${userId}/barns`, id)
-      await setDoc(docRef, newBarn)
+      // Filter out undefined values for Firestore
+      const barnData = Object.fromEntries(
+        Object.entries(newBarn).filter(([_, v]) => v !== undefined)
+      )
+      await setDoc(docRef, barnData)
       this.barns.push(newBarn)
       this.notifyListeners()
       return newBarn
     } catch (error: any) {
       console.error("Firebase addBarn error:", error)
-      throw error // Re-throw the original error to preserve the message
+      throw new Error(error?.message || "Failed to create barn. Please check your connection and try again.")
     }
   }
 
@@ -115,10 +138,14 @@ class FirebasePenStore {
 
     try {
       const docRef = doc(db, `users/${userId}/barns`, id)
-      await updateDoc(docRef, {
-        ...updates,
-        updatedAt: new Date().toISOString(),
-      })
+      // Filter out undefined values for Firestore
+      const updateData = Object.fromEntries(
+        Object.entries({
+          ...updates,
+          updatedAt: new Date().toISOString(),
+        }).filter(([_, v]) => v !== undefined)
+      )
+      await updateDoc(docRef, updateData)
 
       const index = this.barns.findIndex((b) => b.id === id)
       if (index !== -1) {
@@ -148,6 +175,7 @@ class FirebasePenStore {
 
   // PENS
   async loadPens() {
+    await this.waitForAuth()
     const userId = this.getUserId()
     if (!userId) return
 
@@ -156,6 +184,7 @@ class FirebasePenStore {
       this.pens = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Pen))
       this.notifyListeners()
     } catch (error) {
+      console.error("Error loading pens:", error)
       this.pens = []
     }
   }
@@ -176,8 +205,9 @@ class FirebasePenStore {
   }
 
   async addPen(pen: Omit<Pen, "id" | "createdAt" | "updatedAt">): Promise<Pen> {
+    await this.waitForAuth()
     const userId = this.getUserId()
-    if (!userId) throw new Error("Not authenticated")
+    if (!userId) throw new Error("Not authenticated. Please log in and try again.")
 
     const now = new Date().toISOString()
     const id = `pen_${Date.now()}_${Math.random().toString(36).substring(7)}`
@@ -192,13 +222,17 @@ class FirebasePenStore {
 
     try {
       const docRef = doc(db, `users/${userId}/pens`, id)
-      await setDoc(docRef, newPen)
+      // Filter out undefined values for Firestore
+      const penData = Object.fromEntries(
+        Object.entries(newPen).filter(([_, v]) => v !== undefined)
+      )
+      await setDoc(docRef, penData)
       this.pens.push(newPen)
       this.notifyListeners()
       return newPen
     } catch (error: any) {
       console.error("Firebase addPen error:", error)
-      throw error // Re-throw the original error to preserve the message
+      throw new Error(error?.message || "Failed to create pen. Please check your connection and try again.")
     }
   }
 
@@ -208,10 +242,14 @@ class FirebasePenStore {
 
     try {
       const docRef = doc(db, `users/${userId}/pens`, id)
-      await updateDoc(docRef, {
-        ...updates,
-        updatedAt: new Date().toISOString(),
-      })
+      // Filter out undefined values for Firestore
+      const updateData = Object.fromEntries(
+        Object.entries({
+          ...updates,
+          updatedAt: new Date().toISOString(),
+        }).filter(([_, v]) => v !== undefined)
+      )
+      await updateDoc(docRef, updateData)
 
       const index = this.pens.findIndex((p) => p.id === id)
       if (index !== -1) {
