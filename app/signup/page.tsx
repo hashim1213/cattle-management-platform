@@ -73,30 +73,41 @@ export default function SignupPage() {
 
     try {
       // Create account
-      await signup(email, password, name)
+      const userCredential = await signup(email, password, name)
 
-      // The user won't be immediately available, so we need to wait a moment
-      await new Promise(resolve => setTimeout(resolve, 500))
+      // Wait for auth to settle
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      // Get the user ID from the auth context
+      const { auth: firebaseAuth } = await import("@/lib/firebase")
+      const userId = firebaseAuth.currentUser?.uid
+
+      if (!userId) {
+        throw new Error("Failed to get user ID after signup")
+      }
+
+      console.log("Saving user profile to Firestore:", userId)
 
       // Store additional user info in Firestore
-      const userId = (await import("@/lib/firebase")).auth.currentUser?.uid
-      if (userId) {
-        await setDoc(doc(db, "userProfiles", userId), {
-          displayName: name,
-          email,
-          farmName: farmName.trim(),
-          location: location.trim(),
-          farmSize: farmSize.trim() || null,
-          otherFarmingActivities: otherFarmingActivities.trim() || null,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          onboardingCompleted: false,
-        })
+      const profileData = {
+        displayName: name,
+        email,
+        farmName: farmName.trim(),
+        location: location.trim(),
+        farmSize: farmSize.trim() || "",
+        otherFarmingActivities: otherFarmingActivities.trim() || "",
+        onboardingCompleted: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       }
+
+      await setDoc(doc(db, "userProfiles", userId), profileData)
+      console.log("User profile saved successfully")
 
       // Redirect new users to onboarding
       router.push("/onboarding")
     } catch (error: any) {
+      console.error("Signup error:", error)
       setError(error.message || "Failed to create account")
       setStep(1) // Go back to account step if there's an error
     } finally {
@@ -234,32 +245,28 @@ export default function SignupPage() {
                   onChange={(e) => setLocation(e.target.value)}
                   required
                 />
-                <p className="text-xs text-muted-foreground">City, State/Province, Country</p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="farmSize">Farm Size (Optional)</Label>
+                <Label htmlFor="farmSize">Farm Size</Label>
                 <Input
                   id="farmSize"
                   type="text"
-                  placeholder="e.g., 500 acres, 200 hectares"
+                  placeholder="e.g., 500 acres"
                   value={farmSize}
                   onChange={(e) => setFarmSize(e.target.value)}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="otherActivities">Other Farming Activities (Optional)</Label>
-                <Textarea
+                <Label htmlFor="otherActivities">Other Activities</Label>
+                <Input
                   id="otherActivities"
-                  placeholder="e.g., Crops, hay, other livestock..."
+                  type="text"
+                  placeholder="e.g., Crops, hay"
                   value={otherFarmingActivities}
                   onChange={(e) => setOtherFarmingActivities(e.target.value)}
-                  rows={3}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Tell us what else you farm besides cattle
-                </p>
               </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">

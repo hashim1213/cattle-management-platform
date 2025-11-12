@@ -44,20 +44,27 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const loadUserProfile = async () => {
-      if (!user) return
+      if (!user) {
+        console.log("No user, skipping profile load")
+        return
+      }
 
       try {
+        console.log("Loading user profile for:", user.uid)
         const profileRef = doc(db, "userProfiles", user.uid)
         const profileSnap = await getDoc(profileRef)
 
         if (profileSnap.exists()) {
           const data = profileSnap.data() as UserProfile
+          console.log("User profile loaded:", data)
           setUserProfile(data)
           setDisplayName(data.displayName || "")
           setLocation(data.location || "")
           setFarmSize(data.farmSize || "")
           setOtherActivities(data.otherFarmingActivities || "")
           setFarmName(data.farmName || settings?.farmName || "")
+        } else {
+          console.log("User profile does not exist in Firestore")
         }
       } catch (error) {
         console.error("Error loading user profile:", error)
@@ -92,14 +99,22 @@ export default function SettingsPage() {
 
       // Update user profile in Firestore
       const profileRef = doc(db, "userProfiles", user.uid)
-      await updateDoc(profileRef, {
+      const updateData = {
         displayName,
         farmName,
         location,
-        farmSize: farmSize.trim() || null,
-        otherFarmingActivities: otherActivities.trim() || null,
+        farmSize: farmSize.trim() || "",
+        otherFarmingActivities: otherActivities.trim() || "",
         updatedAt: new Date().toISOString(),
-      })
+      }
+
+      // Filter out undefined values
+      const filteredData = Object.fromEntries(
+        Object.entries(updateData).filter(([_, v]) => v !== undefined)
+      )
+
+      await updateDoc(profileRef, filteredData)
+      console.log("User profile updated successfully")
 
       toast({
         title: "Settings Saved",

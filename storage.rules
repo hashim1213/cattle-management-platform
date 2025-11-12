@@ -1,0 +1,5 @@
+{
+  "storage": {
+    "rules": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    // User-specific files\n    match /users/{userId}/{allPaths=**} {\n      allow read, write: if request.auth != null && request.auth.uid == userId;\n    }\n    \n    // Public files (like default images)\n    match /public/{allPaths=**} {\n      allow read: if true;\n      allow write: if false;\n    }\n    \n    // Deny all other requests\n    match /{allPaths=**} {\n      allow read, write: if false;\n    }\n  }\n}\n"
+  }
+}
