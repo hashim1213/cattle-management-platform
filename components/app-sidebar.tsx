@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
-import { Home, Beef, Sprout, MapPin, DollarSign, FileText, TrendingUp, Menu, X, Building2, Calendar, Activity, Package, Users, Calculator, Cookie, Heart, BarChart3, Settings, Package2, Warehouse, LogOut } from "lucide-react"
+import { Home, Beef, Sprout, MapPin, DollarSign, FileText, TrendingUp, Menu, X, Building2, Calendar, Activity, Package, Users, Calculator, Cookie, Heart, BarChart3, Settings, Package2, Warehouse, LogOut, MessageSquare } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -16,7 +16,7 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "Cattle", href: "/cattle", icon: Beef },
   { name: "Pens & Barns", href: "/pens", icon: Warehouse },
-  { name: "Health", href: "/health", icon: Heart },
+  { name: "Farm Assistant", href: "/agent", icon: MessageSquare },
   { name: "Inventory", href: "/inventory", icon: Package2 },
   { name: "Financial", href: "/costs", icon: DollarSign },
 ]
