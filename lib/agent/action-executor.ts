@@ -53,6 +53,68 @@ export interface AddHealthRecordParams {
   notes?: string
 }
 
+export interface AddCattleParams {
+  tagNumber: string
+  name?: string
+  breed: string
+  sex: "Bull" | "Cow" | "Steer" | "Heifer" | "Unknown"
+  birthDate?: string
+  purchaseDate?: string
+  purchasePrice?: number
+  purchaseWeight?: number
+  weight: number
+  penId?: string
+  barnId?: string
+  batchId?: string
+  stage?: string
+  notes?: string
+}
+
+export interface UpdateCattleParams {
+  cattleId?: string
+  tagNumber?: string
+  weight?: number
+  penId?: string
+  barnId?: string
+  status?: "Active" | "Sold" | "Deceased" | "Culled"
+  healthStatus?: "Healthy" | "Sick" | "Treatment" | "Quarantine"
+  notes?: string
+}
+
+export interface DeleteCattleParams {
+  cattleId?: string
+  tagNumber?: string
+}
+
+export interface AddWeightRecordParams {
+  cattleId?: string
+  tagNumber?: string
+  weight: number
+  date?: string
+  notes?: string
+}
+
+export interface AddBarnParams {
+  name: string
+  location: string
+  notes?: string
+}
+
+export interface AddPenParams {
+  name: string
+  barnId: string
+  capacity: number
+  notes?: string
+}
+
+export interface DeletePenParams {
+  penId: string
+}
+
+export interface DeleteBarnParams {
+  barnId: string
+}
+
 class AgentActionExecutor {
   /**
    * Add medication to inventory
@@ -679,6 +741,412 @@ class AgentActionExecutor {
       return {
         success: false,
         message: "Failed to get cattle count by pen",
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * Add cattle
+   */
+  async addCattle(userId: string, params: AddCattleParams): Promise<ActionResult> {
+    if (!userId) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: "NOT_AUTHENTICATED"
+      }
+    }
+
+    try {
+      const id = `cattle_${Date.now()}_${Math.random().toString(36).substring(7)}`
+      const now = new Date().toISOString()
+
+      const cattle: Cattle = {
+        id,
+        tagNumber: params.tagNumber,
+        name: params.name,
+        breed: params.breed,
+        sex: params.sex,
+        birthDate: params.birthDate,
+        purchaseDate: params.purchaseDate,
+        purchasePrice: params.purchasePrice,
+        purchaseWeight: params.purchaseWeight,
+        weight: params.weight,
+        penId: params.penId,
+        barnId: params.barnId,
+        batchId: params.batchId,
+        status: "Active",
+        stage: (params.stage || "receiving") as any,
+        healthStatus: "Healthy",
+        identificationMethod: "Visual Tag",
+        lot: "default",
+        notes: params.notes,
+        createdAt: now,
+        updatedAt: now
+      }
+
+      const docRef = doc(db, `users/${userId}/cattle`, id)
+      const cattleData = Object.fromEntries(
+        Object.entries(cattle).filter(([_, v]) => v !== undefined)
+      )
+      await setDoc(docRef, cattleData)
+
+      return {
+        success: true,
+        message: `Successfully added cattle #${params.tagNumber}`,
+        data: cattle
+      }
+    } catch (error: any) {
+      console.error("Error adding cattle:", error)
+      return {
+        success: false,
+        message: "Failed to add cattle",
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * Update cattle
+   */
+  async updateCattle(userId: string, params: UpdateCattleParams): Promise<ActionResult> {
+    if (!userId) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: "NOT_AUTHENTICATED"
+      }
+    }
+
+    try {
+      let cattleId = params.cattleId
+
+      // Find by tag number if cattleId not provided
+      if (!cattleId && params.tagNumber) {
+        const cattleQuery = query(
+          collection(db, `users/${userId}/cattle`),
+          where("tagNumber", "==", params.tagNumber)
+        )
+        const snapshot = await getDocs(cattleQuery)
+        if (!snapshot.empty) {
+          cattleId = snapshot.docs[0].id
+        }
+      }
+
+      if (!cattleId) {
+        return {
+          success: false,
+          message: "Cattle not found",
+          error: "NOT_FOUND"
+        }
+      }
+
+      const docRef = doc(db, `users/${userId}/cattle`, cattleId)
+      const updates = Object.fromEntries(
+        Object.entries({
+          ...params,
+          cattleId: undefined,
+          tagNumber: undefined,
+          updatedAt: new Date().toISOString()
+        }).filter(([_, v]) => v !== undefined)
+      )
+
+      await updateDoc(docRef, updates)
+
+      return {
+        success: true,
+        message: `Successfully updated cattle #${params.tagNumber || cattleId}`,
+        data: updates
+      }
+    } catch (error: any) {
+      console.error("Error updating cattle:", error)
+      return {
+        success: false,
+        message: "Failed to update cattle",
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * Delete cattle
+   */
+  async deleteCattle(userId: string, params: DeleteCattleParams): Promise<ActionResult> {
+    if (!userId) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: "NOT_AUTHENTICATED"
+      }
+    }
+
+    try {
+      let cattleId = params.cattleId
+
+      // Find by tag number if cattleId not provided
+      if (!cattleId && params.tagNumber) {
+        const cattleQuery = query(
+          collection(db, `users/${userId}/cattle`),
+          where("tagNumber", "==", params.tagNumber)
+        )
+        const snapshot = await getDocs(cattleQuery)
+        if (!snapshot.empty) {
+          cattleId = snapshot.docs[0].id
+        }
+      }
+
+      if (!cattleId) {
+        return {
+          success: false,
+          message: "Cattle not found",
+          error: "NOT_FOUND"
+        }
+      }
+
+      const docRef = doc(db, `users/${userId}/cattle`, cattleId)
+      await deleteDoc(docRef)
+
+      return {
+        success: true,
+        message: `Successfully deleted cattle #${params.tagNumber || cattleId}`,
+        data: { cattleId }
+      }
+    } catch (error: any) {
+      console.error("Error deleting cattle:", error)
+      return {
+        success: false,
+        message: "Failed to delete cattle",
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * Add weight record
+   */
+  async addWeightRecord(userId: string, params: AddWeightRecordParams): Promise<ActionResult> {
+    if (!userId) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: "NOT_AUTHENTICATED"
+      }
+    }
+
+    try {
+      let cattleId = params.cattleId
+
+      // Find by tag number if cattleId not provided
+      if (!cattleId && params.tagNumber) {
+        const cattleQuery = query(
+          collection(db, `users/${userId}/cattle`),
+          where("tagNumber", "==", params.tagNumber)
+        )
+        const snapshot = await getDocs(cattleQuery)
+        if (!snapshot.empty) {
+          cattleId = snapshot.docs[0].id
+        }
+      }
+
+      if (!cattleId) {
+        return {
+          success: false,
+          message: "Cattle not found",
+          error: "NOT_FOUND"
+        }
+      }
+
+      const recordId = `weight_${Date.now()}_${Math.random().toString(36).substring(7)}`
+      const now = new Date().toISOString()
+
+      const weightRecord = {
+        id: recordId,
+        cattleId,
+        date: params.date || now,
+        weight: params.weight,
+        notes: params.notes,
+        createdAt: now
+      }
+
+      const docRef = doc(db, `users/${userId}/cattle/${cattleId}/weightRecords`, recordId)
+      await setDoc(docRef, weightRecord)
+
+      // Update cattle weight
+      const cattleRef = doc(db, `users/${userId}/cattle`, cattleId)
+      await updateDoc(cattleRef, {
+        weight: params.weight,
+        updatedAt: now
+      })
+
+      return {
+        success: true,
+        message: `Successfully added weight record: ${params.weight} lbs for cattle #${params.tagNumber || cattleId}`,
+        data: weightRecord
+      }
+    } catch (error: any) {
+      console.error("Error adding weight record:", error)
+      return {
+        success: false,
+        message: "Failed to add weight record",
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * Add barn
+   */
+  async addBarn(userId: string, params: AddBarnParams): Promise<ActionResult> {
+    if (!userId) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: "NOT_AUTHENTICATED"
+      }
+    }
+
+    try {
+      const id = `barn_${Date.now()}_${Math.random().toString(36).substring(7)}`
+      const now = new Date().toISOString()
+
+      const barn = {
+        id,
+        name: params.name,
+        location: params.location,
+        totalPens: 0,
+        totalCapacity: 0,
+        notes: params.notes,
+        createdAt: now,
+        updatedAt: now
+      }
+
+      const docRef = doc(db, `users/${userId}/barns`, id)
+      const barnData = Object.fromEntries(
+        Object.entries(barn).filter(([_, v]) => v !== undefined)
+      )
+      await setDoc(docRef, barnData)
+
+      return {
+        success: true,
+        message: `Successfully added barn "${params.name}"`,
+        data: barn
+      }
+    } catch (error: any) {
+      console.error("Error adding barn:", error)
+      return {
+        success: false,
+        message: "Failed to add barn",
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * Add pen
+   */
+  async addPen(userId: string, params: AddPenParams): Promise<ActionResult> {
+    if (!userId) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: "NOT_AUTHENTICATED"
+      }
+    }
+
+    try {
+      const id = `pen_${Date.now()}_${Math.random().toString(36).substring(7)}`
+      const now = new Date().toISOString()
+
+      const pen = {
+        id,
+        name: params.name,
+        barnId: params.barnId,
+        capacity: params.capacity,
+        currentCount: 0,
+        notes: params.notes,
+        createdAt: now,
+        updatedAt: now
+      }
+
+      const docRef = doc(db, `users/${userId}/pens`, id)
+      const penData = Object.fromEntries(
+        Object.entries(pen).filter(([_, v]) => v !== undefined)
+      )
+      await setDoc(docRef, penData)
+
+      return {
+        success: true,
+        message: `Successfully added pen "${params.name}" with capacity ${params.capacity}`,
+        data: pen
+      }
+    } catch (error: any) {
+      console.error("Error adding pen:", error)
+      return {
+        success: false,
+        message: "Failed to add pen",
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * Delete pen
+   */
+  async deletePen(userId: string, params: DeletePenParams): Promise<ActionResult> {
+    if (!userId) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: "NOT_AUTHENTICATED"
+      }
+    }
+
+    try {
+      const docRef = doc(db, `users/${userId}/pens`, params.penId)
+      await deleteDoc(docRef)
+
+      return {
+        success: true,
+        message: `Successfully deleted pen`,
+        data: { penId: params.penId }
+      }
+    } catch (error: any) {
+      console.error("Error deleting pen:", error)
+      return {
+        success: false,
+        message: "Failed to delete pen",
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * Delete barn
+   */
+  async deleteBarn(userId: string, params: DeleteBarnParams): Promise<ActionResult> {
+    if (!userId) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: "NOT_AUTHENTICATED"
+      }
+    }
+
+    try {
+      const docRef = doc(db, `users/${userId}/barns`, params.barnId)
+      await deleteDoc(docRef)
+
+      return {
+        success: true,
+        message: `Successfully deleted barn`,
+        data: { barnId: params.barnId }
+      }
+    } catch (error: any) {
+      console.error("Error deleting barn:", error)
+      return {
+        success: false,
+        message: "Failed to delete barn",
         error: error.message
       }
     }

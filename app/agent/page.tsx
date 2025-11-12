@@ -294,10 +294,75 @@ export default function AgentPage() {
                     {currentMessages.length === 0 && (
                       <div className="text-center text-muted-foreground py-8">
                         <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p className="text-lg font-medium">Start a conversation</p>
-                        <p className="text-sm mt-2">
-                          Try: "Add 500cc of Resflor to inventory" or "How many cattle in pen 3?"
+                        <p className="text-lg font-medium">Farm Assistant - Full Control</p>
+                        <p className="text-sm mt-2 mb-4">
+                          I can manage your entire farm. Try these quick actions:
                         </p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-w-3xl mx-auto text-left">
+                          <button
+                            onClick={() => setInputMessage("How many cattle do I have?")}
+                            className="p-3 text-sm bg-muted hover:bg-accent rounded-lg text-left transition-colors"
+                          >
+                            <strong>📊 Farm Overview</strong>
+                            <br />
+                            <span className="text-xs text-muted-foreground">Get complete farm statistics</span>
+                          </button>
+
+                          <button
+                            onClick={() => setInputMessage("Show me all my pens")}
+                            className="p-3 text-sm bg-muted hover:bg-accent rounded-lg text-left transition-colors"
+                          >
+                            <strong>🏠 List Pens</strong>
+                            <br />
+                            <span className="text-xs text-muted-foreground">View all pens and cattle distribution</span>
+                          </button>
+
+                          <button
+                            onClick={() => setInputMessage("Check my inventory")}
+                            className="p-3 text-sm bg-muted hover:bg-accent rounded-lg text-left transition-colors"
+                          >
+                            <strong>💊 Check Inventory</strong>
+                            <br />
+                            <span className="text-xs text-muted-foreground">View all medications and stock levels</span>
+                          </button>
+
+                          <button
+                            onClick={() => setInputMessage("Add a new cow, tag 1001, Angus breed, 850 lbs")}
+                            className="p-3 text-sm bg-muted hover:bg-accent rounded-lg text-left transition-colors"
+                          >
+                            <strong>🐄 Add Cattle</strong>
+                            <br />
+                            <span className="text-xs text-muted-foreground">Add new cattle to your herd</span>
+                          </button>
+
+                          <button
+                            onClick={() => setInputMessage("Create a new pen called North Pen with capacity 50")}
+                            className="p-3 text-sm bg-muted hover:bg-accent rounded-lg text-left transition-colors"
+                          >
+                            <strong>➕ Create Pen</strong>
+                            <br />
+                            <span className="text-xs text-muted-foreground">Add a new pen to your barn</span>
+                          </button>
+
+                          <button
+                            onClick={() => setInputMessage("Add 1000ml of Draxxin antibiotic to inventory")}
+                            className="p-3 text-sm bg-muted hover:bg-accent rounded-lg text-left transition-colors"
+                          >
+                            <strong>💉 Add Medication</strong>
+                            <br />
+                            <span className="text-xs text-muted-foreground">Stock up your inventory</span>
+                          </button>
+                        </div>
+
+                        <div className="mt-6 text-xs text-muted-foreground">
+                          <p className="font-medium mb-1">I can also help you:</p>
+                          <p>• Update cattle weights and move them between pens</p>
+                          <p>• Record health treatments and medications</p>
+                          <p>• Create and manage barns</p>
+                          <p>• Log activities and track pen operations</p>
+                          <p>• Delete records when needed</p>
+                        </div>
                       </div>
                     )}
 

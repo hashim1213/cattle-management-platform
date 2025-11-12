@@ -6,56 +6,77 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
-const SYSTEM_PROMPT = `You are a helpful Farm Assistant for a cattle management platform. You help farmers manage their cattle operations through natural conversation.
+const SYSTEM_PROMPT = `You are a helpful Farm Assistant for a cattle management platform. You help farmers manage their ENTIRE cattle operation through natural conversation. You have FULL CONTROL over all aspects of the farm.
 
-You can help with:
-1. Adding medications/inventory items
-2. Updating pen information
-3. Logging activities for pens
-4. Recording health treatments
-5. Querying cattle, pen, and inventory information
-6. Providing farm summaries and statistics
-
-When users ask you to perform actions, you should:
-- Parse their request to understand the intent
-- Extract relevant parameters
-- Execute the appropriate action
-- Provide clear, friendly confirmation
+CAPABILITIES - You can manage everything:
+1. 🐄 CATTLE: Add, update, delete, search, weigh
+2. 🏠 BARNS & PENS: Create, update, delete, query
+3. 💊 INVENTORY: Add medications, track usage, check stock
+4. 📊 HEALTH: Record treatments, track health history
+5. 📈 ANALYTICS: Get summaries, statistics, reports
+6. 📝 ACTIVITIES: Log pen activities and operations
 
 Available Actions:
 
-WRITE ACTIONS (modify data):
-- addMedication: Add medication to inventory (params: name, category, quantity, unit, costPerUnit, withdrawalPeriod, storageLocation, notes)
-- updatePen: Update pen information (params: penId, name, capacity, notes)
-- logActivity: Log an activity for a pen (params: penId, activityType, description, date, notes)
-- addHealthRecord: Record health treatment and deduct inventory (params: cattleId/tagNumber/penId, medicationName, quantity, date, notes)
+🐄 CATTLE MANAGEMENT:
+- addCattle: Add new cattle (params: tagNumber*, breed*, sex*, weight*, name, birthDate, purchaseDate, purchasePrice, purchaseWeight, penId, barnId, stage, notes)
+  * Sex options: "Bull", "Cow", "Steer", "Heifer", "Unknown"
+  * Stage options: "receiving", "Calf", "Weaned Calf", "Yearling", "Breeding", "Finishing"
+- updateCattle: Update cattle info (params: cattleId OR tagNumber, weight, penId, barnId, status, healthStatus, notes)
+  * Status: "Active", "Sold", "Deceased", "Culled"
+  * healthStatus: "Healthy", "Sick", "Treatment", "Quarantine"
+- deleteCattle: Remove cattle (params: cattleId OR tagNumber)
+- getCattleInfo: Search cattle (params: tagNumber, penId, or cattleId)
+- getAllCattle: Get all cattle with summary
+- addWeightRecord: Record weight (params: cattleId OR tagNumber, weight*, date, notes)
 
-READ ACTIONS (query data):
-- getCattleInfo: Get information about specific cattle (params: tagNumber, penId, or cattleId)
-- getPenInfo: Get information about specific pens (params: penId - optional, omit to get all pens)
-- getInventoryInfo: Get information about inventory items (params: itemName - optional, omit to get all items)
-- getAllCattle: Get total cattle count with summary by pen (no params needed)
-- getFarmSummary: Get comprehensive farm statistics including cattle, pens, and inventory (no params needed)
-- getCattleCountByPen: Get cattle count per pen with pen details (no params needed)
+🏠 BARN & PEN MANAGEMENT:
+- addBarn: Create barn (params: name*, location*, notes)
+- deleteBarn: Remove barn (params: barnId*)
+- addPen: Create pen (params: name*, barnId*, capacity*, notes)
+- updatePen: Update pen (params: penId*, name, capacity, notes)
+- deletePen: Remove pen (params: penId*)
+- getPenInfo: Get pen details (params: penId - optional for all)
+- getCattleCountByPen: Get cattle distribution across pens
 
-Medication categories: antibiotic, antiparasitic, vaccine, anti-inflammatory, hormone, vitamin-injectable, drug-other
-Common units: cc, ml, lbs, kg, tons, bales, bags, doses
+💊 INVENTORY MANAGEMENT:
+- addMedication: Add inventory (params: name*, category*, quantity*, unit*, costPerUnit, withdrawalPeriod, storageLocation, notes)
+  * Categories: antibiotic, antiparasitic, vaccine, anti-inflammatory, hormone, vitamin-injectable, drug-other
+  * Units: cc, ml, lbs, kg, tons, bales, bags, doses
+- getInventoryInfo: Check inventory (params: itemName - optional for all)
 
-When executing actions, you MUST respond with a JSON object containing:
+🏥 HEALTH & TREATMENT:
+- addHealthRecord: Record treatment & deduct inventory (params: cattleId/tagNumber/penId*, medicationName*, quantity*, date, notes)
+- logActivity: Log pen activity (params: penId*, activityType*, description*, date, notes)
+
+📊 REPORTS & ANALYTICS:
+- getFarmSummary: Comprehensive farm overview (cattle, pens, inventory, low stock alerts)
+
+RESPONSE FORMAT:
+You MUST respond with a JSON object:
 {
   "action": "actionName",
   "params": { ... },
-  "message": "A friendly, conversational message to the user explaining what you found or did"
+  "message": "A friendly message explaining what you did or found"
 }
 
-IMPORTANT: For informational queries, you will receive the data back after executing the action. Use that data to craft a conversational, human-readable response. DO NOT just dump raw JSON data to the user.
+IMPORTANT RULES:
+1. For queries, craft conversational, human-readable responses - NO raw JSON dumps
+2. Always confirm destructive actions (delete, sold, deceased)
+3. Use farmer-friendly language
+4. When adding cattle/pens, use the data from the user's request
+5. For updates, you can find by tagNumber OR cattleId
 
-Examples:
-- User: "How many cattle do I have?" → Use getAllCattle action, then respond with: "You have [X] cattle total, distributed across [Y] pens."
-- User: "What's in pen 3?" → Use getCattleInfo with penId, then respond with: "Pen 3 currently has [X] cattle."
-- User: "Give me a farm overview" → Use getFarmSummary, then provide a nice summary of the stats.
+EXAMPLES:
+- "Add a new cow tag 1234, Angus breed, 850 lbs" → addCattle with tagNumber:"1234", breed:"Angus", sex:"Cow", weight:850
+- "Move cow 1234 to pen 5" → updateCattle with tagNumber:"1234", penId:"pen_5"
+- "How many cattle?" → getAllCattle
+- "Create a new barn called North Barn" → addBarn with name:"North Barn", location:"North"
+- "Delete cattle 1234" → deleteCattle with tagNumber:"1234"
+- "Weigh cow 1234 at 920 lbs" → addWeightRecord with tagNumber:"1234", weight:920
+- "What's my farm status?" → getFarmSummary
 
-Be conversational, friendly, and use farming terminology appropriately. Confirm actions before marking them complete.`
+You control EVERYTHING. Be helpful, accurate, and thorough!`
 
 interface ChatMessage {
   role: "user" | "assistant" | "system"
@@ -241,36 +262,74 @@ export async function POST(request: NextRequest) {
         if (actionData.action) {
           // Execute the action
           switch (actionData.action) {
+            // Inventory actions
             case "addMedication":
               actionResult = await actionExecutor.addMedication(userId, actionData.params)
-              break
-            case "updatePen":
-              actionResult = await actionExecutor.updatePen(userId, actionData.params)
-              break
-            case "logActivity":
-              actionResult = await actionExecutor.logActivity(userId, actionData.params)
-              break
-            case "addHealthRecord":
-              actionResult = await actionExecutor.addHealthRecord(userId, actionData.params)
-              break
-            case "getCattleInfo":
-              actionResult = await actionExecutor.getCattleInfo(userId, actionData.params)
-              break
-            case "getPenInfo":
-              actionResult = await actionExecutor.getPenInfo(userId, actionData.params?.penId)
               break
             case "getInventoryInfo":
               actionResult = await actionExecutor.getInventoryInfo(userId, actionData.params?.itemName)
               break
+
+            // Cattle actions
+            case "addCattle":
+              actionResult = await actionExecutor.addCattle(userId, actionData.params)
+              break
+            case "updateCattle":
+              actionResult = await actionExecutor.updateCattle(userId, actionData.params)
+              break
+            case "deleteCattle":
+              actionResult = await actionExecutor.deleteCattle(userId, actionData.params)
+              break
+            case "getCattleInfo":
+              actionResult = await actionExecutor.getCattleInfo(userId, actionData.params)
+              break
             case "getAllCattle":
               actionResult = await actionExecutor.getAllCattle(userId)
               break
-            case "getFarmSummary":
-              actionResult = await actionExecutor.getFarmSummary(userId)
+            case "addWeightRecord":
+              actionResult = await actionExecutor.addWeightRecord(userId, actionData.params)
+              break
+
+            // Health actions
+            case "addHealthRecord":
+              actionResult = await actionExecutor.addHealthRecord(userId, actionData.params)
+              break
+
+            // Pen actions
+            case "addPen":
+              actionResult = await actionExecutor.addPen(userId, actionData.params)
+              break
+            case "updatePen":
+              actionResult = await actionExecutor.updatePen(userId, actionData.params)
+              break
+            case "deletePen":
+              actionResult = await actionExecutor.deletePen(userId, actionData.params)
+              break
+            case "getPenInfo":
+              actionResult = await actionExecutor.getPenInfo(userId, actionData.params?.penId)
               break
             case "getCattleCountByPen":
               actionResult = await actionExecutor.getCattleCountByPen(userId)
               break
+
+            // Barn actions
+            case "addBarn":
+              actionResult = await actionExecutor.addBarn(userId, actionData.params)
+              break
+            case "deleteBarn":
+              actionResult = await actionExecutor.deleteBarn(userId, actionData.params)
+              break
+
+            // Activity actions
+            case "logActivity":
+              actionResult = await actionExecutor.logActivity(userId, actionData.params)
+              break
+
+            // Summary/Stats actions
+            case "getFarmSummary":
+              actionResult = await actionExecutor.getFarmSummary(userId)
+              break
+
             default:
               actionResult = {
                 success: false,
