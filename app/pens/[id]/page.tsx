@@ -26,9 +26,9 @@ import { toast } from "sonner"
 export default function PenDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const { barns, updatePen, pens } = usePenStore()
+  const { barns, updatePen, pens, loading: pensLoading } = usePenStore()
   const [cattle, setCattle] = useState<Cattle[]>([])
-  const [loading, setLoading] = useState(true)
+  const [cattleLoading, setCattleLoading] = useState(true)
   const [isFeedDialogOpen, setIsFeedDialogOpen] = useState(false)
   const [isMedicationDialogOpen, setIsMedicationDialogOpen] = useState(false)
   const [isValueDialogOpen, setIsValueDialogOpen] = useState(false)
@@ -48,7 +48,7 @@ export default function PenDetailPage() {
     const loadCattle = async () => {
       try {
         console.log("Loading cattle for pen:", params.id)
-        setLoading(true)
+        setCattleLoading(true)
         const allCattle = await firebaseDataStore.getCattle()
         console.log(`Total cattle loaded: ${allCattle.length}`)
         const penCattle = allCattle.filter(c => c.penId === params.id)
@@ -58,12 +58,14 @@ export default function PenDetailPage() {
         console.error("Error loading cattle:", error)
         setCattle([])
       } finally {
-        setLoading(false)
+        setCattleLoading(false)
       }
     }
 
     loadCattle()
   }, [params.id])
+
+  const loading = pensLoading || cattleLoading
 
   const handleUpdatePenValue = async () => {
     if (!pen) {
