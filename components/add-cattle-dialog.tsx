@@ -50,6 +50,7 @@ export function AddCattleDialog({ open, onOpenChange, onSuccess }: AddCattleDial
     purchaseDate: "",
     purchaseWeight: "",
     purchasePrice: "",
+    currentValue: "",
     lotNumber: "",
 
     // Breeding Info
@@ -83,6 +84,7 @@ export function AddCattleDialog({ open, onOpenChange, onSuccess }: AddCattleDial
         purchaseDate: formData.purchaseDate,
         purchasePrice: formData.purchasePrice ? Number(formData.purchasePrice) : undefined,
         purchaseWeight: formData.purchaseWeight ? Number(formData.purchaseWeight) : undefined,
+        currentValue: formData.currentValue ? Number(formData.currentValue) : undefined,
         weight: formData.purchaseWeight ? Number(formData.purchaseWeight) : 0,
         lot: formData.lotNumber,
         dam: formData.dam || undefined,
@@ -121,6 +123,7 @@ export function AddCattleDialog({ open, onOpenChange, onSuccess }: AddCattleDial
         purchaseDate: "",
         purchaseWeight: "",
         purchasePrice: "",
+        currentValue: "",
         lotNumber: "",
         dam: "",
         sire: "",
@@ -398,6 +401,20 @@ export function AddCattleDialog({ open, onOpenChange, onSuccess }: AddCattleDial
                     required
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="currentValue">Current Value ($)</Label>
+                <Input
+                  id="currentValue"
+                  type="number"
+                  placeholder="Optional - Leave empty for auto-calculation"
+                  value={formData.currentValue}
+                  onChange={(e) => setFormData({ ...formData, currentValue: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enter current market value or leave empty for automatic calculation
+                </p>
               </div>
             </TabsContent>
 

@@ -20,6 +20,7 @@ export interface Pen {
   barnId: string
   capacity: number
   currentCount: number
+  totalValue?: number  // Total value of all cattle in this pen
   location?: {
     x: number
     y: number

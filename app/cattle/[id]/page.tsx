@@ -28,6 +28,7 @@ export default function CattleDetailPage() {
   const [isAddWeightOpen, setIsAddWeightOpen] = useState(false)
   const [isAddHealthOpen, setIsAddHealthOpen] = useState(false)
   const [isUpdatePriceOpen, setIsUpdatePriceOpen] = useState(false)
+  const [isUpdateValueOpen, setIsUpdateValueOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isAssignLocationOpen, setIsAssignLocationOpen] = useState(false)
   const [cattle, setCattle] = useState<Cattle | null>(null)
@@ -41,6 +42,9 @@ export default function CattleDetailPage() {
   const [weightDate, setWeightDate] = useState<string>(new Date().toISOString().split('T')[0])
   const [weightValue, setWeightValue] = useState<string>("")
   const [weightNotes, setWeightNotes] = useState<string>("")
+
+  // Value update form state
+  const [newValue, setNewValue] = useState<string>("")
 
   useEffect(() => {
     const loadCattle = async () => {
@@ -107,6 +111,44 @@ export default function CattleDetailPage() {
     }
   }
 
+  const handleUpdateValue = async () => {
+    if (!cattle) {
+      toast({
+        title: "Error",
+        description: "Cattle data not loaded.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      // If empty, set to undefined to use auto-calculation
+      const valueToSet = newValue ? Number(newValue) : undefined
+
+      await firebaseDataStore.updateCattle(cattle.id, {
+        currentValue: valueToSet,
+      })
+
+      setNewValue("")
+      setIsUpdateValueOpen(false)
+      setRefreshKey(prev => prev + 1)
+
+      toast({
+        title: "Value updated",
+        description: valueToSet
+          ? "Current value has been set to $" + valueToSet.toFixed(0)
+          : "Value reset to automatic calculation",
+      })
+    } catch (error) {
+      console.error("Failed to update value:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update value.",
+        variant: "destructive",
+      })
+    }
+  }
+
   const handleAssignLocation = async () => {
     if (!cattle) return
 
@@ -153,9 +195,10 @@ export default function CattleDetailPage() {
   const currentWeight = cattle.weight || 0
   const dailyGain = daysOnFeed > 0 ? (currentWeight - startWeight) / daysOnFeed : 0
 
-  // Calculate current value (market price per pound * current weight)
+  // Calculate current value (use manual value if set, otherwise calculate)
   const marketPricePerPound = 1.65
-  const currentValue = currentWeight * marketPricePerPound
+  const calculatedValue = currentWeight * marketPricePerPound
+  const currentValue = cattle.currentValue || calculatedValue
 
   // Calculate target values
   const targetWeight = cattle.targetWeight || 0
@@ -312,12 +355,27 @@ export default function CattleDetailPage() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
-                <div>
+                <div className="flex-1">
                   <p className="text-sm text-muted-foreground mb-1">Current Value</p>
                   <p className="text-2xl font-bold text-foreground">${currentValue.toFixed(0)}</p>
                   <p className="text-xs text-green-600 mt-1">+${((cattle.purchasePrice || 0) > 0 ? (currentValue - (cattle.purchasePrice || 0)).toFixed(0) : 0)} gain</p>
+                  {cattle.currentValue && (
+                    <p className="text-xs text-muted-foreground mt-1">Manual value set</p>
+                  )}
                 </div>
-                <DollarSign className="h-5 w-5 text-amber-600" />
+                <div className="flex flex-col gap-2">
+                  <DollarSign className="h-5 w-5 text-amber-600" />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setNewValue(currentValue.toString())
+                      setIsUpdateValueOpen(true)
+                    }}
+                  >
+                    Update
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -885,6 +943,39 @@ export default function CattleDetailPage() {
               </Button>
               <Button onClick={handleAssignLocation} disabled={!selectedPenId}>
                 Assign Location
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Update Value Dialog */}
+      <Dialog open={isUpdateValueOpen} onOpenChange={setIsUpdateValueOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Current Value</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-value">Current Value ($)</Label>
+              <Input
+                id="new-value"
+                type="number"
+                placeholder="Enter current market value"
+                value={newValue}
+                onChange={(e) => setNewValue(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Leave empty and save to reset to automatic calculation (weight × ${marketPricePerPound}/lb)
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setIsUpdateValueOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleUpdateValue}>
+                Update Value
               </Button>
             </div>
           </div>

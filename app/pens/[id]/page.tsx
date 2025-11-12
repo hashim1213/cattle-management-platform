@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { ArrowLeft, Grid3x3, Wheat, Syringe } from "lucide-react"
+import { ArrowLeft, Grid3x3, Wheat, Syringe, DollarSign } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -13,17 +13,28 @@ import { firebaseDataStore, type Cattle } from "@/lib/data-store-firebase"
 import { PenFeedDialog } from "@/components/pen-feed-dialog"
 import { PenMedicationDialog } from "@/components/pen-medication-dialog"
 import { PenROICard } from "@/components/pen-roi-card"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { toast } from "sonner"
 
 export default function PenDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const { getPen, barns } = usePenStore()
+  const { getPen, barns, updatePen } = usePenStore()
   const [pen, setPen] = useState<any>(null)
   const [barn, setBarn] = useState<any>(null)
   const [cattle, setCattle] = useState<Cattle[]>([])
   const [loading, setLoading] = useState(true)
   const [isFeedDialogOpen, setIsFeedDialogOpen] = useState(false)
   const [isMedicationDialogOpen, setIsMedicationDialogOpen] = useState(false)
+  const [isValueDialogOpen, setIsValueDialogOpen] = useState(false)
+  const [penValue, setPenValue] = useState<string>("")
 
   useEffect(() => {
     const loadPenData = async () => {
@@ -43,6 +54,45 @@ export default function PenDetailPage() {
 
     loadPenData()
   }, [params.id, getPen, barns])
+
+  const handleUpdatePenValue = async () => {
+    if (!pen) {
+      toast.error("Pen data not loaded")
+      return
+    }
+
+    try {
+      const valueToSet = penValue ? Number(penValue) : undefined
+      await updatePen(pen.id, { totalValue: valueToSet })
+
+      setPenValue("")
+      setIsValueDialogOpen(false)
+
+      // Reload pen data
+      const updatedPen = getPen(params.id as string)
+      if (updatedPen) {
+        setPen(updatedPen)
+      }
+
+      toast.success(
+        valueToSet
+          ? `Pen value set to $${valueToSet.toFixed(0)}`
+          : "Pen value reset to automatic calculation"
+      )
+    } catch (error) {
+      console.error("Failed to update pen value:", error)
+      toast.error("Failed to update pen value")
+    }
+  }
+
+  // Calculate total value from cattle
+  const calculatedTotalValue = cattle.reduce((sum, c) => {
+    const marketPricePerPound = 1.65
+    const cattleValue = c.currentValue || (c.weight * marketPricePerPound)
+    return sum + cattleValue
+  }, 0)
+
+  const displayTotalValue = pen?.totalValue || calculatedTotalValue
 
   if (loading || !pen) {
     return (
@@ -141,7 +191,42 @@ export default function PenDetailPage() {
               </CardContent>
             </Card>
 
-            <PenROICard pen={pen} estimatedRevenue={0} />
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Total Value</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <p className="text-3xl font-bold text-foreground mb-2">
+                      ${displayTotalValue.toFixed(0)}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {pen.totalValue
+                        ? "Manual value set"
+                        : `Calculated from ${cattle.length} cattle`}
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-2 items-end">
+                    <DollarSign className="h-5 w-5 text-green-600" />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setPenValue(displayTotalValue.toString())
+                        setIsValueDialogOpen(true)
+                      }}
+                    >
+                      Update
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 mb-6">
+            <PenROICard pen={pen} estimatedRevenue={displayTotalValue} />
           </div>
 
           {/* Cattle List */}
@@ -231,6 +316,39 @@ export default function PenDetailPage() {
           // Refresh data if needed
         }}
       />
+
+      {/* Update Pen Value Dialog */}
+      <Dialog open={isValueDialogOpen} onOpenChange={setIsValueDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Pen Total Value</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="pen-value">Total Value ($)</Label>
+              <Input
+                id="pen-value"
+                type="number"
+                placeholder="Enter total pen value"
+                value={penValue}
+                onChange={(e) => setPenValue(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Leave empty and save to reset to automatic calculation (sum of all cattle values)
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setIsValueDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleUpdatePenValue}>
+                Update Value
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
