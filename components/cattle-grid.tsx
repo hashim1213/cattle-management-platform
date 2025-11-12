@@ -25,14 +25,42 @@ interface CattleGridProps {
 
 export function CattleGrid({ searchQuery, filters }: CattleGridProps) {
   const [cattle, setCattle] = useState<Cattle[]>([])
+  const [loading, setLoading] = useState(true)
   const { pens = [] } = usePenStore()
   const router = useRouter()
 
   useEffect(() => {
-    setCattle(dataStore.getCattle())
+    const loadCattle = async () => {
+      try {
+        setLoading(true)
+        const cattleData = await dataStore.getCattle()
+        setCattle(Array.isArray(cattleData) ? cattleData : [])
+      } catch (error) {
+        console.error("Error loading cattle:", error)
+        setCattle([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadCattle()
+
+    // Subscribe to updates
+    const unsubscribe = dataStore.subscribe(() => {
+      const cattleData = dataStore.getCattle()
+      // Only update if it's a valid array
+      if (Array.isArray(cattleData)) {
+        setCattle(cattleData)
+      }
+    })
+
+    return unsubscribe
   }, [])
 
-  const filteredCattle = cattle.filter((animal) => {
+  // Defensive check to ensure cattle is always an array
+  const safeCattle = Array.isArray(cattle) ? cattle : []
+
+  const filteredCattle = safeCattle.filter((animal) => {
     const matchesSearch = searchQuery
       ? animal.tagNumber.includes(searchQuery) ||
         animal.breed.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -51,6 +79,22 @@ export function CattleGrid({ searchQuery, filters }: CattleGridProps) {
 
     return matchesSearch && matchesStatus && matchesSex && matchesStage && matchesHealthStatus && matchesPen && matchesBarn
   })
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <p className="text-muted-foreground">Loading cattle...</p>
+      </div>
+    )
+  }
+
+  if (filteredCattle.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <p className="text-muted-foreground">No cattle found</p>
+      </div>
+    )
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
