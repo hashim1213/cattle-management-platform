@@ -4,7 +4,7 @@
  */
 
 import { db, auth } from "@/lib/firebase"
-import { collection, doc, getDocs, setDoc, updateDoc, query, where } from "firebase/firestore"
+import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where } from "firebase/firestore"
 import type { InventoryItem, InventoryTransaction } from "@/lib/inventory/inventory-types"
 import type { Cattle } from "@/lib/data-store-firebase"
 import type { Pen } from "@/lib/pen-store-firebase"
@@ -419,7 +419,10 @@ class AgentActionExecutor {
    * Get cattle information
    */
   async getCattleInfo(userId: string, searchParams: { tagNumber?: string; penId?: string; cattleId?: string }): Promise<ActionResult> {
+    console.log('[getCattleInfo] Called with userId:', userId, 'searchParams:', searchParams)
+
     if (!userId) {
+      console.error('[getCattleInfo] No userId provided')
       return {
         success: false,
         message: "Authentication required",
@@ -431,25 +434,40 @@ class AgentActionExecutor {
       let cattleQuery
 
       if (searchParams.cattleId) {
+        console.log('[getCattleInfo] Fetching by cattleId:', searchParams.cattleId)
         const docRef = doc(db, `users/${userId}/cattle`, searchParams.cattleId)
-        const snapshot = await getDocs(collection(db, `users/${userId}/cattle`))
-        const cattle = snapshot.docs.find(doc => doc.id === searchParams.cattleId)
+        const docSnap = await getDoc(docRef)
+
+        if (!docSnap.exists()) {
+          console.log('[getCattleInfo] Cattle not found:', searchParams.cattleId)
+          return {
+            success: false,
+            message: `Cattle with ID ${searchParams.cattleId} not found`,
+            error: "CATTLE_NOT_FOUND"
+          }
+        }
+
+        const cattleData = { id: docSnap.id, ...docSnap.data() }
+        console.log('[getCattleInfo] Successfully retrieved cattle:', cattleData)
         return {
           success: true,
           message: "Cattle information retrieved",
-          data: cattle ? { id: cattle.id, ...cattle.data() } : null
+          data: [cattleData]
         }
       } else if (searchParams.tagNumber) {
+        console.log('[getCattleInfo] Fetching by tagNumber:', searchParams.tagNumber)
         cattleQuery = query(
           collection(db, `users/${userId}/cattle`),
           where("tagNumber", "==", searchParams.tagNumber)
         )
       } else if (searchParams.penId) {
+        console.log('[getCattleInfo] Fetching by penId:', searchParams.penId)
         cattleQuery = query(
           collection(db, `users/${userId}/cattle`),
           where("penId", "==", searchParams.penId)
         )
       } else {
+        console.log('[getCattleInfo] No valid search parameter provided')
         return {
           success: false,
           message: "Please provide tagNumber, penId, or cattleId",
@@ -460,17 +478,35 @@ class AgentActionExecutor {
       const snapshot = await getDocs(cattleQuery)
       const cattle = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 
+      console.log(`[getCattleInfo] Successfully retrieved ${cattle.length} cattle`)
       return {
         success: true,
         message: `Found ${cattle.length} cattle`,
         data: cattle
       }
     } catch (error: any) {
-      console.error("Error getting cattle info:", error)
+      console.error('[getCattleInfo] Error occurred:', {
+        error: error,
+        message: error.message,
+        code: error.code,
+        userId: userId,
+        searchParams: searchParams,
+        stack: error.stack
+      })
+
+      let errorMessage = "Failed to get cattle information"
+      if (error.code === 'permission-denied') {
+        errorMessage = "Permission denied. Please check your Firestore security rules."
+      } else if (error.code === 'unavailable') {
+        errorMessage = "Database temporarily unavailable. Please try again."
+      } else if (error.message) {
+        errorMessage = `Failed to get cattle information: ${error.message}`
+      }
+
       return {
         success: false,
-        message: "Failed to get cattle information",
-        error: error.message
+        message: errorMessage,
+        error: error.code || error.message
       }
     }
   }
@@ -479,7 +515,10 @@ class AgentActionExecutor {
    * Get pen information
    */
   async getPenInfo(userId: string, penId?: string): Promise<ActionResult> {
+    console.log('[getPenInfo] Called with userId:', userId, 'penId:', penId)
+
     if (!userId) {
+      console.error('[getPenInfo] No userId provided')
       return {
         success: false,
         message: "Authentication required",
@@ -489,17 +528,33 @@ class AgentActionExecutor {
 
     try {
       if (penId) {
+        console.log('[getPenInfo] Fetching specific pen:', penId)
         const docRef = doc(db, `users/${userId}/pens`, penId)
-        const snapshot = await getDocs(collection(db, `users/${userId}/pens`))
-        const pen = snapshot.docs.find(doc => doc.id === penId)
+        const docSnap = await getDoc(docRef)
+
+        if (!docSnap.exists()) {
+          console.log('[getPenInfo] Pen not found:', penId)
+          return {
+            success: false,
+            message: `Pen with ID ${penId} not found`,
+            error: "PEN_NOT_FOUND"
+          }
+        }
+
+        const penData = { id: docSnap.id, ...docSnap.data() }
+        console.log('[getPenInfo] Successfully retrieved pen:', penData)
         return {
           success: true,
           message: "Pen information retrieved",
-          data: pen ? { id: pen.id, ...pen.data() } : null
+          data: [penData] // Return as array for consistency with formatQueryResponse
         }
       } else {
-        const snapshot = await getDocs(collection(db, `users/${userId}/pens`))
+        console.log('[getPenInfo] Fetching all pens for user:', userId)
+        const collectionRef = collection(db, `users/${userId}/pens`)
+        const snapshot = await getDocs(collectionRef)
         const pens = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+
+        console.log(`[getPenInfo] Successfully retrieved ${pens.length} pens`)
         return {
           success: true,
           message: `Found ${pens.length} pens`,
@@ -507,11 +562,29 @@ class AgentActionExecutor {
         }
       }
     } catch (error: any) {
-      console.error("Error getting pen info:", error)
+      console.error('[getPenInfo] Error occurred:', {
+        error: error,
+        message: error.message,
+        code: error.code,
+        userId: userId,
+        penId: penId,
+        stack: error.stack
+      })
+
+      // Provide more specific error messages based on error type
+      let errorMessage = "Failed to get pen information"
+      if (error.code === 'permission-denied') {
+        errorMessage = "Permission denied. Please check your Firestore security rules."
+      } else if (error.code === 'unavailable') {
+        errorMessage = "Database temporarily unavailable. Please try again."
+      } else if (error.message) {
+        errorMessage = `Failed to get pen information: ${error.message}`
+      }
+
       return {
         success: false,
-        message: "Failed to get pen information",
-        error: error.message
+        message: errorMessage,
+        error: error.code || error.message
       }
     }
   }
