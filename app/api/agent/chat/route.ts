@@ -215,7 +215,15 @@ export async function POST(request: NextRequest) {
     const body: ChatRequest = await request.json()
     const { messages, conversationId, userId } = body
 
+    console.log('[Chat API] Request received:', {
+      messageCount: messages?.length,
+      conversationId,
+      userId,
+      hasUserId: !!userId
+    })
+
     if (!messages || messages.length === 0) {
+      console.error('[Chat API] No messages provided')
       return NextResponse.json(
         { error: "Messages are required" },
         { status: 400 }
@@ -223,11 +231,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (!userId) {
+      console.error('[Chat API] No userId provided in request body')
       return NextResponse.json(
         { error: "User ID is required" },
         { status: 401 }
       )
     }
+
+    console.log('[Chat API] User authenticated, userId:', userId)
 
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
@@ -260,6 +271,7 @@ export async function POST(request: NextRequest) {
         const actionData = JSON.parse(jsonMatch[0])
 
         if (actionData.action) {
+          console.log('[Chat API] Executing action:', actionData.action, 'with params:', actionData.params)
           // Execute the action
           switch (actionData.action) {
             // Inventory actions
@@ -337,6 +349,13 @@ export async function POST(request: NextRequest) {
               }
           }
 
+          console.log('[Chat API] Action result:', {
+            action: actionData.action,
+            success: actionResult?.success,
+            message: actionResult?.message,
+            error: actionResult?.error
+          })
+
           // If action was successful, format response based on action type
           if (actionResult && actionResult.success) {
             // Use AI-generated message or fallback to action result
@@ -346,14 +365,16 @@ export async function POST(request: NextRequest) {
             if (actionData.action.startsWith("get") && actionResult.data) {
               finalMessage = await formatQueryResponse(actionData.action, actionResult.data, actionData.message)
             }
+            console.log('[Chat API] Action successful, formatted message length:', finalMessage.length)
           } else if (actionResult && !actionResult.success) {
             finalMessage = `Sorry, I encountered an error: ${actionResult.message || actionResult.error}`
+            console.error('[Chat API] Action failed:', finalMessage)
           }
         }
       }
     } catch (parseError) {
       // Not a JSON response, just use the message as-is
-      console.log("Not an action response, using as plain message")
+      console.log("[Chat API] Not an action response, using as plain message")
     }
 
     return NextResponse.json({

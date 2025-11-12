@@ -1,12 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { TrendingUp, Package, DollarSign, Plus, Download, Sprout, MapPin, FileText, Heart } from "lucide-react"
+import { TrendingUp, Package, DollarSign, Plus, Download, Sprout, MapPin, FileText, Heart, MessageSquare } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { AlertCard } from "@/components/alert-card"
 import { MetricCard } from "@/components/metric-card"
-import { QuickEntryDialog } from "@/components/quick-entry-dialog"
 import { LifecycleSettingsDialog } from "@/components/lifecycle-settings-dialog"
 import { useLifecycleConfig } from "@/hooks/use-lifecycle-config"
 import { useFarmSettings } from "@/hooks/use-farm-settings"
@@ -255,7 +254,13 @@ export default function DashboardPage() {
                 <Download className="h-4 w-4 mr-2" />
                 Export Data
               </Button>
-              <QuickEntryDialog />
+              <Link href="/agent">
+                <Button variant="outline" size="sm" className="touch-manipulation min-h-[44px] px-3 sm:px-4">
+                  <MessageSquare className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Farm Assistant</span>
+                  <span className="sm:hidden">AI</span>
+                </Button>
+              </Link>
               <Link href="/cattle">
                 <Button size="sm" className="touch-manipulation min-h-[44px] px-3 sm:px-4">
                   <Plus className="h-4 w-4 sm:mr-2" />
