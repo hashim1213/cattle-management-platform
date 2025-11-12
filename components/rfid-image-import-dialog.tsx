@@ -438,34 +438,36 @@ export function RFIDImageImportDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Import RFID Tags</DialogTitle>
             <DialogDescription>
               Upload a PDF, capture an image, or paste RFID tag data to bulk import cattle
             </DialogDescription>
           </DialogHeader>
 
+          <div className="overflow-y-auto flex-1 pr-2">{/* Scrollable content wrapper */}
+
           {step === "input" && (
             <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button
                   onClick={() => fileInputRef.current?.click()}
                   variant="outline"
-                  className="h-24 flex-col gap-2"
+                  className="h-20 sm:h-24 flex-col gap-2"
                 >
-                  <Upload className="h-6 w-6" />
-                  <span className="text-center">Upload PDF/Image</span>
+                  <Upload className="h-5 w-5 sm:h-6 sm:w-6" />
+                  <span className="text-center text-sm sm:text-base">Upload PDF/Image</span>
                 </Button>
 
                 <Button
                   onClick={startCamera}
                   variant="outline"
-                  className="h-24 flex-col gap-2"
+                  className="h-20 sm:h-24 flex-col gap-2"
                   disabled={isCameraActive}
                 >
-                  <Camera className="h-6 w-6" />
-                  Capture Photo
+                  <Camera className="h-5 w-5 sm:h-6 sm:w-6" />
+                  <span className="text-sm sm:text-base">Capture Photo</span>
                 </Button>
               </div>
 
@@ -507,7 +509,8 @@ export function RFIDImageImportDialog({
                 <Label>Or Paste RFID Data</Label>
                 <Textarea
                   placeholder="Paste from any RFID report or enter tag numbers&#10;&#10;Supported formats:&#10;• McCall: 0124 000174878652 0000/00/00 NONE 25/10/20&#10;• Standard: 840003123456789&#10;• Formatted: 840-003-123456789&#10;• CCIA: CA 124 000174878652&#10;• Visual tags: 1234&#10;• One number per line"
-                  rows={6}
+                  rows={4}
+                  className="text-sm"
                   onChange={(e) => {
                     const text = e.target.value
                     if (!text.trim()) return
@@ -559,9 +562,9 @@ export function RFIDImageImportDialog({
                   <Textarea
                     value={parsedRFIDs.join("\n")}
                     onChange={(e) => handleManualEdit(e.target.value)}
-                    rows={8}
+                    rows={6}
                     placeholder="Edit RFID numbers, one per line"
-                    className="font-mono text-sm"
+                    className="font-mono text-xs sm:text-sm"
                   />
                   <p className="text-xs text-muted-foreground mt-2">
                     You can edit, add, or remove numbers before importing
@@ -620,10 +623,11 @@ export function RFIDImageImportDialog({
               </div>
             </div>
           )}
+          </div>{/* End scrollable content wrapper */}
 
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0 flex-col sm:flex-row gap-2">
             {step === "input" && (
-              <Button variant="outline" onClick={handleClose}>
+              <Button variant="outline" onClick={handleClose} className="w-full sm:w-auto">
                 Cancel
               </Button>
             )}
@@ -638,12 +642,14 @@ export function RFIDImageImportDialog({
                     setParsedRFIDs([])
                   }}
                   disabled={isImporting}
+                  className="w-full sm:w-auto"
                 >
                   Back
                 </Button>
                 <Button
                   onClick={handleImport}
                   disabled={parsedRFIDs.length === 0 || !selectedPenId || isImporting}
+                  className="w-full sm:w-auto"
                 >
                   {isImporting ? (
                     <>
