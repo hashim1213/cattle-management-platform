@@ -118,7 +118,11 @@ class FirebasePenStore {
 
     try {
       const docRef = doc(db, `users/${userId}/barns`, id)
-      await setDoc(docRef, newBarn)
+      // Filter out undefined values for Firestore
+      const barnData = Object.fromEntries(
+        Object.entries(newBarn).filter(([_, v]) => v !== undefined)
+      )
+      await setDoc(docRef, barnData)
       this.barns.push(newBarn)
       this.notifyListeners()
       return newBarn
@@ -134,10 +138,14 @@ class FirebasePenStore {
 
     try {
       const docRef = doc(db, `users/${userId}/barns`, id)
-      await updateDoc(docRef, {
-        ...updates,
-        updatedAt: new Date().toISOString(),
-      })
+      // Filter out undefined values for Firestore
+      const updateData = Object.fromEntries(
+        Object.entries({
+          ...updates,
+          updatedAt: new Date().toISOString(),
+        }).filter(([_, v]) => v !== undefined)
+      )
+      await updateDoc(docRef, updateData)
 
       const index = this.barns.findIndex((b) => b.id === id)
       if (index !== -1) {
@@ -214,7 +222,11 @@ class FirebasePenStore {
 
     try {
       const docRef = doc(db, `users/${userId}/pens`, id)
-      await setDoc(docRef, newPen)
+      // Filter out undefined values for Firestore
+      const penData = Object.fromEntries(
+        Object.entries(newPen).filter(([_, v]) => v !== undefined)
+      )
+      await setDoc(docRef, penData)
       this.pens.push(newPen)
       this.notifyListeners()
       return newPen
@@ -230,10 +242,14 @@ class FirebasePenStore {
 
     try {
       const docRef = doc(db, `users/${userId}/pens`, id)
-      await updateDoc(docRef, {
-        ...updates,
-        updatedAt: new Date().toISOString(),
-      })
+      // Filter out undefined values for Firestore
+      const updateData = Object.fromEntries(
+        Object.entries({
+          ...updates,
+          updatedAt: new Date().toISOString(),
+        }).filter(([_, v]) => v !== undefined)
+      )
+      await updateDoc(docRef, updateData)
 
       const index = this.pens.findIndex((p) => p.id === id)
       if (index !== -1) {
