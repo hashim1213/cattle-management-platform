@@ -242,19 +242,19 @@ export default function CattleDetailPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
+      <header className="border-b border-border bg-card sticky top-0 z-40 lg:static backdrop-blur-sm bg-card/95">
+        <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="min-w-0">
               <Link
                 href="/cattle"
-                className="text-sm text-muted-foreground hover:text-foreground mb-2 flex items-center gap-1"
+                className="text-sm text-muted-foreground hover:text-foreground mb-2 flex items-center gap-1 touch-manipulation min-h-[44px] inline-flex items-center"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Back to Cattle Inventory
               </Link>
-              <div className="flex items-center gap-3 mt-2">
-                <h1 className="text-2xl font-bold text-foreground">Tag #{cattle.tagNumber}</h1>
+              <div className="flex items-center gap-2 sm:gap-3 mt-2 flex-wrap">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">Tag #{cattle.tagNumber}</h1>
                 <Badge
                   className={
                     cattle.healthStatus === "Healthy"
@@ -268,25 +268,32 @@ export default function CattleDetailPage() {
                   <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Ready for Sale</Badge>
                 )}
               </div>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-sm text-muted-foreground mt-1 sm:mt-2">
                 {cattle.breed} • {cattle.sex} • {cattle.stage}
               </p>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setIsEditOpen(true)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
+            <div className="flex gap-2 flex-shrink-0">
+              <Button
+                variant="outline"
+                onClick={() => setIsEditOpen(true)}
+                className="touch-manipulation min-h-[44px] flex-1 sm:flex-none"
+              >
+                <Edit className="h-5 w-5 sm:h-4 sm:w-4 sm:mr-2" />
+                <span className="sm:inline">Edit</span>
               </Button>
-              <Button variant="outline" className="text-destructive bg-transparent">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
+              <Button
+                variant="outline"
+                className="text-destructive bg-transparent touch-manipulation min-h-[44px] flex-1 sm:flex-none"
+              >
+                <Trash2 className="h-5 w-5 sm:h-4 sm:w-4 sm:mr-2" />
+                <span className="sm:inline">Delete</span>
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
         {/* Key Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card>
@@ -341,7 +348,7 @@ export default function CattleDetailPage() {
                     <p className="text-xs text-muted-foreground mt-1">Manual value set</p>
                   )}
                 </div>
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 flex-shrink-0">
                   <DollarSign className="h-5 w-5 text-amber-600" />
                   <Button
                     size="sm"
@@ -350,6 +357,7 @@ export default function CattleDetailPage() {
                       setNewValue(currentValue.toString())
                       setIsUpdateValueOpen(true)
                     }}
+                    className="touch-manipulation min-h-[40px] px-3"
                   >
                     Update
                   </Button>
@@ -361,25 +369,25 @@ export default function CattleDetailPage() {
 
         {/* Location Assignment */}
         <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="min-w-0">
+                <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
+                  <MapPin className="h-5 w-5 flex-shrink-0" />
                   Current Location
                 </h3>
-                <div className="flex items-center gap-4 text-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm">
                   {cattle.barnId && cattle.penId ? (
                     <>
                       <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">
+                        <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="font-medium truncate">
                           {barns.find(b => b.id === cattle.barnId)?.name || "Unknown Barn"}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">
+                        <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="font-medium truncate">
                           {pens.find(p => p.id === cattle.penId)?.name || "Unknown Pen"}
                         </span>
                       </div>
@@ -389,7 +397,11 @@ export default function CattleDetailPage() {
                   )}
                 </div>
               </div>
-              <Button variant="outline" onClick={() => setIsAssignLocationOpen(true)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsAssignLocationOpen(true)}
+                className="touch-manipulation min-h-[44px] w-full sm:w-auto flex-shrink-0"
+              >
                 {cattle.barnId ? "Change Location" : "Assign Location"}
               </Button>
             </div>

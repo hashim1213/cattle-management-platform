@@ -97,11 +97,11 @@ export function CattleGrid({ searchQuery, filters }: CattleGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
       {filteredCattle.map((animal) => (
         <Card
           key={animal.id}
-          className="hover:shadow-lg transition-shadow cursor-pointer"
+          className="hover:shadow-lg active:shadow-xl transition-shadow cursor-pointer touch-manipulation active:scale-[0.98]"
           onClick={() => router.push(`/cattle/${animal.id}`)}
         >
           <CardHeader className="pb-3">
@@ -117,10 +117,11 @@ export function CattleGrid({ searchQuery, filters }: CattleGridProps) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="flex-shrink-0"
+                    className="flex-shrink-0 h-10 w-10 touch-manipulation"
                     onClick={(e) => e.stopPropagation()}
+                    aria-label="Open cattle menu"
                   >
-                    <MoreVertical className="h-4 w-4" />
+                    <MoreVertical className="h-5 w-5" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">

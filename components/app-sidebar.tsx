@@ -54,10 +54,11 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
               href={item.href}
               onClick={onLinkClick}
               className={cn(
-                "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all",
+                "flex items-center gap-3 rounded-xl px-4 text-sm font-medium transition-all touch-manipulation",
+                "py-3 lg:py-3 min-h-[48px]", // Minimum 48px touch target for mobile
                 isActive
                   ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent",
               )}
             >
               <item.icon className="h-5 w-5 shrink-0" />
@@ -101,14 +102,14 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
         <Link
           href="/settings"
           onClick={onLinkClick}
-          className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-sidebar-foreground/70 transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          className="flex items-center gap-3 rounded-xl px-4 py-3 min-h-[48px] text-sm font-medium text-sidebar-foreground/70 transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent touch-manipulation"
         >
           <Settings className="h-5 w-5 shrink-0" />
           Settings
         </Link>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-sidebar-foreground/70 transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          className="w-full flex items-center gap-3 rounded-xl px-4 py-3 min-h-[48px] text-sm font-medium text-sidebar-foreground/70 transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent touch-manipulation"
         >
           <LogOut className="h-5 w-5 shrink-0" />
           Logout
@@ -123,19 +124,24 @@ export function AppSidebar() {
 
   return (
     <>
-      {/* Mobile Top Bar */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-sidebar border-b border-sidebar-border z-50 flex items-center px-4 backdrop-blur-sm bg-sidebar/95">
+      {/* Mobile Top Bar - with iOS safe area support */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-sidebar border-b border-sidebar-border z-50 flex items-center px-4 backdrop-blur-sm bg-sidebar/95 safe-top">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
-            <Button size="icon" variant="ghost" className="text-sidebar-foreground">
-              <Menu className="h-5 w-5" />
+            <Button
+              size="icon"
+              variant="ghost"
+              className="text-sidebar-foreground h-10 w-10 active:bg-sidebar-accent"
+              aria-label="Open navigation menu"
+            >
+              <Menu className="h-6 w-6" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-72 bg-sidebar">
+          <SheetContent side="left" className="p-0 w-[280px] sm:w-[320px] bg-sidebar safe-left">
             <VisuallyHidden>
               <SheetTitle>Navigation Menu</SheetTitle>
             </VisuallyHidden>
-            <div className="flex h-full flex-col">
+            <div className="flex h-full flex-col pb-safe">
               <SidebarContent onLinkClick={() => setMobileOpen(false)} />
             </div>
           </SheetContent>
