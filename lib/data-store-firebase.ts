@@ -140,10 +140,15 @@ class FirebaseDataStore {
 
     try {
       const docRef = doc(db, `users/${userId}/cattle`, id)
-      await setDoc(docRef, newCattle)
+      // Filter out undefined values for Firestore
+      const cattleData = Object.fromEntries(
+        Object.entries(newCattle).filter(([_, v]) => v !== undefined)
+      )
+      await setDoc(docRef, cattleData)
       return newCattle
-    } catch (error) {
-      throw new Error("Failed to add cattle")
+    } catch (error: any) {
+      console.error("Failed to add cattle:", error)
+      throw new Error(error?.message || "Failed to add cattle")
     }
   }
 
@@ -153,12 +158,17 @@ class FirebaseDataStore {
 
     try {
       const docRef = doc(db, `users/${userId}/cattle`, id)
-      await updateDoc(docRef, {
-        ...updates,
-        updatedAt: new Date().toISOString(),
-      })
-    } catch (error) {
-      throw new Error("Failed to update cattle")
+      // Filter out undefined values for Firestore
+      const updateData = Object.fromEntries(
+        Object.entries({
+          ...updates,
+          updatedAt: new Date().toISOString(),
+        }).filter(([_, v]) => v !== undefined)
+      )
+      await updateDoc(docRef, updateData)
+    } catch (error: any) {
+      console.error("Failed to update cattle:", error)
+      throw new Error(error?.message || "Failed to update cattle")
     }
   }
 

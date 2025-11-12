@@ -22,7 +22,7 @@ import {
 } from "lucide-react"
 import { type FarmSector, farmSettingsStore } from "@/lib/farm-settings-store"
 import { lifecycleConfig, type LifecycleStage } from "@/lib/lifecycle-config"
-import { doc, updateDoc, getDoc } from "firebase/firestore"
+import { doc, updateDoc, getDoc, setDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 
 interface OperationType {
@@ -157,8 +157,11 @@ export default function OnboardingPage() {
 
     setIsLoading(true)
     try {
+      console.log("Starting onboarding completion...")
+
       // Initialize farm settings
       await farmSettingsStore.initializeSettings(farmName.trim(), selectedOperation, user.uid)
+      console.log("Farm settings initialized")
 
       // Save lifecycle stages to Firestore
       const lifecycleStages = stages.map((stage, index) => ({
@@ -169,25 +172,29 @@ export default function OnboardingPage() {
         description: stage.description || "",
       }))
 
+      console.log("Lifecycle stages prepared:", lifecycleStages)
+
       // Get existing user profile data
       const userProfileRef = doc(db, "userProfiles", user.uid)
       const userProfileSnap = await getDoc(userProfileRef)
 
+      const updateData = {
+        lifecycleStages,
+        onboardingCompleted: true,
+        updatedAt: new Date().toISOString(),
+      }
+
       if (userProfileSnap.exists()) {
         // Update existing profile with lifecycle and mark onboarding complete
-        await updateDoc(userProfileRef, {
-          lifecycleStages,
-          onboardingCompleted: true,
-          updatedAt: new Date().toISOString(),
-        })
+        await updateDoc(userProfileRef, updateData)
+        console.log("User profile updated with lifecycle stages")
       } else {
-        // If profile doesn't exist, create it with lifecycle stages
-        await updateDoc(userProfileRef, {
-          lifecycleStages,
-          onboardingCompleted: true,
+        // If profile doesn't exist, create it with setDoc
+        await setDoc(userProfileRef, {
+          ...updateData,
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
         })
+        console.log("User profile created with lifecycle stages")
       }
 
       // Also save to local lifecycle config for immediate use
@@ -201,6 +208,8 @@ export default function OnboardingPage() {
       stages.forEach((stage) => {
         lifecycleConfig.addStage(stage)
       })
+
+      console.log("Onboarding completed successfully, redirecting to dashboard")
 
       // Redirect to dashboard
       router.push("/")

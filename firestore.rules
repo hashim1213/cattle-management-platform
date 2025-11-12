@@ -2,43 +2,92 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // User profiles - users can only read/write their own profile
+    match /userProfiles/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
     // Farm settings - one document per user
     match /farmSettings/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isOwner(userId);
     }
 
     // User-specific cattle data
     match /users/{userId}/cattle/{cattleId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isOwner(userId);
 
       // Allow subcollections for weight and health records
       match /weightRecords/{recordId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if isOwner(userId);
       }
 
       match /healthRecords/{recordId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if isOwner(userId);
       }
-    }
-
-    // User-specific pens data
-    match /users/{userId}/pens/{penId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
     // User-specific barns data
     match /users/{userId}/barns/{barnId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isOwner(userId);
     }
 
-    // User-specific batches data
+    // User-specific pens data
+    match /users/{userId}/pens/{penId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // User-specific batches/pen groups data
     match /users/{userId}/batches/{batchId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isOwner(userId);
     }
 
     // User-specific lifecycle stages
     match /users/{userId}/lifecycleStages/{stageId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isOwner(userId);
+    }
+
+    // User-specific pen feed activities
+    match /users/{userId}/penFeedActivities/{activityId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // User-specific pen medication activities
+    match /users/{userId}/penMedicationActivities/{activityId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // User-specific feed inventory
+    match /users/{userId}/feedInventory/{itemId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // User-specific medication inventory
+    match /users/{userId}/medicationInventory/{itemId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // User-specific rations
+    match /users/{userId}/rations/{rationId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // User-specific activity logs
+    match /users/{userId}/activities/{activityId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // User-specific pastures
+    match /users/{userId}/pastures/{pastureId} {
+      allow read, write: if isOwner(userId);
     }
 
     // Deny all other access

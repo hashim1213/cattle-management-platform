@@ -1,0 +1,62 @@
+{
+  "rules": {
+    "users": {
+      "$userId": {
+        ".read": "$userId === auth.uid",
+        ".write": "$userId === auth.uid",
+
+        "cattle": {
+          "$cattleId": {
+            ".validate": "newData.hasChildren(['tagNumber', 'breed', 'sex', 'status'])"
+          }
+        },
+
+        "barns": {
+          "$barnId": {
+            ".validate": "newData.hasChildren(['name', 'location'])"
+          }
+        },
+
+        "pens": {
+          "$penId": {
+            ".validate": "newData.hasChildren(['name', 'barnId', 'capacity'])"
+          }
+        },
+
+        "batches": {
+          "$batchId": {
+            ".validate": "newData.hasChildren(['name'])"
+          }
+        },
+
+        "penFeedActivities": {
+          "$activityId": {
+            ".validate": "newData.hasChildren(['penId', 'date', 'feedType', 'totalAmount'])"
+          }
+        },
+
+        "penMedicationActivities": {
+          "$activityId": {
+            ".validate": "newData.hasChildren(['penId', 'date', 'medicationName', 'purpose'])"
+          }
+        }
+      }
+    },
+
+    "userProfiles": {
+      "$userId": {
+        ".read": "$userId === auth.uid",
+        ".write": "$userId === auth.uid",
+        ".validate": "newData.hasChildren(['displayName', 'email', 'farmName', 'location'])"
+      }
+    },
+
+    "farmSettings": {
+      "$userId": {
+        ".read": "$userId === auth.uid",
+        ".write": "$userId === auth.uid",
+        ".validate": "newData.hasChildren(['farmName', 'sector', 'setupCompleted'])"
+      }
+    }
+  }
+}
