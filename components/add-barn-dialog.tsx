@@ -73,9 +73,10 @@ export function AddBarnDialog({ open, onOpenChange }: AddBarnDialogProps) {
       onOpenChange(false)
     } catch (error: any) {
       console.error("Barn creation error:", error)
+      const errorMessage = error?.message || "Failed to create barn. Please try again."
       toast({
-        title: "Error",
-        description: error?.message || "Failed to create barn. Please try again.",
+        title: "Error Creating Barn",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {

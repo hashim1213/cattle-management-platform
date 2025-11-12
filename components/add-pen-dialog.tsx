@@ -120,10 +120,12 @@ export function AddPenDialog({ open, onOpenChange, defaultBarnId }: AddPenDialog
       setCapacity("")
       setNotes("")
       onOpenChange(false)
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Pen creation error:", error)
+      const errorMessage = error?.message || "Failed to create pen. Please try again."
       toast({
-        title: "Error",
-        description: "Failed to create pen. Please try again.",
+        title: "Error Creating Pen",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
