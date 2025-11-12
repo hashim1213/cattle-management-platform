@@ -416,10 +416,11 @@ export function RFIDImageImportDialog({
       if (onSuccess) {
         onSuccess()
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error("RFID Import Error:", error)
       toast({
         title: "Import Error",
-        description: "Failed to import cattle. Please try again.",
+        description: error?.message || "Failed to import cattle. Please try again.",
         variant: "destructive",
       })
     } finally {
