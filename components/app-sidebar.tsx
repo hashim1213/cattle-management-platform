@@ -16,7 +16,7 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "Cattle", href: "/cattle", icon: Beef },
   { name: "Pens & Barns", href: "/pens", icon: Warehouse },
-  { name: "Farm Assistant", href: "/agent", icon: MessageSquare },
+  { name: "Farm Hand AI", href: "/agent", icon: MessageSquare },
   { name: "Inventory", href: "/inventory", icon: Package2 },
   { name: "Financial", href: "/costs", icon: DollarSign },
 ]

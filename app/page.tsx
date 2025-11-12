@@ -259,7 +259,7 @@ export default function DashboardPage() {
               <Link href="/agent">
                 <Button variant="outline" size="sm" className="touch-manipulation min-h-[44px] px-3 sm:px-4">
                   <MessageSquare className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Farm Assistant</span>
+                  <span className="hidden sm:inline">Farm Hand AI</span>
                   <span className="sm:hidden">AI</span>
                 </Button>
               </Link>

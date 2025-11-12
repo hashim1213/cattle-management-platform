@@ -2,15 +2,18 @@ import { NextRequest, NextResponse } from "next/server"
 import OpenAI from "openai"
 import { actionExecutor } from "@/lib/agent/action-executor"
 
-const SYSTEM_PROMPT = `You are a helpful Farm Assistant for a cattle management platform. You help farmers manage their ENTIRE cattle operation through natural conversation. You have FULL CONTROL over all aspects of the farm.
+const SYSTEM_PROMPT = `You are Farm Hand AI, a comprehensive farm management assistant for cattle operations. You help farmers manage their ENTIRE operation through natural conversation. You have FULL CONTROL over every aspect of the farm.
+
+IDENTITY: Farm Hand AI - Your trusted farm management companion
 
 CAPABILITIES - You can manage everything:
-1. 🐄 CATTLE: Add, update, delete, search, weigh
-2. 🏠 BARNS & PENS: Create, update, delete, query
-3. 💊 INVENTORY: Add medications, track usage, check stock
-4. 📊 HEALTH: Record treatments, track health history
-5. 📈 ANALYTICS: Get summaries, statistics, reports
-6. 📝 ACTIVITIES: Log pen activities and operations
+1. 🐄 CATTLE: Add, update, delete, search, weigh, track health
+2. 🏠 BARNS & PENS: Create, update, delete, query, monitor utilization
+3. 💊 INVENTORY: Add medications, track usage, check stock levels
+4. 🌾 FEED ALLOCATION: Allocate feed to pens, track costs, analyze usage
+5. 📊 HEALTH: Record treatments, track health history, manage medications
+6. 📈 ANALYTICS: Get summaries, statistics, reports, cost analysis
+7. 📝 ACTIVITIES: Log pen activities and operations
 
 Available Actions:
 
@@ -45,6 +48,17 @@ Available Actions:
 - addHealthRecord: Record treatment & deduct inventory (params: cattleId/tagNumber/penId*, medicationName*, quantity*, date, notes)
 - logActivity: Log pen activity (params: penId*, activityType*, description*, date, notes)
 
+🌾 FEED ALLOCATION:
+- allocateFeed: Allocate feed to a pen with automatic inventory deduction (params: penId*, feedItems*, deliveredBy, notes, date)
+  * feedItems: Array of {feedInventoryId OR feedName, quantity}
+  * Automatically deducts from inventory and calculates costs
+  * Example: feedItems: [{feedName: "Hay", quantity: 500}, {feedName: "Corn", quantity: 200}]
+- getFeedAllocations: Get feed allocation history (params: penId, days)
+  * penId: Optional - specific pen or all pens
+  * days: Optional - last N days (default 30)
+- getFeedUsageStats: Get feed usage statistics and cost analysis (params: days)
+  * Returns total cost, weight, average cost per head, breakdown by pen and feed type
+
 📊 REPORTS & ANALYTICS:
 - getFarmSummary: Comprehensive farm overview (cattle, pens, inventory, low stock alerts)
 
@@ -64,15 +78,29 @@ IMPORTANT RULES:
 5. For updates, you can find by tagNumber OR cattleId
 
 EXAMPLES:
+
+Cattle Operations:
 - "Add a new cow tag 1234, Angus breed, 850 lbs" → addCattle with tagNumber:"1234", breed:"Angus", sex:"Cow", weight:850
 - "Move cow 1234 to pen 5" → updateCattle with tagNumber:"1234", penId:"pen_5"
-- "How many cattle?" → getAllCattle
-- "Create a new barn called North Barn" → addBarn with name:"North Barn", location:"North"
-- "Delete cattle 1234" → deleteCattle with tagNumber:"1234"
 - "Weigh cow 1234 at 920 lbs" → addWeightRecord with tagNumber:"1234", weight:920
-- "What's my farm status?" → getFarmSummary
+- "Delete cattle 1234" → deleteCattle with tagNumber:"1234"
 
-You control EVERYTHING. Be helpful, accurate, and thorough!`
+Farm Infrastructure:
+- "Create a new barn called North Barn" → addBarn with name:"North Barn", location:"North"
+- "Add a pen called Feedlot 1 with capacity 50" → addPen with name:"Feedlot 1", capacity:50
+
+Feed Management:
+- "Allocate 500 lbs of hay to pen 1" → allocateFeed with penId:"pen_1", feedItems:[{feedName:"Hay", quantity:500}]
+- "Feed pen 2 with 300 lbs corn and 200 lbs supplement" → allocateFeed with penId:"pen_2", feedItems:[{feedName:"Corn", quantity:300}, {feedName:"Supplement", quantity:200}]
+- "Show me feed usage for the last 30 days" → getFeedUsageStats with days:30
+- "What feed have I allocated to pen 3?" → getFeedAllocations with penId:"pen_3"
+
+Analytics:
+- "How many cattle?" → getAllCattle
+- "What's my farm status?" → getFarmSummary
+- "Show cattle distribution" → getCattleCountByPen
+
+You are Farm Hand AI - you control EVERYTHING on this farm. Be helpful, accurate, and thorough!`
 
 interface ChatMessage {
   role: "user" | "assistant" | "system"
@@ -192,6 +220,46 @@ async function formatQueryResponse(action: string, data: any, aiMessage?: string
             const lowStock = item.quantityOnHand <= item.reorderPoint ? ' ⚠️ LOW' : ''
             formatted += `- **${item.name}**: ${item.quantityOnHand} ${item.unit}${lowStock}\n`
             if (item.totalValue) formatted += `  Value: $${item.totalValue.toFixed(2)}\n`
+          })
+        }
+      }
+      break
+
+    case "getFeedAllocations":
+      if (data.allocations && data.summary) {
+        formatted = `**Feed Allocations Summary:**\n\n`
+        formatted += `- Total allocations: ${data.summary.totalAllocations}\n`
+        formatted += `- Total cost: $${data.summary.totalCost.toFixed(2)}\n`
+        formatted += `- Total weight: ${data.summary.totalWeightTons} tons\n\n`
+
+        if (data.allocations.length > 0) {
+          formatted += `**Recent allocations:**\n`
+          data.allocations.slice(0, 5).forEach((alloc: any) => {
+            formatted += `- ${alloc.penName}: ${(alloc.totalWeight / 2000).toFixed(2)} tons ($${alloc.totalCost.toFixed(2)})\n`
+          })
+        }
+      }
+      break
+
+    case "getFeedUsageStats":
+      if (data) {
+        formatted = `**Feed Usage Statistics:**\n\n`
+        formatted += `- Total allocations: ${data.totalAllocations}\n`
+        formatted += `- Total cost: $${data.totalCost.toFixed(2)}\n`
+        formatted += `- Total weight: ${(data.totalWeight / 2000).toFixed(2)} tons\n`
+        formatted += `- Average cost per head: $${data.averageCostPerHead.toFixed(2)}\n`
+
+        if (data.byPen && Object.keys(data.byPen).length > 0) {
+          formatted += `\n**By Pen:**\n`
+          Object.values(data.byPen).slice(0, 5).forEach((pen: any) => {
+            formatted += `- ${pen.penName}: ${pen.allocations} allocations, $${pen.totalCost.toFixed(2)}\n`
+          })
+        }
+
+        if (data.byFeedType && Object.keys(data.byFeedType).length > 0) {
+          formatted += `\n**By Feed Type:**\n`
+          Object.values(data.byFeedType).slice(0, 5).forEach((feed: any) => {
+            formatted += `- ${feed.feedName}: ${feed.totalUsed} ${feed.unit}, $${feed.totalCost.toFixed(2)}\n`
           })
         }
       }
@@ -340,6 +408,17 @@ export async function POST(request: NextRequest) {
             // Summary/Stats actions
             case "getFarmSummary":
               actionResult = await actionExecutor.getFarmSummary(userId)
+              break
+
+            // Feed allocation actions
+            case "allocateFeed":
+              actionResult = await actionExecutor.allocateFeed(userId, actionData.params)
+              break
+            case "getFeedAllocations":
+              actionResult = await actionExecutor.getFeedAllocations(userId, actionData.params)
+              break
+            case "getFeedUsageStats":
+              actionResult = await actionExecutor.getFeedUsageStats(userId, actionData.params?.days || 30)
               break
 
             default:

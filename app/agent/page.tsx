@@ -262,9 +262,9 @@ export default function AgentPage() {
     <div className="h-full p-4 lg:p-6 overflow-hidden">
       <div className="max-w-7xl mx-auto h-full flex flex-col">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold">Farm Assistant</h1>
+          <h1 className="text-3xl font-bold">🌾 Farm Hand AI</h1>
           <p className="text-muted-foreground">
-            Chat or speak to manage your farm operations
+            Your comprehensive farm management companion - manage your entire cattle operation through conversation
           </p>
         </div>
 
@@ -283,9 +283,9 @@ export default function AgentPage() {
           <TabsContent value="chat" className="flex-1 flex flex-col min-h-0 mt-0">
             <Card className="flex-1 flex flex-col min-h-0">
               <CardHeader>
-                <CardTitle>Chat with Farm Assistant</CardTitle>
+                <CardTitle>Chat with Farm Hand AI</CardTitle>
                 <CardDescription>
-                  Ask me to add medications, update pens, log activities, or get information
+                  I can manage cattle, pens, inventory, feed allocation, health records, and provide comprehensive analytics
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col min-h-0 p-0">
@@ -294,9 +294,9 @@ export default function AgentPage() {
                     {currentMessages.length === 0 && (
                       <div className="text-center text-muted-foreground py-8">
                         <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p className="text-lg font-medium">Farm Assistant - Full Control</p>
+                        <p className="text-lg font-medium">🌾 Farm Hand AI - Complete Farm Control</p>
                         <p className="text-sm mt-2 mb-4">
-                          I can manage your entire farm. Try these quick actions:
+                          I manage your entire cattle operation. Try these quick actions:
                         </p>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-w-3xl mx-auto text-left">
@@ -353,15 +353,34 @@ export default function AgentPage() {
                             <br />
                             <span className="text-xs text-muted-foreground">Stock up your inventory</span>
                           </button>
+
+                          <button
+                            onClick={() => setInputMessage("Allocate 500 lbs of hay to pen 1")}
+                            className="p-3 text-sm bg-muted hover:bg-accent rounded-lg text-left transition-colors"
+                          >
+                            <strong>🌾 Allocate Feed</strong>
+                            <br />
+                            <span className="text-xs text-muted-foreground">Feed pens with automatic cost tracking</span>
+                          </button>
+
+                          <button
+                            onClick={() => setInputMessage("Show me feed usage for the last 30 days")}
+                            className="p-3 text-sm bg-muted hover:bg-accent rounded-lg text-left transition-colors"
+                          >
+                            <strong>📊 Feed Analytics</strong>
+                            <br />
+                            <span className="text-xs text-muted-foreground">View feed costs and usage statistics</span>
+                          </button>
                         </div>
 
                         <div className="mt-6 text-xs text-muted-foreground">
-                          <p className="font-medium mb-1">I can also help you:</p>
-                          <p>• Update cattle weights and move them between pens</p>
-                          <p>• Record health treatments and medications</p>
-                          <p>• Create and manage barns</p>
-                          <p>• Log activities and track pen operations</p>
-                          <p>• Delete records when needed</p>
+                          <p className="font-medium mb-1">Farm Hand AI can help you:</p>
+                          <p>• 🐄 Manage cattle: add, update, weigh, track health</p>
+                          <p>• 🏠 Organize infrastructure: create barns and pens</p>
+                          <p>• 🌾 Allocate feed: track costs, usage, and efficiency</p>
+                          <p>• 💊 Handle inventory: medications, supplements, feed</p>
+                          <p>• 📊 Get analytics: farm summaries, cost analysis, reports</p>
+                          <p>• 🏥 Record treatments: automatic inventory deduction</p>
                         </div>
                       </div>
                     )}

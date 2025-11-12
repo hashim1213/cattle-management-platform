@@ -8,6 +8,7 @@ import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, 
 import type { InventoryItem, InventoryTransaction } from "@/lib/inventory/inventory-types"
 import type { Cattle } from "@/lib/data-store-firebase"
 import type { Pen } from "@/lib/pen-store-firebase"
+import { feedService } from "@/lib/feed/feed-service"
 
 export interface ActionResult {
   success: boolean
@@ -113,6 +114,23 @@ export interface DeletePenParams {
 
 export interface DeleteBarnParams {
   barnId: string
+}
+
+export interface AllocateFeedParams {
+  penId: string
+  feedItems: Array<{
+    feedInventoryId: string
+    feedName?: string
+    quantity: number
+  }>
+  deliveredBy?: string
+  notes?: string
+  date?: string
+}
+
+export interface GetFeedAllocationsParams {
+  penId?: string
+  days?: number
 }
 
 class AgentActionExecutor {
@@ -1220,6 +1238,196 @@ class AgentActionExecutor {
       return {
         success: false,
         message: "Failed to delete barn",
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * Allocate feed to a pen with automatic inventory deduction
+   */
+  async allocateFeed(userId: string, params: AllocateFeedParams): Promise<ActionResult> {
+    if (!userId) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: "NOT_AUTHENTICATED"
+      }
+    }
+
+    try {
+      // Get pen information
+      const penRef = doc(db, `users/${userId}/pens`, params.penId)
+      const penSnap = await getDoc(penRef)
+
+      if (!penSnap.exists()) {
+        return {
+          success: false,
+          message: `Pen not found`,
+          error: "PEN_NOT_FOUND"
+        }
+      }
+
+      const penData = { id: penSnap.id, ...penSnap.data() }
+      const penName = (penData as any).name || params.penId
+      const headCount = (penData as any).currentCount || 0
+
+      if (headCount === 0) {
+        return {
+          success: false,
+          message: `Cannot allocate feed to empty pen "${penName}"`,
+          error: "EMPTY_PEN"
+        }
+      }
+
+      // Process feed items - find by name if only name provided
+      const processedFeedItems = []
+      for (const item of params.feedItems) {
+        let feedId = item.feedInventoryId
+
+        // If no ID but name provided, search inventory
+        if (!feedId && item.feedName) {
+          const inventoryQuery = query(
+            collection(db, `users/${userId}/inventory`),
+            where("name", "==", item.feedName),
+            where("category", "==", "feed")
+          )
+          const invSnapshot = await getDocs(inventoryQuery)
+
+          if (invSnapshot.empty) {
+            return {
+              success: false,
+              message: `Feed "${item.feedName}" not found in inventory`,
+              error: "FEED_NOT_FOUND"
+            }
+          }
+
+          feedId = invSnapshot.docs[0].id
+        }
+
+        if (!feedId) {
+          return {
+            success: false,
+            message: "Feed ID or name is required",
+            error: "INVALID_PARAMS"
+          }
+        }
+
+        processedFeedItems.push({
+          feedInventoryId: feedId,
+          quantity: item.quantity
+        })
+      }
+
+      // Allocate feed using feed service
+      const result = await feedService.allocateFeed({
+        penId: params.penId,
+        penName: penName,
+        headCount: headCount,
+        feedItems: processedFeedItems,
+        deliveredBy: params.deliveredBy || userId,
+        notes: params.notes,
+        date: params.date
+      })
+
+      return {
+        success: true,
+        message: `Successfully allocated feed to pen "${penName}". Total cost: $${result.totalCost.toFixed(2)}, Cost per head: $${result.costPerHead.toFixed(2)}`,
+        data: result
+      }
+    } catch (error: any) {
+      console.error("Error allocating feed:", error)
+      return {
+        success: false,
+        message: error.message || "Failed to allocate feed",
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * Get feed allocations for pen or recent allocations
+   */
+  async getFeedAllocations(userId: string, params?: GetFeedAllocationsParams): Promise<ActionResult> {
+    if (!userId) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: "NOT_AUTHENTICATED"
+      }
+    }
+
+    try {
+      let allocations
+
+      if (params?.penId) {
+        // Get allocations for specific pen
+        allocations = feedService.getPenAllocations(params.penId)
+      } else {
+        // Get recent allocations
+        const days = params?.days || 30
+        allocations = feedService.getRecentAllocations(days)
+      }
+
+      const totalCost = allocations.reduce((sum, a) => sum + a.totalCost, 0)
+      const totalWeight = allocations.reduce((sum, a) => sum + a.totalWeight, 0)
+
+      return {
+        success: true,
+        message: params?.penId
+          ? `Found ${allocations.length} feed allocations for pen`
+          : `Found ${allocations.length} feed allocations in last ${params?.days || 30} days`,
+        data: {
+          allocations,
+          summary: {
+            totalAllocations: allocations.length,
+            totalCost: totalCost,
+            totalWeight: totalWeight,
+            totalWeightTons: (totalWeight / 2000).toFixed(2)
+          }
+        }
+      }
+    } catch (error: any) {
+      console.error("Error getting feed allocations:", error)
+      return {
+        success: false,
+        message: "Failed to get feed allocations",
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * Get feed usage statistics
+   */
+  async getFeedUsageStats(userId: string, days: number = 30): Promise<ActionResult> {
+    if (!userId) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: "NOT_AUTHENTICATED"
+      }
+    }
+
+    try {
+      const cutoffDate = new Date()
+      cutoffDate.setDate(cutoffDate.getDate() - days)
+
+      const stats = feedService.getFeedUsageStats({
+        start: cutoffDate.toISOString().split('T')[0],
+        end: new Date().toISOString().split('T')[0]
+      })
+
+      return {
+        success: true,
+        message: `Feed usage statistics for last ${days} days`,
+        data: stats
+      }
+    } catch (error: any) {
+      console.error("Error getting feed usage stats:", error)
+      return {
+        success: false,
+        message: "Failed to get feed usage statistics",
         error: error.message
       }
     }
