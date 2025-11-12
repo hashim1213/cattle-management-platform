@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { ArrowLeft, Grid3x3, Wheat, Syringe, DollarSign } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -27,6 +27,8 @@ export default function PenDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { barns, updatePen, pens, loading: pensLoading } = usePenStore()
+  const [pen, setPen] = useState<any>(null)
+  const [barn, setBarn] = useState<any>(null)
   const [cattle, setCattle] = useState<Cattle[]>([])
   const [cattleLoading, setCattleLoading] = useState(true)
   const [isFeedDialogOpen, setIsFeedDialogOpen] = useState(false)
@@ -34,28 +36,34 @@ export default function PenDetailPage() {
   const [isValueDialogOpen, setIsValueDialogOpen] = useState(false)
   const [penValue, setPenValue] = useState<string>("")
 
-  // Use useMemo to get current pen and barn - this is reactive to subscription updates
-  const pen = useMemo(() => {
-    return pens.find(p => p.id === params.id) || null
-  }, [pens, params.id])
-
-  const barn = useMemo(() => {
-    return pen ? barns.find(b => b.id === pen.barnId) || null : null
-  }, [barns, pen])
+  // Update pen when pens array changes
+  useEffect(() => {
+    console.log("[PEN DETAIL] Pens changed, looking for pen:", params.id)
+    console.log("[PEN DETAIL] Pens array length:", pens.length)
+    const foundPen = pens.find(p => p.id === params.id)
+    if (foundPen) {
+      console.log("[PEN DETAIL] Found pen:", foundPen.name)
+      setPen(foundPen)
+      const foundBarn = barns.find(b => b.id === foundPen.barnId)
+      setBarn(foundBarn)
+    } else if (pens.length > 0) {
+      console.warn("[PEN DETAIL] Pen not found in array of", pens.length, "pens")
+    }
+  }, [pens, barns, params.id])
 
   // Only load cattle when pen ID changes
   useEffect(() => {
     const loadCattle = async () => {
       try {
-        console.log("Loading cattle for pen:", params.id)
+        console.log("[PEN DETAIL] Loading cattle for pen:", params.id)
         setCattleLoading(true)
         const allCattle = await firebaseDataStore.getCattle()
-        console.log(`Total cattle loaded: ${allCattle.length}`)
+        console.log(`[PEN DETAIL] Total cattle loaded: ${allCattle.length}`)
         const penCattle = allCattle.filter(c => c.penId === params.id)
-        console.log(`Cattle in this pen: ${penCattle.length}`)
+        console.log(`[PEN DETAIL] Cattle in this pen: ${penCattle.length}`)
         setCattle(penCattle)
       } catch (error) {
-        console.error("Error loading cattle:", error)
+        console.error("[PEN DETAIL] Error loading cattle:", error)
         setCattle([])
       } finally {
         setCattleLoading(false)
@@ -65,7 +73,7 @@ export default function PenDetailPage() {
     loadCattle()
   }, [params.id])
 
-  const loading = pensLoading || cattleLoading
+  const loading = pensLoading || (cattleLoading && !pen)
 
   const handleUpdatePenValue = async () => {
     if (!pen) {
@@ -100,13 +108,42 @@ export default function PenDetailPage() {
 
   const displayTotalValue = pen?.totalValue ?? calculatedTotalValue
 
-  if (loading || !pen) {
+  // Show loading only on initial load
+  if (loading && !pen) {
+    console.log("[PEN DETAIL] Showing loading screen")
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-muted-foreground">Loading...</p>
       </div>
     )
   }
+
+  // If pens have loaded but pen not found, show error
+  if (!pensLoading && !pen && pens.length > 0) {
+    console.log("[PEN DETAIL] Pen not found after loading")
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-4">Pen not found</p>
+          <Link href="/pens">
+            <Button>Back to Pens</Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  // If pen is still null (shouldn't happen), show loading
+  if (!pen) {
+    console.log("[PEN DETAIL] Pen is null, waiting...")
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Loading pen data...</p>
+      </div>
+    )
+  }
+
+  console.log("[PEN DETAIL] Rendering pen page for:", pen.name)
 
   const utilizationRate = pen.capacity > 0 ? (pen.currentCount / pen.capacity) * 100 : 0
   const available = pen.capacity - pen.currentCount
