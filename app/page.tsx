@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { TrendingUp, Package, DollarSign, Plus, Download, Sprout, MapPin, FileText, Heart, MessageSquare } from "lucide-react"
+import { TrendingUp, Package, DollarSign, Plus, Download, Sprout, MapPin, FileText, Heart, MessageSquare, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { AlertCard } from "@/components/alert-card"
@@ -12,6 +12,7 @@ import { PenUtilizationCard } from "@/components/pen-utilization-card"
 import { PenOverviewCard } from "@/components/pen-overview-card"
 import { useLifecycleConfig } from "@/hooks/use-lifecycle-config"
 import { useFarmSettings } from "@/hooks/use-farm-settings"
+import { useAuth } from "@/contexts/auth-context"
 import Link from "next/link"
 import Image from "next/image"
 import { firebaseDataStore } from "@/lib/data-store-firebase"
@@ -97,10 +98,12 @@ function SortableStage({
 }
 
 export default function DashboardPage() {
+  const { user, loading: authLoading } = useAuth()
   const [analytics, setAnalytics] = useState<any>(null)
   const [alerts, setAlerts] = useState<any[]>([])
   const [stageCounts, setStageCounts] = useState<Record<string, number>>({})
-  const { stages, reorderStages } = useLifecycleConfig()
+  const [dataLoading, setDataLoading] = useState(true)
+  const { stages, reorderStages, loading: stagesLoading } = useLifecycleConfig()
   const { isSetupCompleted, cattlePricePerLb } = useFarmSettings()
   const router = useRouter()
 
@@ -131,8 +134,15 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
+    // Only load data when user is authenticated
+    if (!user || authLoading) {
+      return
+    }
+
     const loadData = async () => {
       try {
+        setDataLoading(true)
+
         // Load analytics with configurable market price
         const data = await firebaseDataStore.getAnalytics(cattlePricePerLb)
         setAnalytics(data)
@@ -191,6 +201,8 @@ export default function DashboardPage() {
           cows: { count: 0, pregnant: 0, open: 0, exposed: 0 },
           calves: { count: 0, unweaned: 0, weaned: 0 },
         })
+      } finally {
+        setDataLoading(false)
       }
     }
 
@@ -202,7 +214,7 @@ export default function DashboardPage() {
     })
 
     return () => unsubscribe()
-  }, [cattlePricePerLb])
+  }, [user, authLoading, cattlePricePerLb])
 
   const handleExportCattle = async () => {
     const cattle = await firebaseDataStore.getCattle()
@@ -210,8 +222,17 @@ export default function DashboardPage() {
     exportToCSV(report, "cattle-inventory")
   }
 
-  if (!analytics) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>
+  // Show loading state while waiting for auth or data
+  if (authLoading || dataLoading || !analytics) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-lg font-semibold text-foreground">Loading your farm dashboard...</p>
+          <p className="text-sm text-muted-foreground mt-2">This may take a moment</p>
+        </div>
+      </div>
+    )
   }
 
   const metrics = [
