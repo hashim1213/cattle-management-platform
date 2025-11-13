@@ -195,6 +195,13 @@ export default function DashboardPage() {
     }
 
     loadData()
+
+    // Subscribe to data changes
+    const unsubscribe = firebaseDataStore.subscribe(() => {
+      loadData()
+    })
+
+    return () => unsubscribe()
   }, [cattlePricePerLb])
 
   const handleExportCattle = async () => {
