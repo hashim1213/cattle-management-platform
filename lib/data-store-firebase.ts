@@ -14,6 +14,7 @@ import {
   query,
   where,
   orderBy,
+  onSnapshot,
   Timestamp,
 } from "firebase/firestore"
 import { db, auth } from "@/lib/firebase"
@@ -80,6 +81,11 @@ export interface HealthRecord {
 }
 
 class FirebaseDataStore {
+  private userId: string | null = null
+  private cattle: Cattle[] = []
+  private listeners = new Set<() => void>()
+  private unsubscribeCattle?: () => void
+
   private getUserId(): string | null {
     return auth.currentUser?.uid || null
   }
@@ -96,11 +102,70 @@ class FirebaseDataStore {
     return collection(db, `users/${userId}/cattle/${cattleId}/healthRecords`)
   }
 
+  /**
+   * Initialize with user ID and set up real-time listeners
+   */
+  async initialize(userId: string): Promise<void> {
+    if (this.userId === userId && this.unsubscribeCattle) {
+      return // Already initialized for this user
+    }
+
+    // Clean up previous listeners
+    this.cleanup()
+
+    this.userId = userId
+
+    // Set up real-time listener for cattle
+    const cattleRef = this.getCattleCollection(userId)
+    this.unsubscribeCattle = onSnapshot(cattleRef, (snapshot) => {
+      this.cattle = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Cattle))
+      this.notify()
+    }, (error) => {
+      console.error("Error in cattle listener:", error)
+    })
+  }
+
+  /**
+   * Clean up listeners when user logs out
+   */
+  cleanup(): void {
+    if (this.unsubscribeCattle) {
+      this.unsubscribeCattle()
+      this.unsubscribeCattle = undefined
+    }
+    this.cattle = []
+    this.userId = null
+  }
+
+  /**
+   * Subscribe to data changes
+   */
+  subscribe(listener: () => void) {
+    this.listeners.add(listener)
+    return () => this.listeners.delete(listener)
+  }
+
+  private notify() {
+    this.listeners.forEach((listener) => listener())
+  }
+
   // CATTLE OPERATIONS
+  /**
+   * Get all cattle (from cache if real-time listener is active, otherwise fetch once)
+   */
   async getCattle(): Promise<Cattle[]> {
     const userId = this.getUserId()
     if (!userId) return []
 
+    // If we have an active listener, return cached data
+    if (this.unsubscribeCattle && this.cattle.length >= 0) {
+      return this.cattle
+    }
+
+    // Otherwise, fetch once (fallback for components that haven't initialized)
     try {
       const snapshot = await getDocs(this.getCattleCollection(userId))
       return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Cattle))
@@ -113,6 +178,13 @@ class FirebaseDataStore {
     const userId = this.getUserId()
     if (!userId) return null
 
+    // If we have an active listener, check cache first
+    if (this.unsubscribeCattle) {
+      const cached = this.cattle.find(c => c.id === id)
+      if (cached) return cached
+    }
+
+    // Otherwise, fetch from Firestore
     try {
       const docRef = doc(db, `users/${userId}/cattle`, id)
       const docSnap = await getDoc(docRef)

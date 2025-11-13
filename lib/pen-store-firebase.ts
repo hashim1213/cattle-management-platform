@@ -10,6 +10,7 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
+  onSnapshot,
 } from "firebase/firestore"
 import { onAuthStateChanged } from "firebase/auth"
 import { db, auth } from "@/lib/firebase"
@@ -49,6 +50,9 @@ class FirebasePenStore {
   private listeners: Set<() => void> = new Set()
   private authReady: boolean = false
   private authReadyPromise: Promise<void>
+  private userId: string | null = null
+  private unsubscribePens?: () => void
+  private unsubscribeBarns?: () => void
 
   constructor() {
     // Wait for auth to be ready
@@ -82,12 +86,77 @@ class FirebasePenStore {
     }
   }
 
+  /**
+   * Initialize with user ID and set up real-time listeners
+   */
+  async initialize(userId: string): Promise<void> {
+    if (this.userId === userId && this.unsubscribePens && this.unsubscribeBarns) {
+      return // Already initialized for this user
+    }
+
+    // Clean up previous listeners
+    this.cleanup()
+
+    this.userId = userId
+
+    // Set up real-time listener for barns
+    const barnsRef = collection(db, `users/${userId}/barns`)
+    this.unsubscribeBarns = onSnapshot(barnsRef, (snapshot) => {
+      this.barns = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Barn))
+      this.notifyListeners()
+    }, (error) => {
+      console.error("Error in barns listener:", error)
+    })
+
+    // Set up real-time listener for pens
+    const pensRef = collection(db, `users/${userId}/pens`)
+    this.unsubscribePens = onSnapshot(pensRef, (snapshot) => {
+      this.pens = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Pen))
+      this.notifyListeners()
+    }, (error) => {
+      console.error("Error in pens listener:", error)
+    })
+  }
+
+  /**
+   * Clean up listeners when user logs out
+   */
+  cleanup(): void {
+    if (this.unsubscribePens) {
+      this.unsubscribePens()
+      this.unsubscribePens = undefined
+    }
+    if (this.unsubscribeBarns) {
+      this.unsubscribeBarns()
+      this.unsubscribeBarns = undefined
+    }
+    this.pens = []
+    this.barns = []
+    this.userId = null
+  }
+
   // BARNS
+  /**
+   * Load barns (kept for backward compatibility, but real-time listener is preferred)
+   * If listener is active, this does nothing as data is already synced
+   */
   async loadBarns() {
     await this.waitForAuth()
     const userId = this.getUserId()
     if (!userId) return
 
+    // If real-time listener is active, data is already synced
+    if (this.unsubscribeBarns) {
+      return
+    }
+
+    // Otherwise, fetch once (fallback)
     try {
       const snapshot = await getDocs(collection(db, `users/${userId}/barns`))
       this.barns = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Barn))
@@ -124,8 +193,7 @@ class FirebasePenStore {
         Object.entries(newBarn).filter(([_, v]) => v !== undefined)
       )
       await setDoc(docRef, barnData)
-      this.barns.push(newBarn)
-      this.notifyListeners()
+      // Real-time listener will update local state automatically
       return newBarn
     } catch (error: any) {
       console.error("Firebase addBarn error:", error)
@@ -152,27 +220,7 @@ class FirebasePenStore {
       )
 
       await updateDoc(docRef, updateData)
-
-      // Update local state
-      const index = this.barns.findIndex((b) => b.id === id)
-      if (index !== -1) {
-        const updatedBarn = { ...this.barns[index] }
-
-        // Apply updates, removing fields that are explicitly set to undefined
-        Object.entries(updates).forEach(([key, value]) => {
-          if (value === undefined) {
-            delete (updatedBarn as any)[key]
-          } else {
-            (updatedBarn as any)[key] = value
-          }
-        })
-
-        // Update timestamp
-        updatedBarn.updatedAt = updateDataWithTimestamp.updatedAt
-
-        this.barns[index] = updatedBarn
-        this.notifyListeners()
-      }
+      // Real-time listener will update local state automatically
     } catch (error) {
       console.error("Error updating barn:", error)
       throw new Error("Failed to update barn")
@@ -186,21 +234,29 @@ class FirebasePenStore {
     try {
       const docRef = doc(db, `users/${userId}/barns`, id)
       await deleteDoc(docRef)
-      this.barns = this.barns.filter((b) => b.id !== id)
-      // Also delete all pens in this barn
-      this.pens = this.pens.filter((p) => p.barnId !== id)
-      this.notifyListeners()
+      // Real-time listener will update local state automatically
+      // Note: Pens in this barn should be deleted separately or handled with Cloud Functions
     } catch (error) {
       throw new Error("Failed to delete barn")
     }
   }
 
   // PENS
+  /**
+   * Load pens (kept for backward compatibility, but real-time listener is preferred)
+   * If listener is active, this does nothing as data is already synced
+   */
   async loadPens() {
     await this.waitForAuth()
     const userId = this.getUserId()
     if (!userId) return
 
+    // If real-time listener is active, data is already synced
+    if (this.unsubscribePens) {
+      return
+    }
+
+    // Otherwise, fetch once (fallback)
     try {
       const snapshot = await getDocs(collection(db, `users/${userId}/pens`))
       this.pens = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Pen))
@@ -249,8 +305,7 @@ class FirebasePenStore {
         Object.entries(newPen).filter(([_, v]) => v !== undefined)
       )
       await setDoc(docRef, penData)
-      this.pens.push(newPen)
-      this.notifyListeners()
+      // Real-time listener will update local state automatically
       return newPen
     } catch (error: any) {
       console.error("Firebase addPen error:", error)
@@ -277,27 +332,7 @@ class FirebasePenStore {
       )
 
       await updateDoc(docRef, updateData)
-
-      // Update local state
-      const index = this.pens.findIndex((p) => p.id === id)
-      if (index !== -1) {
-        const updatedPen = { ...this.pens[index] }
-
-        // Apply updates, removing fields that are explicitly set to undefined
-        Object.entries(updates).forEach(([key, value]) => {
-          if (value === undefined) {
-            delete (updatedPen as any)[key]
-          } else {
-            (updatedPen as any)[key] = value
-          }
-        })
-
-        // Update timestamp
-        updatedPen.updatedAt = updateDataWithTimestamp.updatedAt
-
-        this.pens[index] = updatedPen
-        this.notifyListeners()
-      }
+      // Real-time listener will update local state automatically
     } catch (error) {
       console.error("Error updating pen:", error)
       throw new Error("Failed to update pen")
@@ -319,8 +354,7 @@ class FirebasePenStore {
     try {
       const docRef = doc(db, `users/${userId}/pens`, id)
       await deleteDoc(docRef)
-      this.pens = this.pens.filter((p) => p.id !== id)
-      this.notifyListeners()
+      // Real-time listener will update local state automatically
     } catch (error) {
       throw new Error("Failed to delete pen")
     }
