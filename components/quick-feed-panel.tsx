@@ -35,15 +35,20 @@ export function QuickFeedPanel({ penId, penName, cattleCount }: QuickFeedPanelPr
   const [feedNotes, setFeedNotes] = useState("")
 
   useEffect(() => {
-    const loadFeedInventory = async () => {
-      if (!user) return
+    if (!user) {
+      setLoading(false)
+      return
+    }
 
+    let unsubscribe: (() => void) | undefined
+
+    const loadFeedInventory = async () => {
       try {
         setLoading(true)
         await firebaseInventoryService.initialize(user.uid)
 
         // Subscribe to inventory changes
-        const unsubscribe = firebaseInventoryService.subscribe(() => {
+        unsubscribe = firebaseInventoryService.subscribe(() => {
           const allInventory = firebaseInventoryService.getAllItems()
           // Filter for feed items only
           const feedItems = allInventory.filter(item => isFeedCategory(item.category))
@@ -54,8 +59,6 @@ export function QuickFeedPanel({ penId, penName, cattleCount }: QuickFeedPanelPr
         const allInventory = firebaseInventoryService.getAllItems()
         const feedItems = allInventory.filter(item => isFeedCategory(item.category))
         setFeedInventory(feedItems)
-
-        return () => unsubscribe()
       } catch (error) {
         console.error("Failed to load feed inventory:", error)
         toast.error("Failed to load feed inventory")
@@ -65,6 +68,13 @@ export function QuickFeedPanel({ penId, penName, cattleCount }: QuickFeedPanelPr
     }
 
     loadFeedInventory()
+
+    // Return cleanup function
+    return () => {
+      if (unsubscribe) {
+        unsubscribe()
+      }
+    }
   }, [user])
 
   const handleQuickFeed = async (feedItem: InventoryItem, amount: number) => {

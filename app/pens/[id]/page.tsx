@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { ArrowLeft, Grid3x3, Syringe, DollarSign, Weight, MoveRight, MoreVertical, Filter, Activity } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -67,6 +67,9 @@ export default function PenDetailPage() {
   const [targetPenId, setTargetPenId] = useState("")
   const [bulkWeight, setBulkWeight] = useState("")
 
+  // Track if we're currently syncing pen count to prevent loops
+  const isSyncingRef = useRef(false)
+
   // Update pen when pens array changes
   useEffect(() => {
     const foundPen = pens.find(p => p.id === params.id)
@@ -106,18 +109,24 @@ export default function PenDetailPage() {
   // Sync pen count with actual cattle count when both are loaded
   useEffect(() => {
     const syncPenCount = async () => {
-      if (pen && !cattleLoading && cattle.length !== pen.currentCount) {
-        console.log(`Syncing pen count: ${pen.currentCount} -> ${cattle.length}`)
-        try {
-          await updatePen(pen.id, { currentCount: cattle.length })
-        } catch (error) {
-          console.error("Failed to sync pen count:", error)
-        }
+      // Prevent concurrent syncs and infinite loops
+      if (isSyncingRef.current) return
+      if (!pen || cattleLoading || cattle.length === pen.currentCount) return
+
+      console.log(`Syncing pen count: ${pen.currentCount} -> ${cattle.length}`)
+      isSyncingRef.current = true
+
+      try {
+        await updatePen(pen.id, { currentCount: cattle.length })
+      } catch (error) {
+        console.error("Failed to sync pen count:", error)
+      } finally {
+        isSyncingRef.current = false
       }
     }
 
     syncPenCount()
-  }, [pen?.id, cattle.length, cattleLoading])
+  }, [pen?.id, cattle.length, cattleLoading, updatePen])
 
   // Filter and search cattle
   useEffect(() => {
