@@ -12,7 +12,7 @@ import { useFarmSettings } from "@/hooks/use-farm-settings"
 import { useAuth } from "@/contexts/auth-context"
 import { Settings as SettingsIcon, Bell, Database, Save, User, MapPin, Home, DollarSign } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { doc, getDoc, updateDoc } from "firebase/firestore"
+import { doc, getDoc, setDoc } from "firebase/firestore"
 import { db, auth as firebaseAuth } from "@/lib/firebase"
 import { updateProfile } from "firebase/auth"
 
@@ -120,10 +120,16 @@ export default function SettingsPage() {
         console.log("Firebase Auth profile updated with new display name")
       }
 
-      // Update user profile in Firestore
+      // Update user profile in Firestore (create if doesn't exist)
       const profileRef = doc(db, "userProfiles", user.uid)
-      const updateData = {
+
+      // Check if profile exists to determine if we need to set createdAt
+      const profileSnap = await getDoc(profileRef)
+      const isNewProfile = !profileSnap.exists()
+
+      const updateData: Record<string, any> = {
         displayName,
+        email: user.email || "",
         farmName,
         location,
         farmSize: farmSize.trim() || "",
@@ -131,12 +137,18 @@ export default function SettingsPage() {
         updatedAt: new Date().toISOString(),
       }
 
+      // Add createdAt for new profiles
+      if (isNewProfile) {
+        updateData.createdAt = new Date().toISOString()
+      }
+
       // Filter out undefined values
       const filteredData = Object.fromEntries(
         Object.entries(updateData).filter(([_, v]) => v !== undefined)
       )
 
-      await updateDoc(profileRef, filteredData)
+      // Use setDoc with merge to create document if it doesn't exist
+      await setDoc(profileRef, filteredData, { merge: true })
       console.log("User profile updated successfully")
 
       toast({
