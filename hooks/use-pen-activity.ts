@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { penActivityStore, type PenFeedActivity, type PenMedicationActivity } from "@/lib/pen-activity-store"
 
 export function usePenActivity() {
@@ -32,18 +32,66 @@ export function usePenActivity() {
     return () => unsubscribe()
   }, [])
 
+  // Memoize functions to prevent re-renders
+  const addFeedActivity = useCallback(
+    (activity: Omit<PenFeedActivity, "id" | "createdAt">) =>
+      penActivityStore.addFeedActivity(activity),
+    []
+  )
+
+  const deleteFeedActivity = useCallback(
+    (id: string) => penActivityStore.deleteFeedActivity(id),
+    []
+  )
+
+  const addMedicationActivity = useCallback(
+    (activity: Omit<PenMedicationActivity, "id" | "createdAt">) =>
+      penActivityStore.addMedicationActivity(activity),
+    []
+  )
+
+  const deleteMedicationActivity = useCallback(
+    (id: string) => penActivityStore.deleteMedicationActivity(id),
+    []
+  )
+
+  const getFeedActivitiesByPen = useCallback(
+    (penId: string) => penActivityStore.getFeedActivitiesByPen(penId),
+    []
+  )
+
+  const getMedicationActivitiesByPen = useCallback(
+    (penId: string) => penActivityStore.getMedicationActivitiesByPen(penId),
+    []
+  )
+
+  const getTotalFeedCostByPen = useCallback(
+    (penId: string) => penActivityStore.getTotalFeedCostByPen(penId),
+    []
+  )
+
+  const getTotalMedicationCostByPen = useCallback(
+    (penId: string) => penActivityStore.getTotalMedicationCostByPen(penId),
+    []
+  )
+
+  const getPenROI = useCallback(
+    (penId: string, cattleValue: number) => penActivityStore.getPenROI(penId, cattleValue),
+    []
+  )
+
   return {
     feedActivities,
     medicationActivities,
     loading,
-    addFeedActivity: penActivityStore.addFeedActivity.bind(penActivityStore),
-    deleteFeedActivity: penActivityStore.deleteFeedActivity.bind(penActivityStore),
-    addMedicationActivity: penActivityStore.addMedicationActivity.bind(penActivityStore),
-    deleteMedicationActivity: penActivityStore.deleteMedicationActivity.bind(penActivityStore),
-    getFeedActivitiesByPen: penActivityStore.getFeedActivitiesByPen.bind(penActivityStore),
-    getMedicationActivitiesByPen: penActivityStore.getMedicationActivitiesByPen.bind(penActivityStore),
-    getTotalFeedCostByPen: penActivityStore.getTotalFeedCostByPen.bind(penActivityStore),
-    getTotalMedicationCostByPen: penActivityStore.getTotalMedicationCostByPen.bind(penActivityStore),
-    getPenROI: penActivityStore.getPenROI.bind(penActivityStore),
+    addFeedActivity,
+    deleteFeedActivity,
+    addMedicationActivity,
+    deleteMedicationActivity,
+    getFeedActivitiesByPen,
+    getMedicationActivitiesByPen,
+    getTotalFeedCostByPen,
+    getTotalMedicationCostByPen,
+    getPenROI,
   }
 }

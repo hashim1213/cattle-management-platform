@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { DollarSign, TrendingUp, TrendingDown, Package, Warehouse } from "lucide-react"
 import { usePenActivity } from "@/hooks/use-pen-activity"
@@ -14,45 +14,51 @@ export function PenOverviewCard() {
   const { pens } = usePenStore()
   const { cattlePricePerLb } = useFarmSettings()
   const [cattle, setCattle] = useState<Cattle[]>([])
-  const [totalSpent, setTotalSpent] = useState(0)
-  const [projectedRevenue, setProjectedRevenue] = useState(0)
-  const [totalCattleInPens, setTotalCattleInPens] = useState(0)
 
+  // Load cattle data only once on mount
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Get all cattle
         const allCattle = await firebaseDataStore.getCattle()
         const activeCattle = allCattle.filter((c) => c.status === "Active" && c.penId)
         setCattle(activeCattle)
-
-        // Calculate total spent across all pens
-        let feedCosts = 0
-        let medicationCosts = 0
-
-        pens.forEach((pen) => {
-          feedCosts += getTotalFeedCostByPen(pen.id)
-          medicationCosts += getTotalMedicationCostByPen(pen.id)
-        })
-
-        const total = feedCosts + medicationCosts
-        setTotalSpent(total)
-
-        // Calculate projected revenue based on cattle weight and market price
-        const revenue = activeCattle.reduce((sum, c) => {
-          return sum + (c.weight * cattlePricePerLb)
-        }, 0)
-        setProjectedRevenue(revenue)
-
-        // Count total cattle in pens
-        setTotalCattleInPens(activeCattle.length)
       } catch (error) {
         console.error("Error loading pen overview data:", error)
       }
     }
 
     loadData()
-  }, [pens, getTotalFeedCostByPen, getTotalMedicationCostByPen, cattlePricePerLb])
+
+    // Subscribe to cattle changes
+    const unsubscribe = firebaseDataStore.subscribe(() => {
+      loadData()
+    })
+
+    return () => unsubscribe()
+  }, [])
+
+  // Memoize expensive calculations
+  const totalSpent = useMemo(() => {
+    let feedCosts = 0
+    let medicationCosts = 0
+
+    pens.forEach((pen) => {
+      feedCosts += getTotalFeedCostByPen(pen.id)
+      medicationCosts += getTotalMedicationCostByPen(pen.id)
+    })
+
+    return feedCosts + medicationCosts
+  }, [pens, getTotalFeedCostByPen, getTotalMedicationCostByPen])
+
+  const projectedRevenue = useMemo(() => {
+    return cattle.reduce((sum, c) => {
+      return sum + (c.weight * cattlePricePerLb)
+    }, 0)
+  }, [cattle, cattlePricePerLb])
+
+  const totalCattleInPens = useMemo(() => {
+    return cattle.length
+  }, [cattle])
 
   const profit = projectedRevenue - totalSpent
   const roi = totalSpent > 0 ? (profit / totalSpent) * 100 : 0
