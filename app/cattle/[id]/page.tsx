@@ -19,12 +19,14 @@ import { firebaseDataStore, type Cattle, type WeightRecord, type HealthRecord } 
 import { feedService, type FeedAllocationRecord } from "@/lib/feed/feed-service"
 import { usePenStore } from "@/hooks/use-pen-store"
 import { useToast } from "@/hooks/use-toast"
+import { useFarmSettings } from "@/hooks/use-farm-settings"
 
 export default function CattleDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { toast } = useToast()
   const { barns, pens, getPen, updatePenCount } = usePenStore()
+  const { cattlePricePerLb } = useFarmSettings()
   const [isAddWeightOpen, setIsAddWeightOpen] = useState(false)
   const [isAddHealthOpen, setIsAddHealthOpen] = useState(false)
   const [isUpdatePriceOpen, setIsUpdatePriceOpen] = useState(false)
@@ -201,7 +203,7 @@ export default function CattleDetailPage() {
   const dailyGain = daysOnFeed > 0 ? (currentWeight - startWeight) / daysOnFeed : 0
 
   // Calculate current value (use manual value if set, otherwise calculate)
-  const marketPricePerPound = 1.65
+  const marketPricePerPound = cattlePricePerLb // Use configurable market price from settings
   const calculatedValue = currentWeight * marketPricePerPound
   const currentValue = cattle.currentValue || calculatedValue
 

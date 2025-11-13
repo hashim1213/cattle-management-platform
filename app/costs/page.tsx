@@ -12,6 +12,7 @@ import { firebaseDataStore } from "@/lib/data-store-firebase"
 import { firebasePenStore } from "@/lib/pen-store-firebase"
 import { financialCalculator, CattleCostBreakdown } from "@/lib/financial-calculator"
 import { Badge } from "@/components/ui/badge"
+import { useFarmSettings } from "@/hooks/use-farm-settings"
 
 interface CostSummary {
   totalCostPerHead: number
@@ -45,6 +46,7 @@ interface PenProfitability {
 }
 
 export default function CostsPage() {
+  const { cattlePricePerLb } = useFarmSettings()
   const [costSummary, setCostSummary] = useState<CostSummary>({
     totalCostPerHead: 0,
     avgCostOfGain: 0,
@@ -62,13 +64,13 @@ export default function CostsPage() {
 
   useEffect(() => {
     calculateFinancials()
-  }, [])
+  }, [cattlePricePerLb])
 
   const calculateFinancials = async () => {
     try {
       const cattle = await firebaseDataStore.getCattle()
       const pens = firebasePenStore.getPens()
-      const currentMarketPrice = 1.65 // $1.65 per pound
+      const currentMarketPrice = cattlePricePerLb // Use configurable market price from settings
 
     let totalInvestment = 0
     let totalFeedCost = 0
@@ -206,8 +208,8 @@ export default function CostsPage() {
     {
       title: "Breakeven Price",
       value: `$${costSummary.projectedBreakeven.toFixed(2)}/lb`,
-      change: "Current market: $1.65/lb",
-      trend: costSummary.projectedBreakeven < 1.65 ? "down" as const : "up" as const,
+      change: `Current market: $${cattlePricePerLb.toFixed(2)}/lb`,
+      trend: costSummary.projectedBreakeven < cattlePricePerLb ? "down" as const : "up" as const,
       icon: Calculator,
     },
     {

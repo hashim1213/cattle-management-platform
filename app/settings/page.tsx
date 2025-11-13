@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { useFarmSettings } from "@/hooks/use-farm-settings"
 import { useAuth } from "@/contexts/auth-context"
-import { Settings as SettingsIcon, Bell, Database, Save, User, MapPin, Home } from "lucide-react"
+import { Settings as SettingsIcon, Bell, Database, Save, User, MapPin, Home, DollarSign } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { doc, getDoc, updateDoc } from "firebase/firestore"
 import { db, auth as firebaseAuth } from "@/lib/firebase"
@@ -26,7 +26,7 @@ interface UserProfile {
 }
 
 export default function SettingsPage() {
-  const { settings, updateSettings, updatePreferences } = useFarmSettings()
+  const { settings, updateSettings, updatePreferences, updatePricing } = useFarmSettings()
   const { user } = useAuth()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
@@ -36,6 +36,9 @@ export default function SettingsPage() {
   const [farmName, setFarmName] = useState(settings?.farmName || "")
   const [enablePastures, setEnablePastures] = useState(settings?.preferences.enablePastures ?? true)
   const [enableRations, setEnableRations] = useState(settings?.preferences.enableRations ?? true)
+
+  // Pricing settings
+  const [cattlePricePerLb, setCattlePricePerLb] = useState(settings?.pricing?.cattlePricePerLb || 6.97)
 
   // User profile
   const [displayName, setDisplayName] = useState("")
@@ -75,6 +78,13 @@ export default function SettingsPage() {
     loadUserProfile()
   }, [user, settings?.farmName])
 
+  // Sync pricing when settings change
+  useEffect(() => {
+    if (settings?.pricing?.cattlePricePerLb) {
+      setCattlePricePerLb(settings.pricing.cattlePricePerLb)
+    }
+  }, [settings?.pricing?.cattlePricePerLb])
+
   const handleSaveSettings = async () => {
     if (!user) {
       toast({
@@ -96,6 +106,10 @@ export default function SettingsPage() {
       await updatePreferences({
         enablePastures,
         enableRations,
+      })
+
+      await updatePricing({
+        cattlePricePerLb,
       })
 
       // Update Firebase Auth profile if display name changed
@@ -289,6 +303,41 @@ export default function SettingsPage() {
                   onCheckedChange={setEnableRations}
                 />
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Pricing Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5" />
+              Pricing & Financial Settings
+            </CardTitle>
+            <CardDescription>
+              Configure market prices to calculate accurate ROI and profitability
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="cattlePrice">Cattle Market Price (per lb)</Label>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-semibold text-muted-foreground">$</span>
+                <Input
+                  id="cattlePrice"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={cattlePricePerLb}
+                  onChange={(e) => setCattlePricePerLb(parseFloat(e.target.value) || 0)}
+                  placeholder="6.97"
+                  className="max-w-[200px]"
+                />
+                <span className="text-sm text-muted-foreground">/ lb</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Current market price for selling cattle. This is used to calculate projected revenue and ROI.
+              </p>
             </div>
           </CardContent>
         </Card>

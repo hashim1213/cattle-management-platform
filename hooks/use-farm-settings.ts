@@ -31,6 +31,7 @@ export function useFarmSettings() {
     isCowCalfEnabled: farmSettingsStore.isCowCalfEnabled(),
     isBackgrounderEnabled: farmSettingsStore.isBackgrounderEnabled(),
     isFeedlotEnabled: farmSettingsStore.isFeedlotEnabled(),
+    cattlePricePerLb: farmSettingsStore.getCattlePricePerLb(),
     initializeSettings: async (farmName: string, sector: FarmSector) => {
       if (user) {
         await farmSettingsStore.initializeSettings(farmName, sector, user.uid)
@@ -44,6 +45,11 @@ export function useFarmSettings() {
     updatePreferences: async (preferences: Partial<FarmSettings["preferences"]>) => {
       if (user) {
         await farmSettingsStore.updatePreferences(preferences, user.uid)
+      }
+    },
+    updatePricing: async (pricing: Partial<FarmSettings["pricing"]>) => {
+      if (user) {
+        await farmSettingsStore.updatePricing(pricing, user.uid)
       }
     },
   }

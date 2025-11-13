@@ -4,8 +4,10 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Beef, Activity, TrendingUp, DollarSign, Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { firebaseDataStore } from "@/lib/data-store-firebase"
+import { useFarmSettings } from "@/hooks/use-farm-settings"
 
 export function CattleStats() {
+  const { cattlePricePerLb } = useFarmSettings()
   const [loading, setLoading] = useState(true)
   const [analytics, setAnalytics] = useState({
     totalCattle: 0,
@@ -18,7 +20,7 @@ export function CattleStats() {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        const data = await firebaseDataStore.getAnalytics()
+        const data = await firebaseDataStore.getAnalytics(cattlePricePerLb)
         setAnalytics(data)
       } catch (error) {
         console.error("Failed to load cattle stats:", error)
@@ -27,7 +29,7 @@ export function CattleStats() {
       }
     }
     loadStats()
-  }, [])
+  }, [cattlePricePerLb])
 
   if (loading) {
     return (

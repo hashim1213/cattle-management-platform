@@ -21,6 +21,9 @@ export interface FarmSettings {
     defaultWeightUnit: "lbs" | "kg"
     defaultCurrency: "USD" | "CAD"
   }
+  pricing: {
+    cattlePricePerLb: number // Market price per pound for cattle
+  }
 }
 
 class FarmSettingsStore {
@@ -37,7 +40,14 @@ class FarmSettingsStore {
       const docSnap = await getDoc(docRef)
 
       if (docSnap.exists()) {
-        this.settings = docSnap.data() as FarmSettings
+        const data = docSnap.data() as FarmSettings
+        // Ensure pricing field exists for backward compatibility
+        if (!data.pricing) {
+          data.pricing = {
+            cattlePricePerLb: 6.97,
+          }
+        }
+        this.settings = data
         this.notifyListeners()
       } else {
         this.settings = null
@@ -108,6 +118,9 @@ class FarmSettingsStore {
         defaultWeightUnit: "lbs",
         defaultCurrency: "USD",
       },
+      pricing: {
+        cattlePricePerLb: 6.97, // Default market price per pound
+      },
     }
     await this.saveSettings(userId)
   }
@@ -132,6 +145,21 @@ class FarmSettingsStore {
     }
     this.settings.updatedAt = new Date().toISOString()
     await this.saveSettings(userId)
+  }
+
+  async updatePricing(pricing: Partial<FarmSettings["pricing"]>, userId: string) {
+    if (!this.settings) return
+
+    this.settings.pricing = {
+      ...this.settings.pricing,
+      ...pricing,
+    }
+    this.settings.updatedAt = new Date().toISOString()
+    await this.saveSettings(userId)
+  }
+
+  getCattlePricePerLb(): number {
+    return this.settings?.pricing?.cattlePricePerLb || 6.97
   }
 
   clearSettings() {
