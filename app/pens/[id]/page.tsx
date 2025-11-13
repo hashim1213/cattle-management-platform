@@ -102,6 +102,22 @@ export default function PenDetailPage() {
     return () => unsubscribe()
   }, [params.id])
 
+  // Sync pen count with actual cattle count when both are loaded
+  useEffect(() => {
+    const syncPenCount = async () => {
+      if (pen && !cattleLoading && cattle.length !== pen.currentCount) {
+        console.log(`Syncing pen count: ${pen.currentCount} -> ${cattle.length}`)
+        try {
+          await updatePen(pen.id, { currentCount: cattle.length })
+        } catch (error) {
+          console.error("Failed to sync pen count:", error)
+        }
+      }
+    }
+
+    syncPenCount()
+  }, [pen?.id, cattle.length, cattleLoading])
+
   // Filter and search cattle
   useEffect(() => {
     let filtered = [...cattle]
@@ -182,8 +198,25 @@ export default function PenDetailPage() {
 
     try {
       const selectedCattle = getSelectedCattle()
+      const currentPenId = pen?.id
+
+      // Update each cattle with new pen assignment
       for (const c of selectedCattle) {
         await firebaseDataStore.updateCattle(c.id, { penId: targetPenId })
+      }
+
+      // Update pen counts
+      if (currentPenId) {
+        await updatePen(currentPenId, {
+          currentCount: Math.max(0, (pen?.currentCount || 0) - selectedCattle.length)
+        })
+      }
+
+      const targetPen = pens.find(p => p.id === targetPenId)
+      if (targetPen) {
+        await updatePen(targetPenId, {
+          currentCount: (targetPen.currentCount || 0) + selectedCattle.length
+        })
       }
 
       toast.success(`Moved ${selectedCattle.length} cattle to new pen`)
