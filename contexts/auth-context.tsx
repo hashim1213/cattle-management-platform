@@ -11,6 +11,9 @@ import {
 } from "firebase/auth"
 import { auth } from "@/lib/firebase"
 import { useRouter } from "next/navigation"
+import { firebaseDataStore } from "@/lib/data-store-firebase"
+import { firebasePenStore } from "@/lib/pen-store-firebase"
+import { firebaseInventoryService } from "@/lib/inventory/inventory-service-firebase"
 
 interface AuthContextType {
   user: User | null
@@ -38,8 +41,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user)
+
+      if (user) {
+        // Initialize real-time listeners for all data stores
+        try {
+          await Promise.all([
+            firebaseDataStore.initialize(user.uid),
+            firebasePenStore.initialize(user.uid),
+            firebaseInventoryService.initialize(user.uid),
+          ])
+        } catch (error) {
+          console.error("Error initializing data stores:", error)
+        }
+      } else {
+        // Clean up listeners when user logs out
+        firebaseDataStore.cleanup()
+        firebasePenStore.cleanup()
+        firebaseInventoryService.cleanup()
+      }
+
       setLoading(false)
     })
 

@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Mic, MicOff, Send, Loader2, MessageSquare, History, Trash2, User, Bot, Sparkles, Plus, Package, Activity, BarChart3, Stethoscope, Home, ChevronDown, ChevronUp } from "lucide-react"
 import { db } from "@/lib/firebase"
-import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } from "firebase/firestore"
+import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, onSnapshot } from "firebase/firestore"
 import { toast } from "sonner"
 
 interface Message {
@@ -51,34 +51,43 @@ export default function AgentPage() {
     }
   }, [currentMessages])
 
-  // Load conversation history
+  // Set up real-time listener for conversation history
   useEffect(() => {
-    if (user) {
-      loadConversationHistory()
+    if (!user) {
+      setConversations([])
+      return
     }
+
+    setIsLoadingHistory(true)
+
+    const conversationsRef = collection(db, `users/${user.uid}/conversations`)
+    const q = query(conversationsRef, orderBy("updatedAt", "desc"))
+
+    // Set up real-time listener
+    const unsubscribe = onSnapshot(q,
+      (snapshot) => {
+        const loadedConversations = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as Conversation))
+
+        setConversations(loadedConversations)
+        setIsLoadingHistory(false)
+      },
+      (error) => {
+        console.error("Error loading conversations:", error)
+        toast.error("Failed to load conversation history")
+        setIsLoadingHistory(false)
+      }
+    )
+
+    // Cleanup listener on unmount or user change
+    return () => unsubscribe()
   }, [user])
 
   const loadConversationHistory = async () => {
-    if (!user) return
-
-    setIsLoadingHistory(true)
-    try {
-      const conversationsRef = collection(db, `users/${user.uid}/conversations`)
-      const q = query(conversationsRef, orderBy("updatedAt", "desc"))
-      const snapshot = await getDocs(q)
-
-      const loadedConversations = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as Conversation))
-
-      setConversations(loadedConversations)
-    } catch (error) {
-      console.error("Error loading conversations:", error)
-      toast.error("Failed to load conversation history")
-    } finally {
-      setIsLoadingHistory(false)
-    }
+    // This function is kept for backward compatibility but is no longer needed
+    // Real-time listener handles conversation loading automatically
   }
 
   const saveConversation = async (messages: Message[]) => {
@@ -104,7 +113,7 @@ export default function AgentPage() {
       })
 
       setCurrentConversationId(docRef.id)
-      await loadConversationHistory()
+      // Real-time listener will update conversations automatically
     } catch (error) {
       console.error("Error saving conversation:", error)
     }
