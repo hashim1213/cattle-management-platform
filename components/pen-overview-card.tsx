@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { DollarSign, TrendingUp, TrendingDown, Package, Warehouse } from "lucide-react"
 import { usePenActivity } from "@/hooks/use-pen-activity"
@@ -10,49 +10,43 @@ import { firebaseDataStore } from "@/lib/data-store-firebase"
 import type { Cattle } from "@/lib/data-store-firebase"
 
 export function PenOverviewCard() {
-  const { getTotalFeedCostByPen, getTotalMedicationCostByPen } = usePenActivity()
+  const { feedActivities, medicationActivities } = usePenActivity()
   const { pens } = usePenStore()
   const { cattlePricePerLb } = useFarmSettings()
   const [cattle, setCattle] = useState<Cattle[]>([])
-  const [totalSpent, setTotalSpent] = useState(0)
-  const [projectedRevenue, setProjectedRevenue] = useState(0)
-  const [totalCattleInPens, setTotalCattleInPens] = useState(0)
+  const [loading, setLoading] = useState(true)
 
+  // Load cattle data once on mount
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Get all cattle
         const allCattle = await firebaseDataStore.getCattle()
         const activeCattle = allCattle.filter((c) => c.status === "Active" && c.penId)
         setCattle(activeCattle)
-
-        // Calculate total spent across all pens
-        let feedCosts = 0
-        let medicationCosts = 0
-
-        pens.forEach((pen) => {
-          feedCosts += getTotalFeedCostByPen(pen.id)
-          medicationCosts += getTotalMedicationCostByPen(pen.id)
-        })
-
-        const total = feedCosts + medicationCosts
-        setTotalSpent(total)
-
-        // Calculate projected revenue based on cattle weight and market price
-        const revenue = activeCattle.reduce((sum, c) => {
-          return sum + (c.weight * cattlePricePerLb)
-        }, 0)
-        setProjectedRevenue(revenue)
-
-        // Count total cattle in pens
-        setTotalCattleInPens(activeCattle.length)
       } catch (error) {
         console.error("Error loading pen overview data:", error)
+      } finally {
+        setLoading(false)
       }
     }
 
     loadData()
-  }, [pens, getTotalFeedCostByPen, getTotalMedicationCostByPen, cattlePricePerLb])
+  }, [])
+
+  // Calculate costs from activity data (memoized)
+  const totalSpent = useMemo(() => {
+    const feedCosts = feedActivities.reduce((sum, activity) => sum + activity.totalCost, 0)
+    const medicationCosts = medicationActivities.reduce((sum, activity) => sum + activity.totalCost, 0)
+    return feedCosts + medicationCosts
+  }, [feedActivities, medicationActivities])
+
+  // Calculate projected revenue (memoized)
+  const projectedRevenue = useMemo(() => {
+    return cattle.reduce((sum, c) => sum + (c.weight * cattlePricePerLb), 0)
+  }, [cattle, cattlePricePerLb])
+
+  // Count cattle in pens (memoized)
+  const totalCattleInPens = useMemo(() => cattle.length, [cattle])
 
   const profit = projectedRevenue - totalSpent
   const roi = totalSpent > 0 ? (profit / totalSpent) * 100 : 0
