@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useLifecycleConfig } from "@/hooks/use-lifecycle-config"
 import { Settings, Plus, Trash2, GripVertical, RotateCcw, Edit } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useToast } from "@/hooks/use-toast"
 import type { LifecycleStage } from "@/lib/lifecycle-config-firebase"
 
 export function LifecycleSettingsDialog() {
@@ -26,6 +27,7 @@ export function LifecycleSettingsDialog() {
   const [newStageDescription, setNewStageDescription] = useState("")
   const [newStageColor, setNewStageColor] = useState("#3b82f6")
   const [newStageImage, setNewStageImage] = useState("")
+  const { toast } = useToast()
 
   const availableImages = [
     "/images/calf.png",
@@ -39,21 +41,34 @@ export function LifecycleSettingsDialog() {
 
   const { stages, addStage, updateStage, removeStage, resetToDefault } = useLifecycleConfig()
 
-  const handleAddStage = () => {
+  const handleAddStage = async () => {
     if (!newStageName.trim()) return
 
-    addStage({
-      name: newStageName.trim(),
-      color: newStageColor,
-      description: newStageDescription.trim() || undefined,
-      image: newStageImage || undefined,
-    })
+    try {
+      await addStage({
+        name: newStageName.trim(),
+        color: newStageColor,
+        description: newStageDescription.trim() || undefined,
+        image: newStageImage || undefined,
+      })
 
-    setNewStageName("")
-    setNewStageDescription("")
-    setNewStageColor("#3b82f6")
-    setNewStageImage("")
-    setShowAddForm(false)
+      toast({
+        title: "Stage added",
+        description: `${newStageName.trim()} has been added to your production lifecycle.`,
+      })
+
+      setNewStageName("")
+      setNewStageDescription("")
+      setNewStageColor("#3b82f6")
+      setNewStageImage("")
+      setShowAddForm(false)
+    } catch (error) {
+      toast({
+        title: "Error adding stage",
+        description: "Failed to add the stage. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleEditStage = (stage: LifecycleStage) => {
@@ -61,34 +76,74 @@ export function LifecycleSettingsDialog() {
     setShowAddForm(false)
   }
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editingStage) return
 
-    updateStage(editingStage.id, {
-      name: editingStage.name,
-      color: editingStage.color,
-      description: editingStage.description,
-      image: editingStage.image,
-    })
+    try {
+      await updateStage(editingStage.id, {
+        name: editingStage.name,
+        color: editingStage.color,
+        description: editingStage.description,
+        image: editingStage.image,
+      })
 
-    setEditingStage(null)
-  }
+      toast({
+        title: "Stage updated",
+        description: `${editingStage.name} has been updated successfully.`,
+      })
 
-  const handleRemoveStage = (id: string) => {
-    if (confirm("Are you sure you want to remove this lifecycle stage?")) {
-      removeStage(id)
+      setEditingStage(null)
+    } catch (error) {
+      toast({
+        title: "Error updating stage",
+        description: "Failed to update the stage. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 
-  const handleReset = () => {
+  const handleRemoveStage = async (id: string) => {
+    const stage = stages.find((s) => s.id === id)
+    if (!stage) return
+
+    if (confirm(`Are you sure you want to remove "${stage.name}"? This action cannot be undone.`)) {
+      try {
+        await removeStage(id)
+        toast({
+          title: "Stage removed",
+          description: `${stage.name} has been removed from your production lifecycle.`,
+        })
+      } catch (error) {
+        toast({
+          title: "Error removing stage",
+          description: "Failed to remove the stage. Please try again.",
+          variant: "destructive",
+        })
+      }
+    }
+  }
+
+  const handleReset = async () => {
     if (
       confirm(
         "Are you sure you want to reset to default lifecycle stages? This will remove any custom stages you've created."
       )
     ) {
-      resetToDefault()
-      setShowAddForm(false)
-      setEditingStage(null)
+      try {
+        await resetToDefault()
+        toast({
+          title: "Stages reset",
+          description: "Your production lifecycle has been reset to default stages.",
+        })
+        setShowAddForm(false)
+        setEditingStage(null)
+      } catch (error) {
+        toast({
+          title: "Error resetting stages",
+          description: "Failed to reset stages. Please try again.",
+          variant: "destructive",
+        })
+      }
     }
   }
 

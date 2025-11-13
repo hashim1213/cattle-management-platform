@@ -7,6 +7,7 @@ import { usePenActivity } from "@/hooks/use-pen-activity"
 import { usePenStore } from "@/hooks/use-pen-store"
 import { useFarmSettings } from "@/hooks/use-farm-settings"
 import { firebaseDataStore } from "@/lib/data-store-firebase"
+import { useRouter } from "next/navigation"
 import type { Cattle } from "@/lib/data-store-firebase"
 
 export function PenOverviewCard() {
@@ -14,6 +15,7 @@ export function PenOverviewCard() {
   const { pens } = usePenStore()
   const { cattlePricePerLb } = useFarmSettings()
   const [cattle, setCattle] = useState<Cattle[]>([])
+  const router = useRouter()
 
   // Load cattle data only once on mount
   useEffect(() => {
@@ -65,9 +67,12 @@ export function PenOverviewCard() {
   const profitColor = profit >= 0 ? "text-green-600" : "text-red-600"
 
   return (
-    <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
       {/* Total Pens */}
-      <Card className="touch-manipulation">
+      <Card
+        className="touch-manipulation cursor-pointer hover:bg-accent/50 active:bg-accent transition-colors"
+        onClick={() => router.push('/pens')}
+      >
         <CardContent className="p-4 sm:p-6">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
