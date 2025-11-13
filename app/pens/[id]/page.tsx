@@ -3,15 +3,17 @@
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { ArrowLeft, Grid3x3, Wheat, Syringe, DollarSign } from "lucide-react"
+import { ArrowLeft, Grid3x3, Wheat, Syringe, DollarSign, Weight, MoveRight, Check, MoreVertical, Filter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+import { Checkbox } from "@/components/ui/checkbox"
 import { usePenStore } from "@/hooks/use-pen-store"
 import { firebaseDataStore, type Cattle } from "@/lib/data-store-firebase"
 import { PenFeedDialog } from "@/components/pen-feed-dialog"
 import { PenMedicationDialog } from "@/components/pen-medication-dialog"
+import { BulkTreatmentDialog } from "@/components/bulk-treatment-dialog"
 import { PenROICard } from "@/components/pen-roi-card"
 import {
   Dialog,
@@ -19,6 +21,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
@@ -30,24 +47,32 @@ export default function PenDetailPage() {
   const [pen, setPen] = useState<any>(null)
   const [barn, setBarn] = useState<any>(null)
   const [cattle, setCattle] = useState<Cattle[]>([])
+  const [filteredCattle, setFilteredCattle] = useState<Cattle[]>([])
   const [cattleLoading, setCattleLoading] = useState(true)
+  const [selectedCattleIds, setSelectedCattleIds] = useState<Set<string>>(new Set())
+  const [filterStatus, setFilterStatus] = useState<string>("all")
+  const [searchQuery, setSearchQuery] = useState("")
+
+  // Dialog states
   const [isFeedDialogOpen, setIsFeedDialogOpen] = useState(false)
   const [isMedicationDialogOpen, setIsMedicationDialogOpen] = useState(false)
+  const [isBulkTreatmentDialogOpen, setIsBulkTreatmentDialogOpen] = useState(false)
+  const [isBulkMoveDialogOpen, setIsBulkMoveDialogOpen] = useState(false)
+  const [isBulkWeighDialogOpen, setIsBulkWeighDialogOpen] = useState(false)
   const [isValueDialogOpen, setIsValueDialogOpen] = useState(false)
   const [penValue, setPenValue] = useState<string>("")
 
+  // Bulk operation states
+  const [targetPenId, setTargetPenId] = useState("")
+  const [bulkWeight, setBulkWeight] = useState("")
+
   // Update pen when pens array changes
   useEffect(() => {
-    console.log("[PEN DETAIL] Pens changed, looking for pen:", params.id)
-    console.log("[PEN DETAIL] Pens array length:", pens.length)
     const foundPen = pens.find(p => p.id === params.id)
     if (foundPen) {
-      console.log("[PEN DETAIL] Found pen:", foundPen.name)
       setPen(foundPen)
       const foundBarn = barns.find(b => b.id === foundPen.barnId)
       setBarn(foundBarn)
-    } else if (pens.length > 0) {
-      console.warn("[PEN DETAIL] Pen not found in array of", pens.length, "pens")
     }
   }, [pens, barns, params.id])
 
@@ -55,32 +80,49 @@ export default function PenDetailPage() {
   useEffect(() => {
     const loadCattle = async () => {
       try {
-        console.log("[PEN DETAIL] Loading cattle for pen:", params.id)
         setCattleLoading(true)
         const allCattle = await firebaseDataStore.getCattle()
-        console.log(`[PEN DETAIL] Total cattle loaded: ${allCattle.length}`)
         const penCattle = allCattle.filter(c => c.penId === params.id)
-        console.log(`[PEN DETAIL] Cattle in this pen: ${penCattle.length}`)
         setCattle(penCattle)
       } catch (error) {
-        console.error("[PEN DETAIL] Error loading cattle:", error)
+        console.error("Error loading cattle:", error)
         setCattle([])
       } finally {
         setCattleLoading(false)
       }
     }
 
-    // Load cattle initially
     loadCattle()
 
     // Subscribe to cattle updates
     const unsubscribe = firebaseDataStore.subscribe(() => {
-      console.log("[PEN DETAIL] Cattle data updated, reloading...")
       loadCattle()
     })
 
     return () => unsubscribe()
   }, [params.id])
+
+  // Filter and search cattle
+  useEffect(() => {
+    let filtered = [...cattle]
+
+    // Apply status filter
+    if (filterStatus !== "all") {
+      filtered = filtered.filter(c => c.healthStatus === filterStatus)
+    }
+
+    // Apply search
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(c =>
+        c.tagNumber?.toLowerCase().includes(query) ||
+        c.breed?.toLowerCase().includes(query) ||
+        c.id?.toLowerCase().includes(query)
+      )
+    }
+
+    setFilteredCattle(filtered)
+  }, [cattle, filterStatus, searchQuery])
 
   const loading = pensLoading || (cattleLoading && !pen)
 
@@ -108,6 +150,90 @@ export default function PenDetailPage() {
     }
   }
 
+  // Selection handlers
+  const toggleSelectAll = () => {
+    if (selectedCattleIds.size === filteredCattle.length) {
+      setSelectedCattleIds(new Set())
+    } else {
+      setSelectedCattleIds(new Set(filteredCattle.map(c => c.id)))
+    }
+  }
+
+  const toggleSelectCattle = (id: string) => {
+    const newSelected = new Set(selectedCattleIds)
+    if (newSelected.has(id)) {
+      newSelected.delete(id)
+    } else {
+      newSelected.add(id)
+    }
+    setSelectedCattleIds(newSelected)
+  }
+
+  const getSelectedCattle = () => {
+    return cattle.filter(c => selectedCattleIds.has(c.id))
+  }
+
+  // Bulk operations
+  const handleBulkMoveToPen = async () => {
+    if (!targetPenId) {
+      toast.error("Please select a target pen")
+      return
+    }
+
+    try {
+      const selectedCattle = getSelectedCattle()
+      for (const c of selectedCattle) {
+        await firebaseDataStore.updateCattle(c.id, { penId: targetPenId })
+      }
+
+      toast.success(`Moved ${selectedCattle.length} cattle to new pen`)
+      setIsBulkMoveDialogOpen(false)
+      setSelectedCattleIds(new Set())
+      setTargetPenId("")
+    } catch (error) {
+      toast.error("Failed to move cattle")
+      console.error(error)
+    }
+  }
+
+  const handleBulkWeigh = async () => {
+    if (!bulkWeight) {
+      toast.error("Please enter weight")
+      return
+    }
+
+    try {
+      const weight = parseFloat(bulkWeight)
+      const selectedCattle = getSelectedCattle()
+
+      for (const c of selectedCattle) {
+        await firebaseDataStore.updateCattle(c.id, { weight })
+        await firebaseDataStore.addWeightRecord(c.id, {
+          date: new Date().toISOString().split('T')[0],
+          weight,
+          notes: "Bulk weight update"
+        })
+      }
+
+      toast.success(`Updated weight for ${selectedCattle.length} cattle`)
+      setIsBulkWeighDialogOpen(false)
+      setSelectedCattleIds(new Set())
+      setBulkWeight("")
+    } catch (error) {
+      toast.error("Failed to update weights")
+      console.error(error)
+    }
+  }
+
+  const handleRowClick = (cattleId: string, event: React.MouseEvent) => {
+    // Don't navigate if clicking on checkbox or action buttons
+    const target = event.target as HTMLElement
+    if (target.closest('input[type="checkbox"]') || target.closest('button')) {
+      return
+    }
+    router.push(`/cattle/${cattleId}`)
+  }
+
   // Calculate total value from cattle
   const calculatedTotalValue = Array.isArray(cattle) ? cattle.reduce((sum, c) => {
     const marketPricePerPound = 1.65
@@ -119,7 +245,6 @@ export default function PenDetailPage() {
 
   // Show loading only on initial load
   if (loading && !pen) {
-    console.log("[PEN DETAIL] Showing loading screen")
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-muted-foreground">Loading...</p>
@@ -129,7 +254,6 @@ export default function PenDetailPage() {
 
   // If pens have loaded but pen not found, show error
   if (!pensLoading && !pen && pens.length > 0) {
-    console.log("[PEN DETAIL] Pen not found after loading")
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -142,9 +266,7 @@ export default function PenDetailPage() {
     )
   }
 
-  // If pen is still null (shouldn't happen), show loading
   if (!pen) {
-    console.log("[PEN DETAIL] Pen is null, waiting...")
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-muted-foreground">Loading pen data...</p>
@@ -152,10 +274,10 @@ export default function PenDetailPage() {
     )
   }
 
-  console.log("[PEN DETAIL] Rendering pen page for:", pen.name)
-
   const utilizationRate = pen.capacity > 0 ? (pen.currentCount / pen.capacity) * 100 : 0
   const available = pen.capacity - pen.currentCount
+  const allSelected = filteredCattle.length > 0 && selectedCattleIds.size === filteredCattle.length
+  const someSelected = selectedCattleIds.size > 0 && selectedCattleIds.size < filteredCattle.length
 
   return (
     <>
@@ -191,10 +313,7 @@ export default function PenDetailPage() {
               <div className="flex gap-2 flex-wrap sm:flex-nowrap">
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    console.log("Record Feed button clicked")
-                    setIsFeedDialogOpen(true)
-                  }}
+                  onClick={() => setIsFeedDialogOpen(true)}
                   className="touch-manipulation min-h-[44px] flex-1 sm:flex-none"
                 >
                   <Wheat className="h-5 w-5 sm:h-4 sm:w-4 sm:mr-2" />
@@ -202,10 +321,7 @@ export default function PenDetailPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    console.log("Record Meds button clicked")
-                    setIsMedicationDialogOpen(true)
-                  }}
+                  onClick={() => setIsMedicationDialogOpen(true)}
                   className="touch-manipulation min-h-[44px] flex-1 sm:flex-none"
                 >
                   <Syringe className="h-5 w-5 sm:h-4 sm:w-4 sm:mr-2" />
@@ -215,7 +331,7 @@ export default function PenDetailPage() {
             </div>
           </div>
 
-          {/* Pen Info Cards */}
+          {/* Info Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
             <Card>
               <CardHeader>
@@ -282,7 +398,6 @@ export default function PenDetailPage() {
                       size="sm"
                       variant="outline"
                       onClick={() => {
-                        console.log("Update Value button clicked")
                         setPenValue(displayTotalValue.toString())
                         setIsValueDialogOpen(true)
                       }}
@@ -300,17 +415,84 @@ export default function PenDetailPage() {
             <PenROICard pen={pen} estimatedRevenue={displayTotalValue} />
           </div>
 
-          {/* Cattle List */}
+          {/* Cattle Management */}
           <Card>
             <CardHeader>
-              <CardTitle>Cattle in this Pen ({cattle.length})</CardTitle>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <CardTitle>Cattle in this Pen ({filteredCattle.length})</CardTitle>
+                  {selectedCattleIds.size > 0 && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {selectedCattleIds.size} selected
+                    </p>
+                  )}
+                </div>
+                {selectedCattleIds.size > 0 && (
+                  <div className="flex gap-2 flex-wrap">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIsBulkMoveDialogOpen(true)}
+                      className="touch-manipulation"
+                    >
+                      <MoveRight className="h-4 w-4 mr-2" />
+                      Move ({selectedCattleIds.size})
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIsBulkTreatmentDialogOpen(true)}
+                      className="touch-manipulation"
+                    >
+                      <Syringe className="h-4 w-4 mr-2" />
+                      Treat ({selectedCattleIds.size})
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIsBulkWeighDialogOpen(true)}
+                      className="touch-manipulation"
+                    >
+                      <Weight className="h-4 w-4 mr-2" />
+                      Weigh ({selectedCattleIds.size})
+                    </Button>
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
-              {cattle.length === 0 ? (
+              {/* Filters */}
+              <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Search by tag number or breed..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="Healthy">Healthy</SelectItem>
+                    <SelectItem value="Sick">Sick</SelectItem>
+                    <SelectItem value="Treatment">Treatment</SelectItem>
+                    <SelectItem value="Quarantine">Quarantine</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {filteredCattle.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <Grid3x3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No cattle in this pen yet</p>
-                  <p className="text-sm mt-1">Assign cattle to this pen to see them here</p>
+                  <p>{cattle.length === 0 ? "No cattle in this pen yet" : "No cattle match your filters"}</p>
+                  <p className="text-sm mt-1">
+                    {cattle.length === 0 ? "Assign cattle to this pen to see them here" : "Try adjusting your search or filters"}
+                  </p>
                 </div>
               ) : (
                 <div className="overflow-x-auto -mx-4 sm:mx-0">
@@ -318,6 +500,17 @@ export default function PenDetailPage() {
                     <table className="min-w-full">
                       <thead className="bg-muted/50 border-b">
                         <tr>
+                          <th className="text-left px-3 py-3 w-12">
+                            <Checkbox
+                              checked={allSelected}
+                              onCheckedChange={toggleSelectAll}
+                              ref={(el) => {
+                                if (el) {
+                                  (el as any).indeterminate = someSelected
+                                }
+                              }}
+                            />
+                          </th>
                           <th className="text-left px-3 py-3 text-sm font-semibold whitespace-nowrap">Tag Number</th>
                           <th className="text-left px-3 py-3 text-sm font-semibold whitespace-nowrap hidden sm:table-cell">Breed</th>
                           <th className="text-left px-3 py-3 text-sm font-semibold whitespace-nowrap hidden md:table-cell">Sex</th>
@@ -328,15 +521,22 @@ export default function PenDetailPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y">
-                        {cattle.map((c) => (
-                          <tr key={c.id} className="hover:bg-muted/30">
+                        {filteredCattle.map((c) => (
+                          <tr
+                            key={c.id}
+                            className="hover:bg-muted/30 cursor-pointer transition-colors"
+                            onClick={(e) => handleRowClick(c.id, e)}
+                          >
+                            <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                              <Checkbox
+                                checked={selectedCattleIds.has(c.id)}
+                                onCheckedChange={() => toggleSelectCattle(c.id)}
+                              />
+                            </td>
                             <td className="px-3 py-3">
-                              <Link
-                                href={`/cattle/${c.id}`}
-                                className="font-medium text-primary hover:underline touch-manipulation inline-block min-h-[44px] flex items-center"
-                              >
+                              <span className="font-medium text-primary">
                                 #{c.tagNumber}
-                              </Link>
+                              </span>
                             </td>
                             <td className="px-3 py-3 text-sm hidden sm:table-cell">{c.breed}</td>
                             <td className="px-3 py-3 text-sm hidden md:table-cell">{c.sex}</td>
@@ -352,19 +552,37 @@ export default function PenDetailPage() {
                                 {c.healthStatus}
                               </Badge>
                             </td>
-                            <td className="px-3 py-3">
-                              <Link href={`/cattle/${c.id}`}>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    console.log("View cattle button clicked:", c.id)
-                                  }}
-                                  className="touch-manipulation min-h-[40px] px-3"
-                                >
-                                  View
-                                </Button>
-                              </Link>
+                            <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  <DropdownMenuItem onClick={() => router.push(`/cattle/${c.id}`)}>
+                                    View Details
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => {
+                                    setSelectedCattleIds(new Set([c.id]))
+                                    setIsBulkWeighDialogOpen(true)
+                                  }}>
+                                    Record Weight
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => {
+                                    setSelectedCattleIds(new Set([c.id]))
+                                    setIsBulkTreatmentDialogOpen(true)
+                                  }}>
+                                    Add Treatment
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </td>
                           </tr>
                         ))}
@@ -378,27 +596,109 @@ export default function PenDetailPage() {
         </div>
       </div>
 
+      {/* Dialogs */}
       {pen && (
         <>
           <PenFeedDialog
             open={isFeedDialogOpen}
             onOpenChange={setIsFeedDialogOpen}
             pen={pen}
-            onSuccess={() => {
-              // Refresh data if needed
-            }}
+            onSuccess={() => {}}
           />
 
           <PenMedicationDialog
             open={isMedicationDialogOpen}
             onOpenChange={setIsMedicationDialogOpen}
             pen={pen}
-            onSuccess={() => {
-              // Refresh data if needed
-            }}
+            onSuccess={() => {}}
           />
+
+          {selectedCattleIds.size > 0 && (
+            <BulkTreatmentDialog
+              open={isBulkTreatmentDialogOpen}
+              onClose={() => {
+                setIsBulkTreatmentDialogOpen(false)
+                setSelectedCattleIds(new Set())
+              }}
+              selectedCattle={getSelectedCattle()}
+              onComplete={() => {
+                setSelectedCattleIds(new Set())
+              }}
+            />
+          )}
         </>
       )}
+
+      {/* Bulk Move Dialog */}
+      <Dialog open={isBulkMoveDialogOpen} onOpenChange={setIsBulkMoveDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Move {selectedCattleIds.size} Cattle to Another Pen</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Target Pen</Label>
+              <Select value={targetPenId} onValueChange={setTargetPenId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select destination pen" />
+                </SelectTrigger>
+                <SelectContent>
+                  {pens
+                    .filter(p => p.id !== pen?.id)
+                    .map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name} ({p.currentCount}/{p.capacity})
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setIsBulkMoveDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleBulkMoveToPen} disabled={!targetPenId}>
+                <MoveRight className="h-4 w-4 mr-2" />
+                Move Cattle
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Weigh Dialog */}
+      <Dialog open={isBulkWeighDialogOpen} onOpenChange={setIsBulkWeighDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Record Weight for {selectedCattleIds.size} Cattle</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Weight (lbs)</Label>
+              <Input
+                type="number"
+                placeholder="Enter weight in pounds"
+                value={bulkWeight}
+                onChange={(e) => setBulkWeight(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                This weight will be recorded for all {selectedCattleIds.size} selected cattle
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setIsBulkWeighDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleBulkWeigh} disabled={!bulkWeight}>
+                <Weight className="h-4 w-4 mr-2" />
+                Record Weight
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Update Pen Value Dialog */}
       <Dialog open={isValueDialogOpen} onOpenChange={setIsValueDialogOpen}>
