@@ -39,6 +39,7 @@ export function CattleTable({ searchQuery, filters }: CattleTableProps) {
       const data = await firebaseDataStore.getCattle()
       setCattle(data)
     } catch (error) {
+      console.error("Error loading cattle:", error)
       setCattle([])
     } finally {
       setLoading(false)
@@ -48,12 +49,12 @@ export function CattleTable({ searchQuery, filters }: CattleTableProps) {
   useEffect(() => {
     loadCattle()
 
-    // Set up interval to refresh cattle data
-    const interval = setInterval(() => {
+    // Subscribe to real-time updates instead of polling
+    const unsubscribe = firebaseDataStore.subscribe(() => {
       loadCattle()
-    }, 5000) // Refresh every 5 seconds
+    })
 
-    return () => clearInterval(interval)
+    return () => unsubscribe()
   }, [])
 
   const filteredCattle = cattle.filter((animal) => {
