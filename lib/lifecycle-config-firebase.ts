@@ -145,7 +145,14 @@ class FirebaseLifecycleConfigStore {
   async addStage(stage: Omit<LifecycleStage, "id" | "order" | "createdAt" | "updatedAt">): Promise<LifecycleStage> {
     await this.waitForAuth()
     const userId = this.getUserId()
-    if (!userId) throw new Error("Not authenticated")
+
+    if (!userId) {
+      console.error("Add stage failed: No user ID available. Auth state:", {
+        authReady: this.authReady,
+        currentUser: auth.currentUser,
+      })
+      throw new Error("Not authenticated")
+    }
 
     const now = new Date().toISOString()
     const id = `stage_${Date.now()}_${Math.random().toString(36).substring(7)}`
@@ -163,19 +170,30 @@ class FirebaseLifecycleConfigStore {
       await setDoc(docRef, newStage)
       this.stages.push(newStage)
       this.notifyListeners()
+      console.log("Stage added successfully:", newStage.name)
       return newStage
     } catch (error) {
       console.error("Error adding lifecycle stage:", error)
+      if (error instanceof Error) {
+        throw error
+      }
       throw new Error("Failed to add lifecycle stage")
     }
   }
 
   async updateStage(id: string, updates: Partial<Omit<LifecycleStage, "id" | "createdAt">>): Promise<boolean> {
+    await this.waitForAuth()
     const userId = this.getUserId()
-    if (!userId) throw new Error("Not authenticated")
+    if (!userId) {
+      console.error("Update stage failed: No user ID available")
+      throw new Error("Not authenticated")
+    }
 
     const index = this.stages.findIndex((s) => s.id === id)
-    if (index === -1) return false
+    if (index === -1) {
+      console.error("Update stage failed: Stage not found:", id)
+      throw new Error("Stage not found")
+    }
 
     try {
       const docRef = doc(db, `users/${userId}/lifecycleStages`, id)
@@ -187,24 +205,36 @@ class FirebaseLifecycleConfigStore {
       await updateDoc(docRef, updateData)
       this.stages[index] = { ...this.stages[index], ...updateData }
       this.notifyListeners()
+      console.log("Stage updated successfully:", this.stages[index].name)
       return true
     } catch (error) {
       console.error("Error updating lifecycle stage:", error)
+      if (error instanceof Error) {
+        throw error
+      }
       throw new Error("Failed to update lifecycle stage")
     }
   }
 
   async removeStage(id: string): Promise<boolean> {
+    await this.waitForAuth()
     const userId = this.getUserId()
-    if (!userId) throw new Error("Not authenticated")
+    if (!userId) {
+      console.error("Remove stage failed: No user ID available")
+      throw new Error("Not authenticated")
+    }
 
     const index = this.stages.findIndex((s) => s.id === id)
-    if (index === -1) return false
+    if (index === -1) {
+      console.error("Remove stage failed: Stage not found:", id)
+      throw new Error("Stage not found")
+    }
 
     try {
       const docRef = doc(db, `users/${userId}/lifecycleStages`, id)
       await deleteDoc(docRef)
 
+      const removedStageName = this.stages[index].name
       this.stages.splice(index, 1)
 
       // Reorder remaining stages
@@ -215,24 +245,32 @@ class FirebaseLifecycleConfigStore {
       }
 
       this.notifyListeners()
+      console.log("Stage removed successfully:", removedStageName)
       return true
     } catch (error) {
       console.error("Error removing lifecycle stage:", error)
+      if (error instanceof Error) {
+        throw error
+      }
       throw new Error("Failed to remove lifecycle stage")
     }
   }
 
   async reorderStages(stageIds: string[]): Promise<void> {
+    await this.waitForAuth()
     const userId = this.getUserId()
-    if (!userId) throw new Error("Not authenticated")
+    if (!userId) {
+      console.error("Reorder stages failed: No user ID available")
+      throw new Error("Not authenticated")
+    }
 
     const reordered = stageIds
       .map((id) => this.stages.find((s) => s.id === id))
       .filter((s): s is LifecycleStage => s !== undefined)
 
     if (reordered.length !== this.stages.length) {
-      console.error("Invalid reorder operation")
-      return
+      console.error("Invalid reorder operation: Mismatch in stage count")
+      throw new Error("Invalid reorder operation")
     }
 
     try {
@@ -248,15 +286,23 @@ class FirebaseLifecycleConfigStore {
 
       this.stages = reordered
       this.notifyListeners()
+      console.log("Stages reordered successfully")
     } catch (error) {
       console.error("Error reordering lifecycle stages:", error)
+      if (error instanceof Error) {
+        throw error
+      }
       throw new Error("Failed to reorder lifecycle stages")
     }
   }
 
   async resetToDefault(): Promise<void> {
+    await this.waitForAuth()
     const userId = this.getUserId()
-    if (!userId) throw new Error("Not authenticated")
+    if (!userId) {
+      console.error("Reset stages failed: No user ID available")
+      throw new Error("Not authenticated")
+    }
 
     try {
       // Delete all existing stages
@@ -268,8 +314,12 @@ class FirebaseLifecycleConfigStore {
       // Reinitialize with defaults
       this.stages = []
       await this.initializeDefaultStages()
+      console.log("Stages reset to default successfully")
     } catch (error) {
       console.error("Error resetting lifecycle stages:", error)
+      if (error instanceof Error) {
+        throw error
+      }
       throw new Error("Failed to reset lifecycle stages")
     }
   }
