@@ -9,6 +9,7 @@ import { MetricCard } from "@/components/metric-card"
 import { LifecycleSettingsDialog } from "@/components/lifecycle-settings-dialog"
 import { FeedMetricsCard } from "@/components/feed-metrics-card"
 import { PenUtilizationCard } from "@/components/pen-utilization-card"
+import { PenOverviewCard } from "@/components/pen-overview-card"
 import { useLifecycleConfig } from "@/hooks/use-lifecycle-config"
 import { useFarmSettings } from "@/hooks/use-farm-settings"
 import Link from "next/link"
@@ -100,7 +101,7 @@ export default function DashboardPage() {
   const [alerts, setAlerts] = useState<any[]>([])
   const [stageCounts, setStageCounts] = useState<Record<string, number>>({})
   const { stages, reorderStages } = useLifecycleConfig()
-  const { isSetupCompleted } = useFarmSettings()
+  const { isSetupCompleted, cattlePricePerLb } = useFarmSettings()
   const router = useRouter()
 
   // Onboarding disabled for now - users go straight to dashboard
@@ -132,8 +133,8 @@ export default function DashboardPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Load analytics
-        const data = await firebaseDataStore.getAnalytics()
+        // Load analytics with configurable market price
+        const data = await firebaseDataStore.getAnalytics(cattlePricePerLb)
         setAnalytics(data)
 
         // Get all cattle data
@@ -194,7 +195,7 @@ export default function DashboardPage() {
     }
 
     loadData()
-  }, [])
+  }, [cattlePricePerLb])
 
   const handleExportCattle = async () => {
     const cattle = await firebaseDataStore.getCattle()
@@ -330,66 +331,10 @@ export default function DashboardPage() {
           </Card>
         </section>
 
-        {/* Herd Overview */}
+        {/* Pen Overview */}
         <section>
-          <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-foreground">Herd Overview</h2>
-          <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-3">
-            <Card className="touch-manipulation">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-3xl sm:text-4xl font-bold text-primary mb-1 sm:mb-2">{analytics.bulls.count}</p>
-                    <p className="text-base sm:text-lg font-semibold text-foreground mb-1 sm:mb-2">Active Bulls</p>
-                    <div className="text-sm text-muted-foreground space-y-0.5">
-                      <p>{analytics.bulls.herdSires} herd sires</p>
-                      <p>{analytics.bulls.herdSireProspects} prospects</p>
-                    </div>
-                  </div>
-                  <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0">
-                    <Image src="/images/bull.png" alt="Bull" fill className="object-contain opacity-70" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="touch-manipulation">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-3xl sm:text-4xl font-bold text-primary mb-1 sm:mb-2">{analytics.cows.count}</p>
-                    <p className="text-base sm:text-lg font-semibold text-foreground mb-1 sm:mb-2">Active Cows</p>
-                    <div className="text-sm text-muted-foreground space-y-0.5">
-                      <p>{analytics.cows.pregnant} pregnant</p>
-                      <p>
-                        {analytics.cows.open} open, {analytics.cows.exposed} exposed
-                      </p>
-                    </div>
-                  </div>
-                  <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0">
-                    <Image src="/images/cow.png" alt="Cow" fill className="object-contain opacity-70" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="touch-manipulation">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-3xl sm:text-4xl font-bold text-primary mb-1 sm:mb-2">{analytics.calves.count}</p>
-                    <p className="text-base sm:text-lg font-semibold text-foreground mb-1 sm:mb-2">Active Calves</p>
-                    <div className="text-sm text-muted-foreground space-y-0.5">
-                      <p>{analytics.calves.unweaned} unweaned</p>
-                      <p>{analytics.calves.weaned} weaned</p>
-                    </div>
-                  </div>
-                  <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0">
-                    <Image src="/images/calf.png" alt="Calf" fill className="object-contain opacity-70" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-foreground">Pen Overview</h2>
+          <PenOverviewCard />
         </section>
 
         {/* Alerts */}

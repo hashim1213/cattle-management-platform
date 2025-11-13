@@ -358,7 +358,7 @@ class FirebaseDataStore {
   }
 
   // ANALYTICS
-  async getAnalytics() {
+  async getAnalytics(marketPricePerLb: number = 6.97) {
     const cattle = await this.getCattle()
     const activeCattle = cattle.filter((c) => c.status === "Active")
 
@@ -382,9 +382,8 @@ class FirebaseDataStore {
       : 0
 
     // Calculate total value (estimated market value)
-    const marketPricePerPound = 1.65 // Default market price
     const totalValue = activeCattle.reduce((sum, c) => {
-      return sum + ((c.weight || 0) * marketPricePerPound)
+      return sum + ((c.weight || 0) * marketPricePerLb)
     }, 0)
 
     // Calculate total inventory value (purchase price + costs)
