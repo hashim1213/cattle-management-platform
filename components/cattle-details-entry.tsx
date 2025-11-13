@@ -16,6 +16,7 @@ interface CattleDetailsEntryProps {
 
 export interface CattleDetails {
   rfid: string
+  visualTag: string
   weight: number
   cost: number
   costPerPound: number
@@ -32,6 +33,15 @@ export function CattleDetailsEntry({ rfids, onComplete, onBack }: CattleDetailsE
   const [totalCost, setTotalCost] = useState("")
   const [sameCost, setSameCost] = useState("")
   const [individualCosts, setIndividualCosts] = useState<Record<string, string>>({})
+
+  // Initialize visual tags with last 4 digits of RFID by default
+  const [visualTags, setVisualTags] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {}
+    rfids.forEach(rfid => {
+      initial[rfid] = rfid.slice(-4)
+    })
+    return initial
+  })
 
   const calculateDetails = (): CattleDetails[] => {
     const details: CattleDetails[] = []
@@ -64,6 +74,7 @@ export function CattleDetailsEntry({ rfids, onComplete, onBack }: CattleDetailsE
 
       details.push({
         rfid,
+        visualTag: visualTags[rfid] || rfid.slice(-4),
         weight: Math.round(weight * 100) / 100, // Round to 2 decimal places
         cost: Math.round(cost * 100) / 100,
         costPerPound: Math.round(costPerPound * 100) / 100,
@@ -88,6 +99,34 @@ export function CattleDetailsEntry({ rfids, onComplete, onBack }: CattleDetailsE
   return (
     <div className="space-y-6 py-4">
       <div className="space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Visual Tags</h3>
+          <p className="text-sm text-muted-foreground mb-3">
+            Edit the visual tag numbers for each animal (defaults to last 4 digits of RFID)
+          </p>
+          <div className="space-y-2 max-h-60 overflow-y-auto border rounded-md p-3">
+            {rfids.map((rfid, index) => (
+              <div key={rfid} className="flex items-center gap-3">
+                <Label className="text-sm font-mono w-40 truncate" title={rfid}>
+                  RFID: {rfid.slice(-8)}
+                </Label>
+                <div className="flex items-center gap-2 flex-1">
+                  <Label className="text-sm whitespace-nowrap">Visual Tag:</Label>
+                  <Input
+                    type="text"
+                    placeholder="Tag number"
+                    value={visualTags[rfid] || ""}
+                    onChange={(e) =>
+                      setVisualTags({ ...visualTags, [rfid]: e.target.value })
+                    }
+                    className="w-32"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div>
           <h3 className="text-lg font-semibold mb-2">Weight Entry</h3>
           <RadioGroup value={weightMode} onValueChange={(v: any) => setWeightMode(v)}>
