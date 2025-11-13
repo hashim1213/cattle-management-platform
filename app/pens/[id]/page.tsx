@@ -51,7 +51,7 @@ export default function PenDetailPage() {
     }
   }, [pens, barns, params.id])
 
-  // Only load cattle when pen ID changes
+  // Load cattle and subscribe to real-time updates
   useEffect(() => {
     const loadCattle = async () => {
       try {
@@ -70,7 +70,16 @@ export default function PenDetailPage() {
       }
     }
 
+    // Load cattle initially
     loadCattle()
+
+    // Subscribe to cattle updates
+    const unsubscribe = firebaseDataStore.subscribe(() => {
+      console.log("[PEN DETAIL] Cattle data updated, reloading...")
+      loadCattle()
+    })
+
+    return () => unsubscribe()
   }, [params.id])
 
   const loading = pensLoading || (cattleLoading && !pen)
