@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { Camera, Upload, Loader2, CheckCircle2, XCircle, FileText } from "lucide-react"
+import { Camera, Upload, Loader2, CheckCircle2, XCircle, FileText, Sparkles } from "lucide-react"
 import Tesseract from "tesseract.js"
 import { firebaseDataStore } from "@/lib/data-store-firebase"
 import { firebasePenStore, type Pen } from "@/lib/pen-store-firebase"
@@ -28,6 +28,8 @@ import { firebaseBatchStore, type Batch } from "@/lib/batch-store-firebase"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useEffect } from "react"
+import { CattleDetailsEntry, type CattleDetails } from "@/components/cattle-details-entry"
+import { Switch } from "@/components/ui/switch"
 
 interface RFIDImageImportDialogProps {
   open: boolean
@@ -51,7 +53,7 @@ export function RFIDImageImportDialog({
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  const [step, setStep] = useState<"input" | "processing" | "review">("input")
+  const [step, setStep] = useState<"input" | "processing" | "review" | "details">("input")
   const [isProcessing, setIsProcessing] = useState(false)
   const [extractedText, setExtractedText] = useState("")
   const [parsedRFIDs, setParsedRFIDs] = useState<string[]>([])
@@ -60,6 +62,8 @@ export function RFIDImageImportDialog({
   const [isCameraActive, setIsCameraActive] = useState(false)
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [isImporting, setIsImporting] = useState(false)
+  const [useOpenAI, setUseOpenAI] = useState(false)
+  const [cattleDetails, setCattleDetails] = useState<CattleDetails[]>([])
 
   // Load pens and batches when dialog opens
   useEffect(() => {
@@ -263,7 +267,62 @@ export function RFIDImageImportDialog({
     })
   }
 
-  const processImage = async (imageFile: Blob) => {
+  const processImageWithOpenAI = async (imageFile: Blob) => {
+    setIsProcessing(true)
+    setStep("processing")
+
+    try {
+      const formData = new FormData()
+      formData.append('file', imageFile)
+
+      const response = await fetch('/api/ocr', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = await response.json()
+
+      if (!data.success) {
+        throw new Error(data.error || 'OpenAI OCR failed')
+      }
+
+      const text = data.text
+      setExtractedText(text)
+
+      // Parse RFID numbers from extracted text
+      const uniqueRFIDs = parseRFIDsFromText(text)
+
+      setParsedRFIDs(uniqueRFIDs)
+      setStep("review")
+
+      if (uniqueRFIDs.length === 0) {
+        toast({
+          title: "No RFID Numbers Found",
+          description: "Unable to detect RFID numbers in the image. Please try again with a clearer photo.",
+          variant: "destructive",
+        })
+      } else {
+        toast({
+          title: "OCR Complete (OpenAI)",
+          description: `Found ${uniqueRFIDs.length} RFID number(s) using advanced AI`,
+        })
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || "Unknown error"
+      toast({
+        title: "OpenAI OCR Error",
+        description: `${errorMessage}. Falling back to standard OCR...`,
+        variant: "destructive",
+      })
+
+      // Fallback to Tesseract
+      await processImageWithTesseract(imageFile)
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const processImageWithTesseract = async (imageFile: Blob) => {
     setIsProcessing(true)
     setStep("processing")
 
@@ -318,12 +377,20 @@ export function RFIDImageImportDialog({
     }
   }
 
+  const processImage = async (imageFile: Blob) => {
+    if (useOpenAI) {
+      await processImageWithOpenAI(imageFile)
+    } else {
+      await processImageWithTesseract(imageFile)
+    }
+  }
+
   const handleManualEdit = (text: string) => {
     const lines = text.split("\n").map((line) => line.trim()).filter(Boolean)
     setParsedRFIDs(lines)
   }
 
-  const handleImport = async () => {
+  const handleContinueToDetails = () => {
     if (parsedRFIDs.length === 0) {
       toast({
         title: "No RFID Numbers",
@@ -342,6 +409,10 @@ export function RFIDImageImportDialog({
       return
     }
 
+    setStep("details")
+  }
+
+  const handleImport = async (details: CattleDetails[]) => {
     const pen = pens.find((p) => p.id === selectedPenId)
     if (!pen) {
       toast({
@@ -361,33 +432,38 @@ export function RFIDImageImportDialog({
       // Get existing cattle to check for duplicates
       const existingCattle = await firebaseDataStore.getCattle()
 
-      for (const rfid of parsedRFIDs) {
+      for (const detail of details) {
         // Check if cattle with this RFID already exists
-        const isDuplicate = existingCattle.find((c) => c.rfidTag === rfid)
+        const isDuplicate = existingCattle.find((c) => c.rfidTag === detail.rfid)
 
         if (isDuplicate) {
           duplicateCount++
           continue
         }
 
-        // Create new cattle entry
+        const today = new Date().toISOString().split("T")[0]
+
+        // Create new cattle entry with weight and cost details
         const cattleData = {
-          tagNumber: rfid.slice(-4), // Use last 4 digits as visual tag
-          rfidTag: rfid,
+          tagNumber: detail.rfid.slice(-4), // Use last 4 digits as visual tag
+          rfidTag: detail.rfid,
           penId: selectedPenId,
           barnId: pen.barnId,
           batchId: selectedBatchId && selectedBatchId !== "none" ? selectedBatchId : undefined,
           stage: "receiving" as const,
-          arrivalDate: new Date().toISOString().split("T")[0],
+          arrivalDate: today,
           breed: "Unknown",
           sex: "Unknown" as const,
-          weight: 0,
-          arrivalWeight: 0,
+          weight: detail.weight,
+          arrivalWeight: detail.weight,
+          purchaseWeight: detail.weight,
+          purchasePrice: detail.cost,
+          purchaseDate: today,
           lot: "Imported",
           status: "Active" as const,
           healthStatus: "Healthy" as const,
           identificationMethod: "RFID",
-          notes: "Imported via RFID scan on " + new Date().toLocaleDateString(),
+          notes: `Imported via RFID scan on ${new Date().toLocaleDateString()}. Cost per lb: $${detail.costPerPound.toFixed(2)}`,
         }
 
         await firebaseDataStore.addCattle(cattleData as any)
@@ -399,9 +475,12 @@ export function RFIDImageImportDialog({
         currentCount: pen.currentCount + successCount,
       })
 
+      const totalCost = details.reduce((sum, d) => sum + d.cost, 0)
+      const totalWeight = details.reduce((sum, d) => sum + d.weight, 0)
+
       toast({
         title: "Import Complete",
-        description: `Successfully imported ${successCount} cattle. ${
+        description: `Successfully imported ${successCount} cattle (${totalWeight.toFixed(0)} lbs total, $${totalCost.toFixed(2)} total cost). ${
           duplicateCount > 0 ? `${duplicateCount} duplicates skipped.` : ""
         }`,
       })
@@ -410,6 +489,7 @@ export function RFIDImageImportDialog({
       setStep("input")
       setExtractedText("")
       setParsedRFIDs([])
+      setCattleDetails([])
       onOpenChange(false)
 
       // Call onSuccess callback if provided
@@ -451,6 +531,29 @@ export function RFIDImageImportDialog({
 
           {step === "input" && (
             <div className="space-y-4 py-4">
+              <Card className="bg-muted/50">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      <Label htmlFor="use-openai" className="cursor-pointer">
+                        Use OpenAI Vision (Better Accuracy)
+                      </Label>
+                    </div>
+                    <Switch
+                      id="use-openai"
+                      checked={useOpenAI}
+                      onCheckedChange={setUseOpenAI}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {useOpenAI
+                      ? "Using GPT-4o for enhanced OCR accuracy. Requires API key."
+                      : "Using standard Tesseract OCR. Free but less accurate."}
+                  </p>
+                </CardContent>
+              </Card>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button
                   onClick={() => fileInputRef.current?.click()}
@@ -624,6 +727,14 @@ export function RFIDImageImportDialog({
               </div>
             </div>
           )}
+
+          {step === "details" && (
+            <CattleDetailsEntry
+              rfids={parsedRFIDs}
+              onComplete={handleImport}
+              onBack={() => setStep("review")}
+            />
+          )}
           </div>{/* End scrollable content wrapper */}
 
           <DialogFooter className="flex-shrink-0 flex-col sm:flex-row gap-2">
@@ -642,24 +753,16 @@ export function RFIDImageImportDialog({
                     setExtractedText("")
                     setParsedRFIDs([])
                   }}
-                  disabled={isImporting}
                   className="w-full sm:w-auto"
                 >
                   Back
                 </Button>
                 <Button
-                  onClick={handleImport}
-                  disabled={parsedRFIDs.length === 0 || !selectedPenId || isImporting}
+                  onClick={handleContinueToDetails}
+                  disabled={parsedRFIDs.length === 0 || !selectedPenId}
                   className="w-full sm:w-auto"
                 >
-                  {isImporting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Importing...
-                    </>
-                  ) : (
-                    `Import ${parsedRFIDs.length} Cattle`
-                  )}
+                  Continue to Details ({parsedRFIDs.length} Cattle)
                 </Button>
               </>
             )}
