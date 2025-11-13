@@ -52,12 +52,20 @@ export function LifecycleSettingsDialog() {
     }
 
     try {
-      await addStage({
+      const stageData: any = {
         name: newStageName.trim(),
         color: newStageColor,
-        description: newStageDescription.trim() || undefined,
-        image: newStageImage || undefined,
-      })
+      }
+
+      // Only include description and image if they have values
+      if (newStageDescription.trim()) {
+        stageData.description = newStageDescription.trim()
+      }
+      if (newStageImage) {
+        stageData.image = newStageImage
+      }
+
+      await addStage(stageData)
 
       toast({
         title: "Stage added",
@@ -100,12 +108,20 @@ export function LifecycleSettingsDialog() {
     }
 
     try {
-      await updateStage(editingStage.id, {
+      const updateData: any = {
         name: editingStage.name,
         color: editingStage.color,
-        description: editingStage.description,
-        image: editingStage.image,
-      })
+      }
+
+      // Only include description and image if they have values
+      if (editingStage.description) {
+        updateData.description = editingStage.description
+      }
+      if (editingStage.image) {
+        updateData.image = editingStage.image
+      }
+
+      await updateStage(editingStage.id, updateData)
 
       toast({
         title: "Stage updated",
