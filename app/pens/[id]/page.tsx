@@ -3,18 +3,21 @@
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { ArrowLeft, Grid3x3, Wheat, Syringe, DollarSign, Weight, MoveRight, Check, MoreVertical, Filter } from "lucide-react"
+import { ArrowLeft, Grid3x3, Syringe, DollarSign, Weight, MoveRight, MoreVertical, Filter, Activity } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { usePenStore } from "@/hooks/use-pen-store"
 import { firebaseDataStore, type Cattle } from "@/lib/data-store-firebase"
-import { PenFeedDialog } from "@/components/pen-feed-dialog"
 import { PenMedicationDialog } from "@/components/pen-medication-dialog"
 import { BulkTreatmentDialog } from "@/components/bulk-treatment-dialog"
 import { PenROICard } from "@/components/pen-roi-card"
+import { ActivityLogItem } from "@/components/activity-log-item"
+import { useActivityStore } from "@/hooks/use-activity-store"
+import { QuickFeedPanel } from "@/components/quick-feed-panel"
 import {
   Dialog,
   DialogContent,
@@ -44,6 +47,7 @@ export default function PenDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { barns, updatePen, pens, loading: pensLoading } = usePenStore()
+  const { getEntityActivities } = useActivityStore()
   const [pen, setPen] = useState<any>(null)
   const [barn, setBarn] = useState<any>(null)
   const [cattle, setCattle] = useState<Cattle[]>([])
@@ -54,13 +58,10 @@ export default function PenDetailPage() {
   const [searchQuery, setSearchQuery] = useState("")
 
   // Dialog states
-  const [isFeedDialogOpen, setIsFeedDialogOpen] = useState(false)
   const [isMedicationDialogOpen, setIsMedicationDialogOpen] = useState(false)
   const [isBulkTreatmentDialogOpen, setIsBulkTreatmentDialogOpen] = useState(false)
   const [isBulkMoveDialogOpen, setIsBulkMoveDialogOpen] = useState(false)
   const [isBulkWeighDialogOpen, setIsBulkWeighDialogOpen] = useState(false)
-  const [isValueDialogOpen, setIsValueDialogOpen] = useState(false)
-  const [penValue, setPenValue] = useState<string>("")
 
   // Bulk operation states
   const [targetPenId, setTargetPenId] = useState("")
@@ -82,7 +83,7 @@ export default function PenDetailPage() {
       try {
         setCattleLoading(true)
         const allCattle = await firebaseDataStore.getCattle()
-        const penCattle = allCattle.filter(c => c.penId === params.id)
+        const penCattle = allCattle.filter(c => c.penId === params.id && c.status === "Active")
         setCattle(penCattle)
       } catch (error) {
         console.error("Error loading cattle:", error)
@@ -141,30 +142,6 @@ export default function PenDetailPage() {
   }, [cattle, filterStatus, searchQuery])
 
   const loading = pensLoading || (cattleLoading && !pen)
-
-  const handleUpdatePenValue = async () => {
-    if (!pen) {
-      toast.error("Pen data not loaded")
-      return
-    }
-
-    try {
-      const valueToSet = penValue ? Number(penValue) : undefined
-      await updatePen(pen.id, { totalValue: valueToSet })
-
-      setPenValue("")
-      setIsValueDialogOpen(false)
-
-      toast.success(
-        valueToSet
-          ? `Pen value set to $${valueToSet.toFixed(0)}`
-          : "Pen value reset to automatic calculation"
-      )
-    } catch (error) {
-      console.error("Failed to update pen value:", error)
-      toast.error("Failed to update pen value")
-    }
-  }
 
   // Selection handlers
   const toggleSelectAll = () => {
@@ -267,15 +244,6 @@ export default function PenDetailPage() {
     router.push(`/cattle/${cattleId}`)
   }
 
-  // Calculate total value from cattle
-  const calculatedTotalValue = Array.isArray(cattle) ? cattle.reduce((sum, c) => {
-    const marketPricePerPound = 1.65
-    const cattleValue = c.currentValue || (c.weight * marketPricePerPound)
-    return sum + cattleValue
-  }, 0) : 0
-
-  const displayTotalValue = pen?.totalValue ?? calculatedTotalValue
-
   // Show loading only on initial load
   if (loading && !pen) {
     return (
@@ -307,10 +275,11 @@ export default function PenDetailPage() {
     )
   }
 
-  const utilizationRate = pen.capacity > 0 ? (pen.currentCount / pen.capacity) * 100 : 0
-  const available = pen.capacity - pen.currentCount
+  const utilizationRate = pen.capacity > 0 ? (cattle.length / pen.capacity) * 100 : 0
+  const available = pen.capacity - cattle.length
   const allSelected = filteredCattle.length > 0 && selectedCattleIds.size === filteredCattle.length
   const someSelected = selectedCattleIds.size > 0 && selectedCattleIds.size < filteredCattle.length
+  const recentActivities = getEntityActivities("pen", pen.id, 20)
 
   return (
     <>
@@ -346,14 +315,6 @@ export default function PenDetailPage() {
               <div className="flex gap-2 flex-wrap sm:flex-nowrap">
                 <Button
                   variant="outline"
-                  onClick={() => setIsFeedDialogOpen(true)}
-                  className="touch-manipulation min-h-[44px] flex-1 sm:flex-none"
-                >
-                  <Wheat className="h-5 w-5 sm:h-4 sm:w-4 sm:mr-2" />
-                  <span className="sm:inline">Feed</span>
-                </Button>
-                <Button
-                  variant="outline"
                   onClick={() => setIsMedicationDialogOpen(true)}
                   className="touch-manipulation min-h-[44px] flex-1 sm:flex-none"
                 >
@@ -364,91 +325,95 @@ export default function PenDetailPage() {
             </div>
           </div>
 
-          {/* Info Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Capacity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Occupied</span>
-                    <span className="font-medium">{pen.currentCount} / {pen.capacity}</span>
-                  </div>
-                  <Progress value={utilizationRate} className="h-2" />
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Available</span>
-                    <span className="font-medium">{available} head</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Main Tabs */}
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="cattle">Cattle ({cattle.length})</TabsTrigger>
+              <TabsTrigger value="activity">Activity</TabsTrigger>
+            </TabsList>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Details</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Pen ID</span>
-                    <span className="font-medium">{pen.id}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Max Capacity</span>
-                    <span className="font-medium">{pen.capacity} head</span>
-                  </div>
-                  {pen.notes && (
-                    <div className="pt-2 border-t">
-                      <p className="text-muted-foreground">Notes:</p>
-                      <p className="text-foreground">{pen.notes}</p>
+            {/* Overview Tab */}
+            <TabsContent value="overview" className="space-y-4 mt-4">
+              {/* Info Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Capacity</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Occupied</span>
+                        <span className="font-medium">{cattle.length} / {pen.capacity}</span>
+                      </div>
+                      <Progress value={utilizationRate} className="h-2" />
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Available</span>
+                        <span className="font-medium">{available} head</span>
+                      </div>
                     </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Total Value</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="text-3xl font-bold text-foreground mb-2">
-                      ${displayTotalValue.toFixed(0)}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {pen.totalValue
-                        ? "Manual value set"
-                        : `Calculated from ${cattle.length} cattle`}
-                    </p>
-                  </div>
-                  <div className="flex flex-col gap-2 items-end flex-shrink-0">
-                    <DollarSign className="h-5 w-5 text-green-600" />
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setPenValue(displayTotalValue.toString())
-                        setIsValueDialogOpen(true)
-                      }}
-                      className="touch-manipulation min-h-[40px] px-4"
-                    >
-                      Update
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Health Status</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Healthy</span>
+                        <Badge variant="default">{cattle.filter(c => c.healthStatus === "Healthy").length}</Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Sick/Treatment</span>
+                        <Badge variant="destructive">
+                          {cattle.filter(c => c.healthStatus === "Sick" || c.healthStatus === "Treatment").length}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Quarantine</span>
+                        <Badge variant="outline">{cattle.filter(c => c.healthStatus === "Quarantine").length}</Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
-          <div className="grid grid-cols-1 gap-6 mb-6">
-            <PenROICard pen={pen} estimatedRevenue={displayTotalValue} />
-          </div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Pen Info</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Pen ID</span>
+                        <span className="font-medium text-xs">{pen.id.substring(0, 12)}...</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Max Capacity</span>
+                        <span className="font-medium">{pen.capacity} head</span>
+                      </div>
+                      {pen.notes && (
+                        <div className="pt-2 border-t">
+                          <p className="text-muted-foreground text-xs">Notes:</p>
+                          <p className="text-foreground text-xs">{pen.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
 
-          {/* Cattle Management */}
+              {/* ROI Card */}
+              <PenROICard pen={pen} estimatedRevenue={0} />
+
+              {/* Quick Feed Panel */}
+              <QuickFeedPanel penId={pen.id} penName={pen.name} cattleCount={cattle.length} />
+            </TabsContent>
+
+            {/* Cattle Tab */}
+            <TabsContent value="cattle" className="mt-4">
           <Card>
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -626,19 +591,41 @@ export default function PenDetailPage() {
               )}
             </CardContent>
           </Card>
+            </TabsContent>
+
+            {/* Activity Tab */}
+            <TabsContent value="activity" className="mt-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Recent Activity
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {recentActivities.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No activity recorded yet</p>
+                      <p className="text-sm mt-1">Activity will appear here as you work with this pen</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {recentActivities.map((activity) => (
+                        <ActivityLogItem key={activity.id} activity={activity} />
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 
       {/* Dialogs */}
       {pen && (
         <>
-          <PenFeedDialog
-            open={isFeedDialogOpen}
-            onOpenChange={setIsFeedDialogOpen}
-            pen={pen}
-            onSuccess={() => {}}
-          />
-
           <PenMedicationDialog
             open={isMedicationDialogOpen}
             onOpenChange={setIsMedicationDialogOpen}
@@ -727,39 +714,6 @@ export default function PenDetailPage() {
               <Button onClick={handleBulkWeigh} disabled={!bulkWeight}>
                 <Weight className="h-4 w-4 mr-2" />
                 Record Weight
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Update Pen Value Dialog */}
-      <Dialog open={isValueDialogOpen} onOpenChange={setIsValueDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Update Pen Total Value</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="pen-value">Total Value ($)</Label>
-              <Input
-                id="pen-value"
-                type="number"
-                placeholder="Enter total pen value"
-                value={penValue}
-                onChange={(e) => setPenValue(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                Leave empty and save to reset to automatic calculation (sum of all cattle values)
-              </p>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => setIsValueDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleUpdatePenValue}>
-                Update Value
               </Button>
             </div>
           </div>
