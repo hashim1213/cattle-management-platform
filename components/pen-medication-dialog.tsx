@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -21,9 +21,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2 } from "lucide-react"
+import { Loader2, AlertCircle, Package } from "lucide-react"
 import { usePenActivity } from "@/hooks/use-pen-activity"
+import { firebaseInventoryService } from "@/lib/inventory/inventory-service-firebase"
 import type { Pen } from "@/lib/pen-store-firebase"
+import type { InventoryItem } from "@/lib/inventory/inventory-types"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface PenMedicationDialogProps {
   open: boolean
@@ -41,25 +44,72 @@ export function PenMedicationDialog({
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const { addMedicationActivity } = usePenActivity()
+  const [medications, setMedications] = useState<InventoryItem[]>([])
 
   const [date, setDate] = useState(new Date().toISOString().split("T")[0])
-  const [medicationName, setMedicationName] = useState("")
+  const [selectedMedicationId, setSelectedMedicationId] = useState("")
   const [purpose, setPurpose] = useState("")
   const [dosagePerHead, setDosagePerHead] = useState("")
-  const [unit, setUnit] = useState("ml")
-  const [costPerHead, setCostPerHead] = useState("")
   const [withdrawalPeriod, setWithdrawalPeriod] = useState("")
   const [notes, setNotes] = useState("")
+
+  // Load medications from inventory
+  useEffect(() => {
+    const inventory = firebaseInventoryService.getInventory()
+    const drugItems = inventory.filter(item =>
+      item.category === 'antibiotic' ||
+      item.category === 'antiparasitic' ||
+      item.category === 'vaccine' ||
+      item.category === 'anti-inflammatory' ||
+      item.category === 'hormone' ||
+      item.category === 'vitamin-injectable' ||
+      item.category === 'drug-other'
+    )
+    setMedications(drugItems)
+  }, [open])
+
+  // Get selected medication details
+  const selectedMedication = useMemo(() =>
+    medications.find(m => m.id === selectedMedicationId),
+    [medications, selectedMedicationId]
+  )
+
+  // Calculate total dosage, cost, and check availability
+  const calculations = useMemo(() => {
+    if (!selectedMedication || !dosagePerHead || !pen || pen.currentCount === 0) {
+      return {
+        totalDosage: 0,
+        costPerHead: 0,
+        totalCost: 0,
+        available: true,
+        sufficientInventory: true
+      }
+    }
+
+    const dosage = parseFloat(dosagePerHead)
+    const totalDosage = dosage * pen.currentCount
+    const costPerHead = selectedMedication.costPerUnit * dosage
+    const totalCost = costPerHead * pen.currentCount
+    const sufficientInventory = selectedMedication.quantityOnHand >= totalDosage
+
+    return {
+      totalDosage,
+      costPerHead,
+      totalCost,
+      sufficientInventory,
+      available: selectedMedication.quantityOnHand
+    }
+  }, [selectedMedication, dosagePerHead, pen])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!pen) return
 
-    if (!medicationName.trim()) {
+    if (!selectedMedicationId) {
       toast({
         title: "Validation Error",
-        description: "Medication name is required",
+        description: "Please select a medication from inventory",
         variant: "destructive",
       })
       return
@@ -75,7 +125,6 @@ export function PenMedicationDialog({
     }
 
     const dosage = parseFloat(dosagePerHead)
-    const cost = parseFloat(costPerHead)
 
     if (isNaN(dosage) || dosage <= 0) {
       toast({
@@ -86,10 +135,10 @@ export function PenMedicationDialog({
       return
     }
 
-    if (isNaN(cost) || cost < 0) {
+    if (!calculations.sufficientInventory) {
       toast({
-        title: "Validation Error",
-        description: "Cost per head must be a valid number",
+        title: "Insufficient Inventory",
+        description: `Need ${calculations.totalDosage.toFixed(1)}${selectedMedication?.unit} but only ${calculations.available.toFixed(1)}${selectedMedication?.unit} available`,
         variant: "destructive",
       })
       return
@@ -105,31 +154,32 @@ export function PenMedicationDialog({
     setLoading(true)
 
     try {
+      // Add medication activity which will automatically deduct inventory
       await addMedicationActivity({
         penId: pen.id,
         barnId: pen.barnId,
         date,
-        medicationName: medicationName.trim(),
+        medicationName: selectedMedication!.name,
+        medicationInventoryId: selectedMedicationId,
         purpose: purpose.trim(),
         dosagePerHead: dosage,
-        unit,
+        unit: selectedMedication!.unit,
         cattleCount: pen.currentCount,
-        costPerHead: cost,
-        withdrawalPeriod: withdrawalPeriod ? parseInt(withdrawalPeriod) : undefined,
+        costPerHead: calculations.costPerHead,
+        withdrawalPeriod: withdrawalPeriod ? parseInt(withdrawalPeriod) : selectedMedication?.withdrawalPeriod,
         notes: notes.trim() || undefined,
       })
 
       toast({
         title: "Medication Activity Recorded",
-        description: `${medicationName} recorded for ${pen.name} (${pen.currentCount} head)`,
+        description: `${selectedMedication!.name} recorded for ${pen.name} (${pen.currentCount} head). Total cost: $${calculations.totalCost.toFixed(2)}`,
       })
 
       // Reset form
       setDate(new Date().toISOString().split("T")[0])
-      setMedicationName("")
+      setSelectedMedicationId("")
       setPurpose("")
       setDosagePerHead("")
-      setCostPerHead("")
       setWithdrawalPeriod("")
       setNotes("")
 
@@ -141,7 +191,7 @@ export function PenMedicationDialog({
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to record medication activity. Please try again.",
+        description: (error as Error).message || "Failed to record medication activity. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -179,14 +229,38 @@ export function PenMedicationDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="medicationName">Medication Name *</Label>
-              <Input
-                id="medicationName"
-                placeholder="e.g., Draxxin, Excede, LA-200"
-                value={medicationName}
-                onChange={(e) => setMedicationName(e.target.value)}
-                required
-              />
+              <Label htmlFor="medication">Medication *</Label>
+              <Select value={selectedMedicationId} onValueChange={setSelectedMedicationId} required>
+                <SelectTrigger id="medication">
+                  <SelectValue placeholder="Select medication from inventory" />
+                </SelectTrigger>
+                <SelectContent>
+                  {medications.length === 0 ? (
+                    <SelectItem value="none" disabled>
+                      No medications in inventory
+                    </SelectItem>
+                  ) : (
+                    medications.map((med) => (
+                      <SelectItem key={med.id} value={med.id}>
+                        {med.name} - {med.quantityOnHand}{med.unit} available
+                        {med.concentration && ` (${med.concentration})`}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              {selectedMedication && (
+                <div className="text-xs text-muted-foreground space-y-1 p-2 bg-muted rounded">
+                  <div className="flex items-center gap-2">
+                    <Package className="h-3 w-3" />
+                    Available: {selectedMedication.quantityOnHand}{selectedMedication.unit}
+                  </div>
+                  <div>Cost: ${selectedMedication.costPerUnit.toFixed(2)}/{selectedMedication.unit}</div>
+                  {selectedMedication.withdrawalPeriod && (
+                    <div>Withdrawal: {selectedMedication.withdrawalPeriod} days</div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -205,53 +279,18 @@ export function PenMedicationDialog({
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="dosagePerHead">Dosage Per Head *</Label>
-                <Input
-                  id="dosagePerHead"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="5.0"
-                  value={dosagePerHead}
-                  onChange={(e) => setDosagePerHead(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="unit">Unit *</Label>
-                <Select value={unit} onValueChange={setUnit}>
-                  <SelectTrigger id="unit">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ml">Milliliters (ml)</SelectItem>
-                    <SelectItem value="cc">CC</SelectItem>
-                    <SelectItem value="mg">Milligrams (mg)</SelectItem>
-                    <SelectItem value="g">Grams (g)</SelectItem>
-                    <SelectItem value="doses">Doses</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
             <div className="space-y-2">
-              <Label htmlFor="costPerHead">Cost Per Head *</Label>
+              <Label htmlFor="dosagePerHead">Dosage Per Head * ({selectedMedication?.unit || 'unit'})</Label>
               <Input
-                id="costPerHead"
+                id="dosagePerHead"
                 type="number"
                 step="0.01"
                 min="0"
-                placeholder="5.00"
-                value={costPerHead}
-                onChange={(e) => setCostPerHead(e.target.value)}
+                placeholder="5.0"
+                value={dosagePerHead}
+                onChange={(e) => setDosagePerHead(e.target.value)}
                 required
               />
-              <p className="text-xs text-muted-foreground">
-                Cost per animal treated (e.g., $5.00 per head)
-              </p>
             </div>
 
             <div className="space-y-2">
@@ -260,23 +299,39 @@ export function PenMedicationDialog({
                 id="withdrawalPeriod"
                 type="number"
                 min="0"
-                placeholder="28"
+                placeholder={selectedMedication?.withdrawalPeriod?.toString() || "28"}
                 value={withdrawalPeriod}
                 onChange={(e) => setWithdrawalPeriod(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
                 Days before cattle can be slaughtered or milk can be sold
+                {selectedMedication?.withdrawalPeriod && ` (Default: ${selectedMedication.withdrawalPeriod} days)`}
               </p>
             </div>
 
-            {pen && pen.currentCount > 0 && dosagePerHead && costPerHead && (
-              <div className="p-3 bg-muted rounded-lg">
-                <p className="text-sm font-medium mb-1">Calculated Values:</p>
-                <p className="text-sm text-muted-foreground">
-                  Total dosage: {(parseFloat(dosagePerHead) * pen.currentCount).toFixed(2)} {unit}
+            {!calculations.sufficientInventory && selectedMedication && dosagePerHead && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Insufficient inventory! Need {calculations.totalDosage.toFixed(1)}{selectedMedication.unit} but only {calculations.available.toFixed(1)}{selectedMedication.unit} available.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {pen && pen.currentCount > 0 && dosagePerHead && selectedMedication && calculations.sufficientInventory && (
+              <div className="p-3 bg-primary/10 rounded-lg space-y-1">
+                <p className="text-sm font-medium">Calculated Values:</p>
+                <p className="text-sm">
+                  Total dosage: <strong>{calculations.totalDosage.toFixed(2)} {selectedMedication.unit}</strong>
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  Total cost: ${(parseFloat(costPerHead) * pen.currentCount).toFixed(2)}
+                <p className="text-sm">
+                  Cost per head: <strong>${calculations.costPerHead.toFixed(2)}</strong>
+                </p>
+                <p className="text-sm">
+                  Total cost: <strong>${calculations.totalCost.toFixed(2)}</strong>
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Inventory will be automatically deducted
                 </p>
               </div>
             )}
@@ -302,7 +357,15 @@ export function PenMedicationDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading || !pen}>
+            <Button
+              type="submit"
+              disabled={
+                loading ||
+                !pen ||
+                !selectedMedicationId ||
+                !calculations.sufficientInventory
+              }
+            >
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -2,10 +2,12 @@
  * Pen Activity Store - Firebase Edition
  * Manages pen-level activities like feeding and medication
  * Automatically calculates per-cattle averages
+ * Integrates with inventory service for automatic deductions
  */
 
 import { collection, doc, getDocs, setDoc, deleteDoc, query, where } from "firebase/firestore"
 import { db, auth } from "@/lib/firebase"
+import { firebaseInventoryService } from "@/lib/inventory/inventory-service-firebase"
 
 export interface PenFeedActivity {
   id: string
@@ -30,6 +32,7 @@ export interface PenMedicationActivity {
   barnId: string
   date: string
   medicationName: string
+  medicationInventoryId?: string // Link to inventory item
   purpose: string // Treatment, Prevention, etc.
   dosagePerHead: number
   unit: string
@@ -172,17 +175,38 @@ class PenActivityStore {
     if (!userId) throw new Error("Not authenticated")
 
     const id = `med_${Date.now()}_${Math.random().toString(36).substring(7)}`
+    const totalDosage = activity.dosagePerHead * activity.cattleCount
+    const totalCost = activity.costPerHead * activity.cattleCount
 
     const newActivity: PenMedicationActivity = {
       ...activity,
       id,
-      totalDosage: activity.dosagePerHead * activity.cattleCount,
-      totalCost: activity.costPerHead * activity.cattleCount,
+      totalDosage,
+      totalCost,
       createdAt: new Date().toISOString(),
       createdBy: userId,
     }
 
     try {
+      // If medication is linked to inventory, deduct from inventory
+      if (activity.medicationInventoryId) {
+        try {
+          await firebaseInventoryService.deduct({
+            itemId: activity.medicationInventoryId,
+            quantity: totalDosage,
+            reason: `Pen medication: ${activity.medicationName} for pen`,
+            performedBy: userId,
+            relatedRecordType: "bulk_health_record",
+            relatedRecordId: id,
+            notes: `Bulk pen treatment: ${activity.cattleCount} head @ ${activity.dosagePerHead}${activity.unit} per head`
+          })
+        } catch (inventoryError) {
+          console.error("Failed to deduct inventory:", inventoryError)
+          throw new Error(`Inventory deduction failed: ${(inventoryError as Error).message}`)
+        }
+      }
+
+      // Save medication activity
       const docRef = doc(db, `users/${userId}/penMedicationActivities`, id)
       const activityData = Object.fromEntries(
         Object.entries(newActivity).filter(([_, v]) => v !== undefined)
