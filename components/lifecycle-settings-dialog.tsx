@@ -42,7 +42,14 @@ export function LifecycleSettingsDialog() {
   const { stages, addStage, updateStage, removeStage, resetToDefault } = useLifecycleConfig()
 
   const handleAddStage = async () => {
-    if (!newStageName.trim()) return
+    if (!newStageName.trim()) {
+      toast({
+        title: "Stage name required",
+        description: "Please enter a name for the stage.",
+        variant: "destructive",
+      })
+      return
+    }
 
     try {
       await addStage({
@@ -63,9 +70,13 @@ export function LifecycleSettingsDialog() {
       setNewStageImage("")
       setShowAddForm(false)
     } catch (error) {
+      console.error("Error adding stage:", error)
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred"
       toast({
         title: "Error adding stage",
-        description: "Failed to add the stage. Please try again.",
+        description: errorMessage === "Not authenticated"
+          ? "Please log in to add stages."
+          : `Failed to add stage: ${errorMessage}`,
         variant: "destructive",
       })
     }
@@ -78,6 +89,15 @@ export function LifecycleSettingsDialog() {
 
   const handleSaveEdit = async () => {
     if (!editingStage) return
+
+    if (!editingStage.name.trim()) {
+      toast({
+        title: "Stage name required",
+        description: "Please enter a name for the stage.",
+        variant: "destructive",
+      })
+      return
+    }
 
     try {
       await updateStage(editingStage.id, {
@@ -94,9 +114,13 @@ export function LifecycleSettingsDialog() {
 
       setEditingStage(null)
     } catch (error) {
+      console.error("Error updating stage:", error)
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred"
       toast({
         title: "Error updating stage",
-        description: "Failed to update the stage. Please try again.",
+        description: errorMessage === "Not authenticated"
+          ? "Please log in to update stages."
+          : `Failed to update stage: ${errorMessage}`,
         variant: "destructive",
       })
     }
@@ -114,9 +138,13 @@ export function LifecycleSettingsDialog() {
           description: `${stage.name} has been removed from your production lifecycle.`,
         })
       } catch (error) {
+        console.error("Error removing stage:", error)
+        const errorMessage = error instanceof Error ? error.message : "Unknown error occurred"
         toast({
           title: "Error removing stage",
-          description: "Failed to remove the stage. Please try again.",
+          description: errorMessage === "Not authenticated"
+            ? "Please log in to remove stages."
+            : `Failed to remove stage: ${errorMessage}`,
           variant: "destructive",
         })
       }
@@ -138,9 +166,13 @@ export function LifecycleSettingsDialog() {
         setShowAddForm(false)
         setEditingStage(null)
       } catch (error) {
+        console.error("Error resetting stages:", error)
+        const errorMessage = error instanceof Error ? error.message : "Unknown error occurred"
         toast({
           title: "Error resetting stages",
-          description: "Failed to reset stages. Please try again.",
+          description: errorMessage === "Not authenticated"
+            ? "Please log in to reset stages."
+            : `Failed to reset stages: ${errorMessage}`,
           variant: "destructive",
         })
       }
