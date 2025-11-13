@@ -18,9 +18,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { Camera, Upload, Loader2, CheckCircle2, XCircle, FileText } from "lucide-react"
+import { Camera, Upload, Loader2, CheckCircle2, XCircle, Sparkles, Scale } from "lucide-react"
 import Tesseract from "tesseract.js"
 import { firebaseDataStore } from "@/lib/data-store-firebase"
 import { firebasePenStore, type Pen } from "@/lib/pen-store-firebase"
@@ -37,6 +39,8 @@ interface RFIDImageImportDialogProps {
   onSuccess?: () => void
 }
 
+type WeightEntryMode = "total" | "individual" | "same"
+
 export function RFIDImageImportDialog({
   open,
   onOpenChange,
@@ -51,7 +55,7 @@ export function RFIDImageImportDialog({
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  const [step, setStep] = useState<"input" | "processing" | "review">("input")
+  const [step, setStep] = useState<"input" | "processing" | "review" | "weights">("input")
   const [isProcessing, setIsProcessing] = useState(false)
   const [extractedText, setExtractedText] = useState("")
   const [parsedRFIDs, setParsedRFIDs] = useState<string[]>([])
@@ -60,6 +64,13 @@ export function RFIDImageImportDialog({
   const [isCameraActive, setIsCameraActive] = useState(false)
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [isImporting, setIsImporting] = useState(false)
+  const [useOpenAI, setUseOpenAI] = useState(true) // Default to OpenAI for better accuracy
+
+  // Weight entry state
+  const [weightMode, setWeightMode] = useState<WeightEntryMode>("total")
+  const [totalWeight, setTotalWeight] = useState<number>(0)
+  const [sameWeight, setSameWeight] = useState<number>(0)
+  const [individualWeights, setIndividualWeights] = useState<Record<string, number>>({})
 
   // Load pens and batches when dialog opens
   useEffect(() => {
@@ -132,16 +143,12 @@ export function RFIDImageImportDialog({
     setStep("processing")
 
     try {
-      // Add timeout to prevent hanging
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error("PDF processing timed out after 60 seconds")), 60000)
       })
 
       const pdfPromise = async () => {
-        // Dynamically import pdfjs-dist only on client side
         const pdfjsLib = await import("pdfjs-dist")
-
-        // Configure worker - try HTTPS first
         pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
 
         const arrayBuffer = await pdfFile.arrayBuffer()
@@ -149,7 +156,6 @@ export function RFIDImageImportDialog({
 
         let fullText = ""
 
-        // Extract text from all pages
         for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
           const page = await pdf.getPage(pageNum)
           const textContent = await page.getTextContent()
@@ -166,9 +172,7 @@ export function RFIDImageImportDialog({
 
       setExtractedText(fullText)
 
-      // Parse RFID numbers from extracted text
       const rfids = parseRFIDsFromText(fullText)
-
       setParsedRFIDs(rfids)
       setStep("review")
 
@@ -200,75 +204,115 @@ export function RFIDImageImportDialog({
   const parseRFIDsFromText = (text: string): string[] => {
     const foundRFIDs: string[] = []
 
-    // Pattern 1: McCall Livestock format
-    // Example: "0124 000174878652 0000/00/00 NONE 25/10/20"
     const mccallPattern = /(\d{4})\s+(\d{12})(?:\s+\d{4}\/\d{2}\/\d{2}\s+\w+\s+\d{2}\/\d{2}\/\d{2})?/g
     let mccallMatches = text.matchAll(mccallPattern)
     for (const match of mccallMatches) {
       foundRFIDs.push(`${match[1]}${match[2]}`)
     }
 
-    // Pattern 2: Standard 15-16 digit RFID tags
-    // Example: "840003123456789" or "8400031234567890"
     const standardPattern = /\b\d{15,16}\b/g
     const standardMatches = text.match(standardPattern)
     if (standardMatches) {
       foundRFIDs.push(...standardMatches)
     }
 
-    // Pattern 3: RFID with dashes or spaces
-    // Example: "840-003-123456789" or "840 003 123456789"
     const formattedPattern = /\b\d{3}[-\s]\d{3}[-\s]\d{9,10}\b/g
     const formattedMatches = text.match(formattedPattern)
     if (formattedMatches) {
       foundRFIDs.push(...formattedMatches.map(m => m.replace(/[-\s]/g, "")))
     }
 
-    // Pattern 4: Visual tags in tables (often 4-6 digits)
-    // Example: "1234" or "123456" in structured data
     const visualTagPattern = /\b\d{4,6}\b/g
     const visualMatches = text.match(visualTagPattern)
     if (visualMatches && foundRFIDs.length === 0) {
-      // Only use visual tags if no RFID tags found
       foundRFIDs.push(...visualMatches)
     }
 
-    // Pattern 5: Canadian CCIA format
-    // Example: "CA 124 000174878652"
     const cciaPattern = /(?:CA|CAN)?\s*(\d{3,4})\s+(\d{12})/gi
     const cciaMatches = text.matchAll(cciaPattern)
     for (const match of cciaMatches) {
       foundRFIDs.push(`${match[1]}${match[2]}`)
     }
 
-    // Pattern 6: Line-by-line numbers (when in structured list)
     const lines = text.split('\n')
     for (const line of lines) {
       const trimmed = line.trim()
-      // If line starts with digits and has 10+ consecutive digits
       const lineMatch = trimmed.match(/^\d{10,16}$/)
       if (lineMatch) {
         foundRFIDs.push(lineMatch[0])
       }
     }
 
-    // Remove duplicates and filter valid RFIDs
     return Array.from(new Set(foundRFIDs)).filter((rfid) => {
-      // Must be at least 4 digits (for visual tags) or 10+ for electronic tags
       const isValid = rfid.length >= 4 && /^\d+$/.test(rfid)
-      // Exclude common false positives like dates, page numbers
-      const notFalsePositive = !rfid.match(/^(19|20)\d{2}$/) && // Not a year
-                               !rfid.match(/^(0?[1-9]|1[0-2])(0?[1-9]|[12]\d|3[01])$/) // Not a date
+      const notFalsePositive = !rfid.match(/^(19|20)\d{2}$/) && !rfid.match(/^(0?[1-9]|1[0-2])(0?[1-9]|[12]\d|3[01])$/)
       return isValid && notFalsePositive
     })
   }
 
-  const processImage = async (imageFile: Blob) => {
+  const processImageWithOpenAI = async (imageFile: Blob) => {
     setIsProcessing(true)
     setStep("processing")
 
     try {
-      // Add timeout to prevent hanging
+      const base64Image = await new Promise<string>((resolve) => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(reader.result as string)
+        reader.readAsDataURL(imageFile)
+      })
+
+      const response = await fetch("/api/ocr", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          image: base64Image,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("OpenAI Vision API request failed")
+      }
+
+      const data = await response.json()
+      const text = data.extractedText || ""
+      setExtractedText(text)
+
+      const uniqueRFIDs = parseRFIDsFromText(text)
+
+      setParsedRFIDs(uniqueRFIDs)
+      setStep("review")
+
+      if (uniqueRFIDs.length === 0) {
+        toast({
+          title: "No RFID Numbers Found",
+          description: "Unable to detect RFID numbers in the image. Please try again with a clearer photo.",
+          variant: "destructive",
+        })
+      } else {
+        toast({
+          title: "AI OCR Complete",
+          description: `Found ${uniqueRFIDs.length} RFID number(s) using OpenAI Vision`,
+        })
+      }
+    } catch (error: any) {
+      console.error("OpenAI Vision Error:", error)
+      toast({
+        title: "AI OCR Failed",
+        description: "Falling back to standard OCR...",
+      })
+      await processImageWithTesseract(imageFile)
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const processImageWithTesseract = async (imageFile: Blob) => {
+    setIsProcessing(true)
+    setStep("processing")
+
+    try {
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error("OCR processing timed out after 60 seconds")), 60000)
       })
@@ -286,7 +330,6 @@ export function RFIDImageImportDialog({
       const text = result.data.text
       setExtractedText(text)
 
-      // Parse RFID numbers from extracted text
       const uniqueRFIDs = parseRFIDsFromText(text)
 
       setParsedRFIDs(uniqueRFIDs)
@@ -318,12 +361,20 @@ export function RFIDImageImportDialog({
     }
   }
 
+  const processImage = async (imageFile: Blob) => {
+    if (useOpenAI) {
+      await processImageWithOpenAI(imageFile)
+    } else {
+      await processImageWithTesseract(imageFile)
+    }
+  }
+
   const handleManualEdit = (text: string) => {
     const lines = text.split("\n").map((line) => line.trim()).filter(Boolean)
     setParsedRFIDs(lines)
   }
 
-  const handleImport = async () => {
+  const proceedToWeights = () => {
     if (parsedRFIDs.length === 0) {
       toast({
         title: "No RFID Numbers",
@@ -342,6 +393,16 @@ export function RFIDImageImportDialog({
       return
     }
 
+    // Initialize individual weights
+    const weights: Record<string, number> = {}
+    parsedRFIDs.forEach((rfid) => {
+      weights[rfid] = 0
+    })
+    setIndividualWeights(weights)
+    setStep("weights")
+  }
+
+  const handleImport = async () => {
     const pen = pens.find((p) => p.id === selectedPenId)
     if (!pen) {
       toast({
@@ -352,17 +413,30 @@ export function RFIDImageImportDialog({
       return
     }
 
+    // Calculate weights based on mode
+    let cattleWeights: Record<string, number> = {}
+    if (weightMode === "total") {
+      const avgWeight = parsedRFIDs.length > 0 ? totalWeight / parsedRFIDs.length : 0
+      parsedRFIDs.forEach((rfid) => {
+        cattleWeights[rfid] = avgWeight
+      })
+    } else if (weightMode === "same") {
+      parsedRFIDs.forEach((rfid) => {
+        cattleWeights[rfid] = sameWeight
+      })
+    } else {
+      cattleWeights = individualWeights
+    }
+
     setIsImporting(true)
 
     try {
       let successCount = 0
       let duplicateCount = 0
 
-      // Get existing cattle to check for duplicates
       const existingCattle = await firebaseDataStore.getCattle()
 
       for (const rfid of parsedRFIDs) {
-        // Check if cattle with this RFID already exists
         const isDuplicate = existingCattle.find((c) => c.rfidTag === rfid)
 
         if (isDuplicate) {
@@ -370,9 +444,10 @@ export function RFIDImageImportDialog({
           continue
         }
 
-        // Create new cattle entry
+        const weight = cattleWeights[rfid] || 0
+
         const cattleData = {
-          tagNumber: rfid.slice(-4), // Use last 4 digits as visual tag
+          tagNumber: rfid.slice(-4),
           rfidTag: rfid,
           penId: selectedPenId,
           barnId: pen.barnId,
@@ -381,8 +456,8 @@ export function RFIDImageImportDialog({
           arrivalDate: new Date().toISOString().split("T")[0],
           breed: "Unknown",
           sex: "Unknown" as const,
-          weight: 0,
-          arrivalWeight: 0,
+          weight: weight,
+          arrivalWeight: weight,
           lot: "Imported",
           status: "Active" as const,
           healthStatus: "Healthy" as const,
@@ -394,7 +469,6 @@ export function RFIDImageImportDialog({
         successCount++
       }
 
-      // Update pen count
       await firebasePenStore.updatePen(selectedPenId, {
         currentCount: pen.currentCount + successCount,
       })
@@ -406,13 +480,8 @@ export function RFIDImageImportDialog({
         }`,
       })
 
-      // Reset and close
-      setStep("input")
-      setExtractedText("")
-      setParsedRFIDs([])
-      onOpenChange(false)
+      handleClose()
 
-      // Call onSuccess callback if provided
       if (onSuccess) {
         onSuccess()
       }
@@ -433,13 +502,17 @@ export function RFIDImageImportDialog({
     setStep("input")
     setExtractedText("")
     setParsedRFIDs([])
+    setWeightMode("total")
+    setTotalWeight(0)
+    setSameWeight(0)
+    setIndividualWeights({})
     onOpenChange(false)
   }
 
   return (
     <>
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>Import RFID Tags</DialogTitle>
             <DialogDescription>
@@ -447,10 +520,40 @@ export function RFIDImageImportDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="overflow-y-auto flex-1 pr-2">{/* Scrollable content wrapper */}
+          <div className="overflow-y-auto flex-1 pr-2">
 
           {step === "input" && (
             <div className="space-y-4 py-4">
+              {/* OCR Method Selection */}
+              <Card>
+                <CardContent className="p-4">
+                  <Label className="mb-2 block">OCR Method</Label>
+                  <RadioGroup value={useOpenAI ? "openai" : "tesseract"} onValueChange={(v) => setUseOpenAI(v === "openai")}>
+                    <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-accent">
+                      <RadioGroupItem value="openai" id="openai" />
+                      <Label htmlFor="openai" className="flex-1 cursor-pointer">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="h-4 w-4 text-primary" />
+                          <div>
+                            <p className="font-medium">OpenAI Vision (Recommended)</p>
+                            <p className="text-xs text-muted-foreground">More accurate, better at reading tables and structured data</p>
+                          </div>
+                        </div>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-accent">
+                      <RadioGroupItem value="tesseract" id="tesseract" />
+                      <Label htmlFor="tesseract" className="flex-1 cursor-pointer">
+                        <div>
+                          <p className="font-medium">Standard OCR</p>
+                          <p className="text-xs text-muted-foreground">Works offline, good for simple text</p>
+                        </div>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </CardContent>
+              </Card>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button
                   onClick={() => fileInputRef.current?.click()}
@@ -534,9 +637,9 @@ export function RFIDImageImportDialog({
           {step === "processing" && (
             <div className="py-12 flex flex-col items-center gap-4">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <p className="text-lg font-medium">Processing Image...</p>
+              <p className="text-lg font-medium">Processing {useOpenAI ? "with AI" : "Image"}...</p>
               <p className="text-sm text-muted-foreground">
-                Extracting RFID numbers using OCR
+                {useOpenAI ? "Using OpenAI Vision for accurate extraction" : "Extracting RFID numbers using OCR"}
               </p>
             </div>
           )}
@@ -624,7 +727,116 @@ export function RFIDImageImportDialog({
               </div>
             </div>
           )}
-          </div>{/* End scrollable content wrapper */}
+
+          {step === "weights" && (
+            <div className="space-y-4 py-4">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Scale className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold">Enter Weights</h3>
+                    <Badge>{parsedRFIDs.length} cattle</Badge>
+                  </div>
+
+                  <Label className="mb-3 block">How would you like to enter weights?</Label>
+                  <RadioGroup value={weightMode} onValueChange={(v) => setWeightMode(v as WeightEntryMode)}>
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2 p-3 rounded-lg border">
+                        <RadioGroupItem value="total" id="total" />
+                        <Label htmlFor="total" className="flex-1 cursor-pointer">
+                          <div>
+                            <p className="font-medium">Total Weight</p>
+                            <p className="text-xs text-muted-foreground">Enter total weight, system will average across all cattle</p>
+                          </div>
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2 p-3 rounded-lg border">
+                        <RadioGroupItem value="same" id="same" />
+                        <Label htmlFor="same" className="flex-1 cursor-pointer">
+                          <div>
+                            <p className="font-medium">Same Weight for All</p>
+                            <p className="text-xs text-muted-foreground">All cattle have the same weight</p>
+                          </div>
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2 p-3 rounded-lg border">
+                        <RadioGroupItem value="individual" id="individual" />
+                        <Label htmlFor="individual" className="flex-1 cursor-pointer">
+                          <div>
+                            <p className="font-medium">Individual Weights</p>
+                            <p className="text-xs text-muted-foreground">Enter weight for each animal</p>
+                          </div>
+                        </Label>
+                      </div>
+                    </div>
+                  </RadioGroup>
+
+                  <div className="mt-4 space-y-3">
+                    {weightMode === "total" && (
+                      <div className="space-y-2">
+                        <Label>Total Weight (lbs)</Label>
+                        <Input
+                          type="number"
+                          placeholder="Enter total weight"
+                          value={totalWeight || ""}
+                          onChange={(e) => setTotalWeight(parseFloat(e.target.value) || 0)}
+                        />
+                        <p className="text-sm text-muted-foreground">
+                          Average per animal: {parsedRFIDs.length > 0 ? (totalWeight / parsedRFIDs.length).toFixed(1) : 0} lbs
+                        </p>
+                      </div>
+                    )}
+
+                    {weightMode === "same" && (
+                      <div className="space-y-2">
+                        <Label>Weight per Animal (lbs)</Label>
+                        <Input
+                          type="number"
+                          placeholder="Enter weight"
+                          value={sameWeight || ""}
+                          onChange={(e) => setSameWeight(parseFloat(e.target.value) || 0)}
+                        />
+                        <p className="text-sm text-muted-foreground">
+                          Total weight: {(sameWeight * parsedRFIDs.length).toFixed(1)} lbs
+                        </p>
+                      </div>
+                    )}
+
+                    {weightMode === "individual" && (
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        <Label>Individual Weights (lbs)</Label>
+                        {parsedRFIDs.map((rfid, index) => (
+                          <div key={rfid} className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground w-24 font-mono">
+                              {rfid.slice(-6)}
+                            </span>
+                            <Input
+                              type="number"
+                              placeholder="Weight"
+                              value={individualWeights[rfid] || ""}
+                              onChange={(e) =>
+                                setIndividualWeights({
+                                  ...individualWeights,
+                                  [rfid]: parseFloat(e.target.value) || 0,
+                                })
+                              }
+                              className="flex-1"
+                            />
+                          </div>
+                        ))}
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Total: {Object.values(individualWeights).reduce((sum, w) => sum + w, 0).toFixed(1)} lbs
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+          </div>
 
           <DialogFooter className="flex-shrink-0 flex-col sm:flex-row gap-2">
             {step === "input" && (
@@ -642,6 +854,25 @@ export function RFIDImageImportDialog({
                     setExtractedText("")
                     setParsedRFIDs([])
                   }}
+                  className="w-full sm:w-auto"
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={proceedToWeights}
+                  disabled={parsedRFIDs.length === 0 || !selectedPenId}
+                  className="w-full sm:w-auto"
+                >
+                  Next: Enter Weights
+                </Button>
+              </>
+            )}
+
+            {step === "weights" && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setStep("review")}
                   disabled={isImporting}
                   className="w-full sm:w-auto"
                 >
@@ -649,7 +880,7 @@ export function RFIDImageImportDialog({
                 </Button>
                 <Button
                   onClick={handleImport}
-                  disabled={parsedRFIDs.length === 0 || !selectedPenId || isImporting}
+                  disabled={isImporting}
                   className="w-full sm:w-auto"
                 >
                   {isImporting ? (
