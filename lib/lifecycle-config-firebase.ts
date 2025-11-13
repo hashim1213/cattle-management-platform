@@ -157,12 +157,16 @@ class FirebaseLifecycleConfigStore {
     const now = new Date().toISOString()
     const id = `stage_${Date.now()}_${Math.random().toString(36).substring(7)}`
 
+    // Build the stage object, removing undefined values for Firebase
     const newStage: LifecycleStage = {
-      ...stage,
       id,
+      name: stage.name,
+      color: stage.color,
       order: this.stages.length + 1,
       createdAt: now,
       updatedAt: now,
+      ...(stage.description && { description: stage.description }),
+      ...(stage.image && { image: stage.image }),
     }
 
     try {
@@ -197,10 +201,17 @@ class FirebaseLifecycleConfigStore {
 
     try {
       const docRef = doc(db, `users/${userId}/lifecycleStages`, id)
-      const updateData = {
-        ...updates,
+
+      // Build update object, removing undefined values for Firebase
+      const updateData: any = {
         updatedAt: new Date().toISOString(),
       }
+
+      if (updates.name !== undefined) updateData.name = updates.name
+      if (updates.color !== undefined) updateData.color = updates.color
+      if (updates.order !== undefined) updateData.order = updates.order
+      if (updates.description !== undefined) updateData.description = updates.description
+      if (updates.image !== undefined) updateData.image = updates.image
 
       await updateDoc(docRef, updateData)
       this.stages[index] = { ...this.stages[index], ...updateData }
