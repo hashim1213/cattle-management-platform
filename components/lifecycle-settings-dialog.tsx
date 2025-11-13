@@ -275,12 +275,15 @@ export function LifecycleSettingsDialog() {
             <Button
               variant="outline"
               className="w-full gap-2"
-              onClick={() => setShowAddForm(true)}
+              onClick={() => {
+                setShowAddForm(true)
+                setEditingStage(null)
+              }}
             >
               <Plus className="h-4 w-4" />
               Add New Stage
             </Button>
-          ) : (
+          ) : showAddForm && !editingStage ? (
             <div className="space-y-4 p-4 border rounded-lg bg-accent/20">
               <div className="flex items-center justify-between mb-2">
                 <Label className="text-base font-semibold">New Stage</Label>
@@ -379,7 +382,7 @@ export function LifecycleSettingsDialog() {
                 </Button>
               </div>
             </div>
-          )}
+          ) : null}
 
           <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
             <strong>Note:</strong> Changes to lifecycle stages will affect how cattle are categorized.
