@@ -194,8 +194,8 @@ export function AddInventoryDialog({ open, onClose, item }: AddInventoryDialogPr
 
     try {
       if (item) {
-        // Update existing item
-        await inventoryService.updateInventoryItem(item.id, {
+        // Update existing item - filter out undefined values for Firestore
+        const updates: any = {
           name,
           category,
           unit,
@@ -203,11 +203,15 @@ export function AddInventoryDialog({ open, onClose, item }: AddInventoryDialogPr
           reorderQuantity: reorderQty,
           costPerUnit: cost,
           storageLocation,
-          supplier: supplier || undefined,
-          expirationDate: expirationDate || undefined,
-          withdrawalPeriod: withdrawalPeriod ? parseInt(withdrawalPeriod) : undefined,
-          notes: notes || undefined
-        })
+        }
+
+        // Only add optional fields if they have values (Firestore doesn't allow undefined)
+        if (supplier) updates.supplier = supplier
+        if (expirationDate) updates.expirationDate = expirationDate
+        if (withdrawalPeriod) updates.withdrawalPeriod = parseInt(withdrawalPeriod)
+        if (notes) updates.notes = notes
+
+        await inventoryService.updateInventoryItem(item.id, updates)
 
         if (qty !== item.quantityOnHand) {
           await inventoryService.adjust({
@@ -218,8 +222,8 @@ export function AddInventoryDialog({ open, onClose, item }: AddInventoryDialogPr
           })
         }
       } else {
-        // Create new item
-        await inventoryService.addInventoryItem({
+        // Create new item - filter out undefined values for Firestore
+        const newItemData: any = {
           name,
           category,
           quantityOnHand: qty,
@@ -228,11 +232,15 @@ export function AddInventoryDialog({ open, onClose, item }: AddInventoryDialogPr
           reorderQuantity: reorderQty,
           costPerUnit: cost,
           storageLocation,
-          supplier: supplier || undefined,
-          expirationDate: expirationDate || undefined,
-          withdrawalPeriod: withdrawalPeriod ? parseInt(withdrawalPeriod) : undefined,
-          notes: notes || undefined
-        })
+        }
+
+        // Only add optional fields if they have values (Firestore doesn't allow undefined)
+        if (supplier) newItemData.supplier = supplier
+        if (expirationDate) newItemData.expirationDate = expirationDate
+        if (withdrawalPeriod) newItemData.withdrawalPeriod = parseInt(withdrawalPeriod)
+        if (notes) newItemData.notes = notes
+
+        await inventoryService.addInventoryItem(newItemData)
       }
 
       onClose()
