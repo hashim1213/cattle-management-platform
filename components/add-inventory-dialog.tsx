@@ -16,7 +16,9 @@ import {
   isFeedCategory,
   isSupplementCategory
 } from "@/lib/inventory/inventory-types"
-import { Pill, Wheat, Salad, ChevronDown, ChevronUp } from "lucide-react"
+import { searchCatalog, CatalogItem, getCatalogByType } from "@/lib/inventory/inventory-catalog"
+import { Pill, Wheat, Salad, ChevronDown, ChevronUp, Search, X } from "lucide-react"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
 interface AddInventoryDialogProps {
   open: boolean
@@ -46,6 +48,13 @@ const QUICK_TEMPLATES = {
 }
 
 export function AddInventoryDialog({ open, onClose, item }: AddInventoryDialogProps) {
+  // Catalog search state
+  const [catalogSearchQuery, setCatalogSearchQuery] = useState("")
+  const [catalogCategory, setCatalogCategory] = useState<"all" | "meds" | "feed" | "supplements">("all")
+  const [catalogResults, setCatalogResults] = useState<CatalogItem[]>([])
+  const [activeTab, setActiveTab] = useState<"catalog" | "manual">("catalog")
+
+  // Form state
   const [name, setName] = useState("")
   const [category, setCategory] = useState<InventoryCategory>("antibiotic")
   const [quantityOnHand, setQuantityOnHand] = useState("")
@@ -61,6 +70,14 @@ export function AddInventoryDialog({ open, onClose, item }: AddInventoryDialogPr
   const [expirationDate, setExpirationDate] = useState("")
   const [withdrawalPeriod, setWithdrawalPeriod] = useState("")
   const [notes, setNotes] = useState("")
+
+  // Update catalog search results when query or category changes
+  useEffect(() => {
+    if (activeTab === "catalog" && !item) {
+      const results = searchCatalog(catalogSearchQuery, catalogCategory)
+      setCatalogResults(results)
+    }
+  }, [catalogSearchQuery, catalogCategory, activeTab, item])
 
   // Load existing item data when editing
   useEffect(() => {
@@ -78,8 +95,10 @@ export function AddInventoryDialog({ open, onClose, item }: AddInventoryDialogPr
       setWithdrawalPeriod(item.withdrawalPeriod?.toString() || "")
       setNotes(item.notes || "")
       setShowAdvanced(true) // Show advanced fields when editing
+      setActiveTab("manual") // Go to manual tab when editing
     } else {
       resetForm()
+      setActiveTab("catalog") // Start with catalog when adding new
     }
   }, [item, open])
 
@@ -97,6 +116,31 @@ export function AddInventoryDialog({ open, onClose, item }: AddInventoryDialogPr
     setWithdrawalPeriod("")
     setNotes("")
     setShowAdvanced(false)
+    setCatalogSearchQuery("")
+    setCatalogCategory("all")
+    setCatalogResults([])
+  }
+
+  const applyCatalogItem = (catalogItem: CatalogItem) => {
+    setName(catalogItem.name)
+    setCategory(catalogItem.category)
+    setUnit(catalogItem.unit)
+    setReorderPoint(catalogItem.defaultReorderPoint?.toString() || "")
+    setReorderQuantity(catalogItem.defaultReorderQty?.toString() || "")
+    setCostPerUnit(catalogItem.defaultCost?.toString() || "")
+
+    // Apply drug-specific fields
+    if (catalogItem.withdrawalPeriod !== undefined) {
+      setWithdrawalPeriod(catalogItem.withdrawalPeriod.toString())
+    }
+
+    // Set notes with description
+    if (catalogItem.description) {
+      setNotes(catalogItem.description)
+    }
+
+    // Switch to manual tab to enter quantity and finish
+    setActiveTab("manual")
   }
 
   const applyTemplate = (template: typeof QUICK_TEMPLATES.meds[0]) => {
@@ -107,7 +151,7 @@ export function AddInventoryDialog({ open, onClose, item }: AddInventoryDialogPr
     setReorderQuantity(template.reorderQty.toString())
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Validation - only require essential fields
     if (!name || !quantityOnHand) {
       alert("Please provide item name and quantity")
@@ -124,49 +168,54 @@ export function AddInventoryDialog({ open, onClose, item }: AddInventoryDialogPr
       return
     }
 
-    if (item) {
-      // Update existing item
-      inventoryService.updateInventoryItem(item.id, {
-        name,
-        category,
-        unit,
-        reorderPoint: reorder,
-        reorderQuantity: reorderQty,
-        costPerUnit: cost,
-        storageLocation,
-        supplier: supplier || undefined,
-        expirationDate: expirationDate || undefined,
-        withdrawalPeriod: withdrawalPeriod ? parseInt(withdrawalPeriod) : undefined,
-        notes: notes || undefined
-      })
+    try {
+      if (item) {
+        // Update existing item
+        await inventoryService.updateInventoryItem(item.id, {
+          name,
+          category,
+          unit,
+          reorderPoint: reorder,
+          reorderQuantity: reorderQty,
+          costPerUnit: cost,
+          storageLocation,
+          supplier: supplier || undefined,
+          expirationDate: expirationDate || undefined,
+          withdrawalPeriod: withdrawalPeriod ? parseInt(withdrawalPeriod) : undefined,
+          notes: notes || undefined
+        })
 
-      if (qty !== item.quantityOnHand) {
-        inventoryService.adjust({
-          itemId: item.id,
-          newQuantity: qty,
-          reason: "Manual adjustment",
-          performedBy: "current-user"
+        if (qty !== item.quantityOnHand) {
+          await inventoryService.adjust({
+            itemId: item.id,
+            newQuantity: qty,
+            reason: "Manual adjustment",
+            performedBy: "current-user"
+          })
+        }
+      } else {
+        // Create new item
+        await inventoryService.addInventoryItem({
+          name,
+          category,
+          quantityOnHand: qty,
+          unit,
+          reorderPoint: reorder,
+          reorderQuantity: reorderQty,
+          costPerUnit: cost,
+          storageLocation,
+          supplier: supplier || undefined,
+          expirationDate: expirationDate || undefined,
+          withdrawalPeriod: withdrawalPeriod ? parseInt(withdrawalPeriod) : undefined,
+          notes: notes || undefined
         })
       }
-    } else {
-      // Create new item
-      inventoryService.addInventoryItem({
-        name,
-        category,
-        quantityOnHand: qty,
-        unit,
-        reorderPoint: reorder,
-        reorderQuantity: reorderQty,
-        costPerUnit: cost,
-        storageLocation,
-        supplier: supplier || undefined,
-        expirationDate: expirationDate || undefined,
-        withdrawalPeriod: withdrawalPeriod ? parseInt(withdrawalPeriod) : undefined,
-        notes: notes || undefined
-      })
-    }
 
-    onClose()
+      onClose()
+    } catch (error) {
+      console.error("Error saving inventory item:", error)
+      alert("Failed to save inventory item. Please try again.")
+    }
   }
 
   const isDrug = isDrugCategory(category)
@@ -181,8 +230,102 @@ export function AddInventoryDialog({ open, onClose, item }: AddInventoryDialogPr
         </DialogHeader>
 
         {!item && (
-          <div className="space-y-3 pb-4">
-            <p className="text-sm text-muted-foreground">Quick add common items:</p>
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "catalog" | "manual")} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="catalog">Search Catalog</TabsTrigger>
+              <TabsTrigger value="manual">Manual Entry</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="catalog" className="space-y-4">
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Search our catalog of common medications, feeds, and supplements
+                </p>
+
+                {/* Search bar */}
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search medications, feeds, supplements..."
+                      value={catalogSearchQuery}
+                      onChange={(e) => setCatalogSearchQuery(e.target.value)}
+                      className="pl-9 pr-9"
+                    />
+                    {catalogSearchQuery && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
+                        onClick={() => setCatalogSearchQuery("")}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  <Select value={catalogCategory} onValueChange={(v: any) => setCatalogCategory(v)}>
+                    <SelectTrigger className="w-[150px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Items</SelectItem>
+                      <SelectItem value="meds">Medications</SelectItem>
+                      <SelectItem value="feed">Feed</SelectItem>
+                      <SelectItem value="supplements">Supplements</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Catalog results */}
+                <div className="border rounded-lg max-h-[400px] overflow-y-auto">
+                  {catalogResults.length === 0 ? (
+                    <div className="p-8 text-center text-muted-foreground">
+                      <p>No items found</p>
+                      <p className="text-sm">Try adjusting your search or switch to Manual Entry</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y">
+                      {catalogResults.map((catalogItem, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => applyCatalogItem(catalogItem)}
+                          className="w-full p-3 text-left hover:bg-accent transition-colors"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <p className="font-medium">{catalogItem.name}</p>
+                              {catalogItem.description && (
+                                <p className="text-sm text-muted-foreground">{catalogItem.description}</p>
+                              )}
+                              {catalogItem.commonNames && catalogItem.commonNames.length > 0 && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Also known as: {catalogItem.commonNames.join(", ")}
+                                </p>
+                              )}
+                            </div>
+                            <div className="text-right text-sm text-muted-foreground ml-4">
+                              <p>{catalogItem.unit}</p>
+                              {catalogItem.defaultCost && (
+                                <p className="text-xs">${catalogItem.defaultCost.toFixed(2)}/{catalogItem.unit}</p>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-xs text-muted-foreground text-center">
+                  Can't find what you're looking for? Switch to Manual Entry tab
+                </p>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="manual" className="space-y-4">
+              {/* Quick add templates - keep existing */}
+              <div className="space-y-3 pb-4">
+                <p className="text-sm text-muted-foreground">Quick add common items:</p>
 
             {/* Medications Quick Add */}
             <div>
@@ -246,139 +389,294 @@ export function AddInventoryDialog({ open, onClose, item }: AddInventoryDialogPr
                 ))}
               </div>
             </div>
-          </div>
+              </div>
+
+              <div className="space-y-4 py-4">
+                {/* Essential Fields Only */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
+                    <Label htmlFor="name">Item Name *</Label>
+                    <Input
+                      id="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g., Penicillin, Hay, Mineral Mix"
+                      className="text-base"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="quantityOnHand">Quantity *</Label>
+                    <Input
+                      id="quantityOnHand"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={quantityOnHand}
+                      onChange={(e) => setQuantityOnHand(e.target.value)}
+                      placeholder="100"
+                      className="text-base"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="unit">Unit *</Label>
+                    <Select value={unit} onValueChange={(v) => setUnit(v as InventoryUnit)}>
+                      <SelectTrigger className="text-base">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ml">ml</SelectItem>
+                        <SelectItem value="cc">cc</SelectItem>
+                        <SelectItem value="lbs">lbs</SelectItem>
+                        <SelectItem value="tons">tons</SelectItem>
+                        <SelectItem value="bales">bales</SelectItem>
+                        <SelectItem value="bags">bags</SelectItem>
+                        <SelectItem value="bushels">bushels</SelectItem>
+                        <SelectItem value="doses">doses</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="costPerUnit">Cost per Unit</Label>
+                    <Input
+                      id="costPerUnit"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={costPerUnit}
+                      onChange={(e) => setCostPerUnit(e.target.value)}
+                      placeholder="0.00"
+                      className="text-base"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="storageLocation">Location</Label>
+                    <Input
+                      id="storageLocation"
+                      value={storageLocation}
+                      onChange={(e) => setStorageLocation(e.target.value)}
+                      placeholder="Main Storage"
+                      className="text-base"
+                    />
+                  </div>
+                </div>
+
+                {/* Advanced Fields Toggle */}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  className="w-full"
+                >
+                  {showAdvanced ? (
+                    <>
+                      <ChevronUp className="h-4 w-4 mr-2" />
+                      Hide Advanced Options
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-4 w-4 mr-2" />
+                      Show Advanced Options
+                    </>
+                  )}
+                </Button>
+
+                {/* Advanced Fields */}
+                {showAdvanced && (
+                  <div className="space-y-4 pt-4 border-t">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="reorderPoint">Reorder Alert Level</Label>
+                        <Input
+                          id="reorderPoint"
+                          type="number"
+                          min="0"
+                          value={reorderPoint}
+                          onChange={(e) => setReorderPoint(e.target.value)}
+                          placeholder="100"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">Alert when stock reaches this level</p>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="reorderQuantity">Reorder Amount</Label>
+                        <Input
+                          id="reorderQuantity"
+                          type="number"
+                          min="0"
+                          value={reorderQuantity}
+                          onChange={(e) => setReorderQuantity(e.target.value)}
+                          placeholder="500"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">How much to reorder</p>
+                      </div>
+
+                      {isDrug && (
+                        <>
+                          <div>
+                            <Label htmlFor="expirationDate">Expiration Date</Label>
+                            <Input
+                              id="expirationDate"
+                              type="date"
+                              value={expirationDate}
+                              onChange={(e) => setExpirationDate(e.target.value)}
+                            />
+                          </div>
+
+                          <div>
+                            <Label htmlFor="withdrawalPeriod">Withdrawal Period (days)</Label>
+                            <Input
+                              id="withdrawalPeriod"
+                              type="number"
+                              min="0"
+                              value={withdrawalPeriod}
+                              onChange={(e) => setWithdrawalPeriod(e.target.value)}
+                              placeholder="28"
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      <div className="sm:col-span-2">
+                        <Label htmlFor="supplier">Supplier</Label>
+                        <Input
+                          id="supplier"
+                          value={supplier}
+                          onChange={(e) => setSupplier(e.target.value)}
+                          placeholder="Vendor name"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <Label htmlFor="notes">Notes</Label>
+                        <Textarea
+                          id="notes"
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
+                          placeholder="Additional notes..."
+                          rows={2}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
         )}
 
-        <div className="space-y-4 py-4">
-          {/* Essential Fields Only */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2">
-              <Label htmlFor="name">Item Name *</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g., Penicillin, Hay, Mineral Mix"
-                className="text-base"
-              />
+        {/* When editing, show form directly without tabs */}
+        {item && (
+          <div className="space-y-4 py-4">
+            {/* Essential Fields Only */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="sm:col-span-2">
+                <Label htmlFor="name">Item Name *</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g., Penicillin, Hay, Mineral Mix"
+                  className="text-base"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="quantityOnHand">Quantity *</Label>
+                <Input
+                  id="quantityOnHand"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={quantityOnHand}
+                  onChange={(e) => setQuantityOnHand(e.target.value)}
+                  placeholder="100"
+                  className="text-base"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="unit">Unit *</Label>
+                <Select value={unit} onValueChange={(v) => setUnit(v as InventoryUnit)}>
+                  <SelectTrigger className="text-base">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ml">ml</SelectItem>
+                    <SelectItem value="cc">cc</SelectItem>
+                    <SelectItem value="lbs">lbs</SelectItem>
+                    <SelectItem value="tons">tons</SelectItem>
+                    <SelectItem value="bales">bales</SelectItem>
+                    <SelectItem value="bags">bags</SelectItem>
+                    <SelectItem value="bushels">bushels</SelectItem>
+                    <SelectItem value="doses">doses</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="costPerUnit">Cost per Unit</Label>
+                <Input
+                  id="costPerUnit"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={costPerUnit}
+                  onChange={(e) => setCostPerUnit(e.target.value)}
+                  placeholder="0.00"
+                  className="text-base"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="storageLocation">Location</Label>
+                <Input
+                  id="storageLocation"
+                  value={storageLocation}
+                  onChange={(e) => setStorageLocation(e.target.value)}
+                  placeholder="Main Storage"
+                  className="text-base"
+                />
+              </div>
             </div>
 
-            <div>
-              <Label htmlFor="quantityOnHand">Quantity *</Label>
-              <Input
-                id="quantityOnHand"
-                type="number"
-                min="0"
-                step="0.01"
-                value={quantityOnHand}
-                onChange={(e) => setQuantityOnHand(e.target.value)}
-                placeholder="100"
-                className="text-base"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="unit">Unit *</Label>
-              <Select value={unit} onValueChange={(v) => setUnit(v as InventoryUnit)}>
-                <SelectTrigger className="text-base">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ml">ml</SelectItem>
-                  <SelectItem value="cc">cc</SelectItem>
-                  <SelectItem value="lbs">lbs</SelectItem>
-                  <SelectItem value="tons">tons</SelectItem>
-                  <SelectItem value="bales">bales</SelectItem>
-                  <SelectItem value="bags">bags</SelectItem>
-                  <SelectItem value="bushels">bushels</SelectItem>
-                  <SelectItem value="doses">doses</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="costPerUnit">Cost per Unit</Label>
-              <Input
-                id="costPerUnit"
-                type="number"
-                min="0"
-                step="0.01"
-                value={costPerUnit}
-                onChange={(e) => setCostPerUnit(e.target.value)}
-                placeholder="0.00"
-                className="text-base"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="storageLocation">Location</Label>
-              <Input
-                id="storageLocation"
-                value={storageLocation}
-                onChange={(e) => setStorageLocation(e.target.value)}
-                placeholder="Main Storage"
-                className="text-base"
-              />
-            </div>
-          </div>
-
-          {/* Advanced Fields Toggle */}
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="w-full"
-          >
-            {showAdvanced ? (
-              <>
-                <ChevronUp className="h-4 w-4 mr-2" />
-                Hide Advanced Options
-              </>
-            ) : (
-              <>
-                <ChevronDown className="h-4 w-4 mr-2" />
-                Show Advanced Options
-              </>
-            )}
-          </Button>
-
-          {/* Advanced Fields */}
-          {showAdvanced && (
+            {/* Advanced Fields for editing - always shown */}
             <div className="space-y-4 pt-4 border-t">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="reorderPoint">Reorder Alert Level</Label>
+                  <Label htmlFor="reorderPoint-edit">Reorder Alert Level</Label>
                   <Input
-                    id="reorderPoint"
+                    id="reorderPoint-edit"
                     type="number"
                     min="0"
                     value={reorderPoint}
                     onChange={(e) => setReorderPoint(e.target.value)}
                     placeholder="100"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">Alert when stock reaches this level</p>
                 </div>
 
                 <div>
-                  <Label htmlFor="reorderQuantity">Reorder Amount</Label>
+                  <Label htmlFor="reorderQuantity-edit">Reorder Amount</Label>
                   <Input
-                    id="reorderQuantity"
+                    id="reorderQuantity-edit"
                     type="number"
                     min="0"
                     value={reorderQuantity}
                     onChange={(e) => setReorderQuantity(e.target.value)}
                     placeholder="500"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">How much to reorder</p>
                 </div>
 
                 {isDrug && (
                   <>
                     <div>
-                      <Label htmlFor="expirationDate">Expiration Date</Label>
+                      <Label htmlFor="expirationDate-edit">Expiration Date</Label>
                       <Input
-                        id="expirationDate"
+                        id="expirationDate-edit"
                         type="date"
                         value={expirationDate}
                         onChange={(e) => setExpirationDate(e.target.value)}
@@ -386,9 +684,9 @@ export function AddInventoryDialog({ open, onClose, item }: AddInventoryDialogPr
                     </div>
 
                     <div>
-                      <Label htmlFor="withdrawalPeriod">Withdrawal Period (days)</Label>
+                      <Label htmlFor="withdrawalPeriod-edit">Withdrawal Period (days)</Label>
                       <Input
-                        id="withdrawalPeriod"
+                        id="withdrawalPeriod-edit"
                         type="number"
                         min="0"
                         value={withdrawalPeriod}
@@ -400,9 +698,9 @@ export function AddInventoryDialog({ open, onClose, item }: AddInventoryDialogPr
                 )}
 
                 <div className="sm:col-span-2">
-                  <Label htmlFor="supplier">Supplier</Label>
+                  <Label htmlFor="supplier-edit">Supplier</Label>
                   <Input
-                    id="supplier"
+                    id="supplier-edit"
                     value={supplier}
                     onChange={(e) => setSupplier(e.target.value)}
                     placeholder="Vendor name"
@@ -410,9 +708,9 @@ export function AddInventoryDialog({ open, onClose, item }: AddInventoryDialogPr
                 </div>
 
                 <div className="sm:col-span-2">
-                  <Label htmlFor="notes">Notes</Label>
+                  <Label htmlFor="notes-edit">Notes</Label>
                   <Textarea
-                    id="notes"
+                    id="notes-edit"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Additional notes..."
@@ -421,8 +719,8 @@ export function AddInventoryDialog({ open, onClose, item }: AddInventoryDialogPr
                 </div>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
