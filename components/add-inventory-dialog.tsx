@@ -19,6 +19,7 @@ import {
 import { searchCatalog, CatalogItem, getCatalogByType } from "@/lib/inventory/inventory-catalog"
 import { Pill, Wheat, Salad, ChevronDown, ChevronUp, Search, X } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { useAuth } from "@/contexts/auth-context"
 
 interface AddInventoryDialogProps {
   open: boolean
@@ -48,6 +49,9 @@ const QUICK_TEMPLATES = {
 }
 
 export function AddInventoryDialog({ open, onClose, item }: AddInventoryDialogProps) {
+  const { user } = useAuth()
+  const [isInitialized, setIsInitialized] = useState(false)
+
   // Catalog search state
   const [catalogSearchQuery, setCatalogSearchQuery] = useState("")
   const [catalogCategory, setCatalogCategory] = useState<"all" | "meds" | "feed" | "supplements">("all")
@@ -70,6 +74,15 @@ export function AddInventoryDialog({ open, onClose, item }: AddInventoryDialogPr
   const [expirationDate, setExpirationDate] = useState("")
   const [withdrawalPeriod, setWithdrawalPeriod] = useState("")
   const [notes, setNotes] = useState("")
+
+  // Initialize inventory service when dialog opens
+  useEffect(() => {
+    if (user?.uid && open && !isInitialized) {
+      inventoryService.initialize(user.uid).then(() => {
+        setIsInitialized(true)
+      })
+    }
+  }, [user?.uid, open, isInitialized])
 
   // Update catalog search results when query or category changes
   useEffect(() => {
@@ -152,6 +165,17 @@ export function AddInventoryDialog({ open, onClose, item }: AddInventoryDialogPr
   }
 
   const handleSubmit = async () => {
+    // Check if service is initialized
+    if (!isInitialized && !user?.uid) {
+      alert("Please wait, initializing...")
+      return
+    }
+
+    // Ensure service is initialized
+    if (user?.uid) {
+      await inventoryService.initialize(user.uid)
+    }
+
     // Validation - only require essential fields
     if (!name || !quantityOnHand) {
       alert("Please provide item name and quantity")
@@ -214,7 +238,8 @@ export function AddInventoryDialog({ open, onClose, item }: AddInventoryDialogPr
       onClose()
     } catch (error) {
       console.error("Error saving inventory item:", error)
-      alert("Failed to save inventory item. Please try again.")
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred"
+      alert(`Failed to save inventory item: ${errorMessage}\n\nPlease check the console for more details.`)
     }
   }
 
