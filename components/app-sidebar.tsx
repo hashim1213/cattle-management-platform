@@ -3,14 +3,13 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
-import { Home, Beef, Sprout, MapPin, DollarSign, FileText, TrendingUp, Menu, X, Building2, Calendar, Activity, Package, Users, Calculator, Cookie, Heart, BarChart3, Settings, Package2, Warehouse, LogOut, MessageSquare } from "lucide-react"
+import { Home, Beef, MapPin, DollarSign, Menu, Package2, Warehouse, MessageSquare } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { UserSwitcher } from "@/components/user-switcher"
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
-import { useAuth } from "@/contexts/auth-context"
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
@@ -25,12 +24,6 @@ const adminNavigation = []
 
 function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   const pathname = usePathname()
-  const { logout, user } = useAuth()
-
-  const handleLogout = async () => {
-    await logout()
-    if (onLinkClick) onLinkClick()
-  }
 
   return (
     <>
@@ -96,24 +89,9 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
         )}
       </nav>
 
-      {/* Footer */}
-      <div className="border-t border-sidebar-border p-4 space-y-2">
+      {/* Footer - User Profile */}
+      <div className="border-t border-sidebar-border p-4">
         <UserSwitcher />
-        <Link
-          href="/settings"
-          onClick={onLinkClick}
-          className="flex items-center gap-3 rounded-xl px-4 py-3 min-h-[48px] text-sm font-medium text-sidebar-foreground/70 transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent touch-manipulation"
-        >
-          <Settings className="h-5 w-5 shrink-0" />
-          Settings
-        </Link>
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 rounded-xl px-4 py-3 min-h-[48px] text-sm font-medium text-sidebar-foreground/70 transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent touch-manipulation"
-        >
-          <LogOut className="h-5 w-5 shrink-0" />
-          Logout
-        </button>
       </div>
     </>
   )

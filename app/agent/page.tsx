@@ -540,9 +540,9 @@ export default function AgentPage() {
 
                 <div className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                   <div className="max-w-4xl mx-auto">
-                    {/* Quick Actions Panel */}
+                    {/* Quick Actions Panel - Mobile Optimized */}
                     {showQuickActions && (
-                      <div className="border-b p-4">
+                      <div className="border-b p-3 sm:p-4">
                         <div className="flex items-center justify-between mb-3">
                           <h3 className="text-sm font-semibold flex items-center gap-2">
                             <Sparkles className="h-4 w-4 text-primary" />
@@ -552,17 +552,17 @@ export default function AgentPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => setShowQuickActions(false)}
-                            className="h-8"
+                            className="h-8 touch-manipulation"
                           >
                             <ChevronDown className="h-4 w-4" />
                           </Button>
                         </div>
-                        <ScrollArea className="max-h-[300px]">
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pr-4">
+                        <ScrollArea className="max-h-[60vh] sm:max-h-[300px]">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pr-2 sm:pr-4">
                             {quickActions.map((category, idx) => (
                               <div key={idx} className="space-y-2">
                                 <div className="flex items-center gap-2 mb-2">
-                                  <span className="text-lg">{category.icon}</span>
+                                  <span className="text-base sm:text-lg">{category.icon}</span>
                                   <span className="text-sm font-medium">{category.category}</span>
                                 </div>
                                 <div className="space-y-1.5">
@@ -570,7 +570,7 @@ export default function AgentPage() {
                                     <button
                                       key={actionIdx}
                                       onClick={() => handleQuickAction(action.template)}
-                                      className="w-full text-left px-3 py-2 text-sm bg-card hover:bg-accent border rounded-lg transition-all hover:shadow-sm hover:scale-[1.02]"
+                                      className="w-full text-left px-3 py-2.5 text-sm bg-card hover:bg-accent active:bg-accent border rounded-lg transition-colors touch-manipulation min-h-[44px] flex items-center"
                                       disabled={isLoading || isRecording}
                                     >
                                       {action.label}
@@ -585,59 +585,63 @@ export default function AgentPage() {
                     )}
 
                     <div className="p-4">
-                      {/* Action Buttons Row */}
-                      <div className="flex gap-2 mb-3 overflow-x-auto pb-2">
-                        <Button
-                          onClick={() => setShowQuickActions(!showQuickActions)}
-                          variant="outline"
-                          size="sm"
-                          className="flex-shrink-0"
-                          disabled={isLoading || isRecording}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Quick Actions
-                          {showQuickActions ? <ChevronDown className="h-3 w-3 ml-1" /> : <ChevronUp className="h-3 w-3 ml-1" />}
-                        </Button>
-                        {quickActions.slice(0, 5).map((category, idx) => (
+                      {/* Action Buttons Row - Mobile Optimized */}
+                      <div className="mb-3">
+                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                           <Button
-                            key={idx}
-                            onClick={() => {
-                              const firstAction = category.actions[0]
-                              if (firstAction) {
-                                handleQuickAction(firstAction.template)
-                              }
-                            }}
+                            onClick={() => setShowQuickActions(!showQuickActions)}
                             variant="outline"
                             size="sm"
-                            className="flex-shrink-0"
+                            className="flex-shrink-0 touch-manipulation min-h-[36px]"
                             disabled={isLoading || isRecording}
                           >
-                            <span className="mr-1.5">{category.icon}</span>
-                            {category.category}
+                            <Plus className="h-4 w-4 mr-1.5" />
+                            <span className="whitespace-nowrap">Quick Actions</span>
+                            {showQuickActions ? <ChevronDown className="h-3 w-3 ml-1.5" /> : <ChevronUp className="h-3 w-3 ml-1.5" />}
                           </Button>
-                        ))}
+                          <div className="hidden sm:flex gap-2">
+                            {quickActions.slice(0, 3).map((category, idx) => (
+                              <Button
+                                key={idx}
+                                onClick={() => {
+                                  const firstAction = category.actions[0]
+                                  if (firstAction) {
+                                    handleQuickAction(firstAction.template)
+                                  }
+                                }}
+                                variant="outline"
+                                size="sm"
+                                className="flex-shrink-0 touch-manipulation"
+                                disabled={isLoading || isRecording}
+                              >
+                                <span className="mr-1.5">{category.icon}</span>
+                                <span className="whitespace-nowrap">{category.category}</span>
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Input Area */}
+                      {/* Input Area - Mobile Optimized */}
                       <div className="flex gap-2 items-end">
                         <Button
                           onClick={isRecording ? stopRecording : startRecording}
                           variant={isRecording ? "destructive" : "default"}
                           size="icon"
                           disabled={isLoading}
-                          className="flex-shrink-0 h-12 w-12"
+                          className="flex-shrink-0 h-11 w-11 sm:h-12 sm:w-12 touch-manipulation"
                           title={isRecording ? "Stop recording" : "Start voice input"}
                         >
                           {isRecording ? (
-                            <MicOff className="h-6 w-6" />
+                            <MicOff className="h-5 w-5 sm:h-6 sm:w-6" />
                           ) : (
-                            <Mic className="h-6 w-6" />
+                            <Mic className="h-5 w-5 sm:h-6 sm:w-6" />
                           )}
                         </Button>
 
                         <div className="flex-1 relative">
                           <Textarea
-                            placeholder="Type or click Quick Actions above..."
+                            placeholder="Type a message or use Quick Actions..."
                             value={inputMessage}
                             onChange={(e) => setInputMessage(e.target.value)}
                             onKeyDown={(e) => {
@@ -646,14 +650,14 @@ export default function AgentPage() {
                                 sendMessage(inputMessage)
                               }
                             }}
-                            className="min-h-[52px] max-h-[200px] resize-none pr-12 rounded-2xl text-base"
+                            className="min-h-[52px] max-h-[200px] resize-none pr-12 rounded-2xl text-base touch-manipulation"
                             disabled={isLoading || isRecording}
                           />
                           <Button
                             onClick={() => sendMessage(inputMessage)}
                             disabled={!inputMessage.trim() || isLoading || isRecording}
                             size="icon"
-                            className="absolute right-2 bottom-2 h-9 w-9 rounded-lg"
+                            className="absolute right-2 bottom-2 h-9 w-9 rounded-lg touch-manipulation"
                           >
                             {isLoading ? (
                               <Loader2 className="h-5 w-5 animate-spin" />
@@ -669,16 +673,17 @@ export default function AgentPage() {
                             variant="outline"
                             size="icon"
                             disabled={isLoading}
-                            className="flex-shrink-0 h-12 w-12"
+                            className="hidden sm:flex flex-shrink-0 h-12 w-12 touch-manipulation"
                             title="Start new conversation"
                           >
                             <MessageSquare className="h-5 w-5" />
                           </Button>
                         )}
                       </div>
-                      <div className="flex items-center justify-between mt-2">
+                      <div className="flex items-center justify-between mt-2 flex-wrap gap-1">
                         <p className="text-xs text-muted-foreground">
-                          Press Enter to send • Shift+Enter for new line
+                          <span className="hidden sm:inline">Press Enter to send • Shift+Enter for new line</span>
+                          <span className="sm:hidden">Tap send or press Enter</span>
                         </p>
                         {inputMessage.includes('[') && (
                           <p className="text-xs text-orange-600 font-medium">
