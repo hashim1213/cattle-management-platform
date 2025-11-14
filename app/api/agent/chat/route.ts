@@ -265,13 +265,44 @@ export async function POST(request: NextRequest) {
     let finalMessage = assistantMessage
 
     try {
-      // Look for JSON in the response
-      const jsonMatch = assistantMessage.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        const actionData = JSON.parse(jsonMatch[0])
+      // Look for JSON in the response - improved extraction
+      let actionData = null
 
-        if (actionData.action) {
-          console.log('[Chat API] Executing action:', actionData.action, 'with params:', actionData.params)
+      // First try to parse the entire message as JSON
+      try {
+        actionData = JSON.parse(assistantMessage)
+      } catch {
+        // If that fails, try to extract JSON from the message
+        const jsonMatch = assistantMessage.match(/\{(?:[^{}]|(?:\{(?:[^{}]|(?:\{[^{}]*\}))*\}))*\}/)
+        if (jsonMatch) {
+          actionData = JSON.parse(jsonMatch[0])
+        }
+      }
+
+      if (actionData && actionData.action) {
+        console.log('[Chat API] Executing action:', actionData.action, 'with params:', actionData.params)
+
+        // Validate that params exist for actions that need them
+        const requiresParams = ![
+          'getAllCattle',
+          'getFarmSummary',
+          'getCattleCountByPen'
+        ].includes(actionData.action)
+
+        if (requiresParams && (!actionData.params || Object.keys(actionData.params).length === 0)) {
+          actionResult = {
+            success: false,
+            message: `Missing required parameters for ${actionData.action}. Please provide the necessary information.`,
+            error: 'MISSING_PARAMS'
+          }
+          finalMessage = `I need more information to ${actionData.action.replace(/([A-Z])/g, ' $1').toLowerCase()}. Please provide all the required details.`
+
+          return NextResponse.json({
+            message: finalMessage,
+            actionResult,
+            conversationId: conversationId || `conv_${Date.now()}`,
+          })
+        }
           // Execute the action
           switch (actionData.action) {
             // Inventory actions
@@ -373,8 +404,15 @@ export async function POST(request: NextRequest) {
         }
       }
     } catch (parseError) {
-      // Not a JSON response, just use the message as-is
-      console.log("[Chat API] Not an action response, using as plain message")
+      // Not a JSON response or parsing failed
+      console.log("[Chat API] JSON parsing failed or not an action response:", parseError)
+      console.log("[Chat API] Using assistant message as-is")
+
+      // If we got a parse error, it means the AI didn't format correctly
+      // Log this for debugging but continue with the message
+      if (parseError instanceof SyntaxError) {
+        console.warn("[Chat API] AI returned invalid JSON format")
+      }
     }
 
     return NextResponse.json({

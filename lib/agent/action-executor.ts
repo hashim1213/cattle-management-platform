@@ -128,6 +128,21 @@ class AgentActionExecutor {
       }
     }
 
+    // Validate required parameters
+    if (!params.name || !params.category || params.quantity === undefined || params.quantity === null || !params.unit) {
+      const missing = []
+      if (!params.name) missing.push("medication name")
+      if (!params.category) missing.push("category")
+      if (params.quantity === undefined || params.quantity === null) missing.push("quantity")
+      if (!params.unit) missing.push("unit")
+
+      return {
+        success: false,
+        message: `Missing required fields: ${missing.join(", ")}. Please provide all required information.`,
+        error: "MISSING_REQUIRED_FIELDS"
+      }
+    }
+
     try {
       const id = `inv_${Date.now()}_${Math.random().toString(36).substring(7)}`
       const now = new Date().toISOString()
@@ -831,6 +846,21 @@ class AgentActionExecutor {
       }
     }
 
+    // Validate required parameters
+    if (!params.tagNumber || !params.breed || !params.sex || params.weight === undefined || params.weight === null) {
+      const missing = []
+      if (!params.tagNumber) missing.push("tag number")
+      if (!params.breed) missing.push("breed")
+      if (!params.sex) missing.push("sex")
+      if (params.weight === undefined || params.weight === null) missing.push("weight")
+
+      return {
+        success: false,
+        message: `Missing required fields: ${missing.join(", ")}. Please provide all required information.`,
+        error: "MISSING_REQUIRED_FIELDS"
+      }
+    }
+
     try {
       const id = `cattle_${Date.now()}_${Math.random().toString(36).substring(7)}`
       const now = new Date().toISOString()
@@ -1079,6 +1109,19 @@ class AgentActionExecutor {
       }
     }
 
+    // Validate required parameters
+    if (!params.name || !params.location) {
+      const missing = []
+      if (!params.name) missing.push("barn name")
+      if (!params.location) missing.push("location")
+
+      return {
+        success: false,
+        message: `Missing required fields: ${missing.join(", ")}. Please provide all required information.`,
+        error: "MISSING_REQUIRED_FIELDS"
+      }
+    }
+
     try {
       const id = `barn_${Date.now()}_${Math.random().toString(36).substring(7)}`
       const now = new Date().toISOString()
@@ -1124,6 +1167,20 @@ class AgentActionExecutor {
         success: false,
         message: "Authentication required",
         error: "NOT_AUTHENTICATED"
+      }
+    }
+
+    // Validate required parameters
+    if (!params.name || !params.barnId || params.capacity === undefined || params.capacity === null) {
+      const missing = []
+      if (!params.name) missing.push("pen name")
+      if (!params.barnId) missing.push("barn ID")
+      if (params.capacity === undefined || params.capacity === null) missing.push("capacity")
+
+      return {
+        success: false,
+        message: `Missing required fields: ${missing.join(", ")}. Please provide all required information.`,
+        error: "MISSING_REQUIRED_FIELDS"
       }
     }
 
