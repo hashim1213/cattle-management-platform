@@ -58,6 +58,17 @@ interface AdjustParams {
   notes?: string
 }
 
+// Helper function to remove undefined values from objects before saving to Firestore
+function removeUndefined<T extends Record<string, any>>(obj: T): Partial<T> {
+  const result: any = {}
+  for (const key in obj) {
+    if (obj[key] !== undefined) {
+      result[key] = obj[key]
+    }
+  }
+  return result
+}
+
 class FirebaseInventoryService {
   private static instance: FirebaseInventoryService
   private userId: string | null = null
@@ -233,9 +244,9 @@ class FirebaseInventoryService {
       updatedAt: new Date().toISOString()
     })
 
-    // Add transaction
+    // Add transaction (remove undefined values)
     const transRef = doc(db, `users/${userId}/inventoryTransactions`, transactionId)
-    batch.set(transRef, transaction)
+    batch.set(transRef, removeUndefined(transaction))
 
     // Commit batch
     await batch.commit()
@@ -294,7 +305,7 @@ class FirebaseInventoryService {
     })
 
     const transRef = doc(db, `users/${userId}/inventoryTransactions`, transactionId)
-    batch.set(transRef, transaction)
+    batch.set(transRef, removeUndefined(transaction))
 
     await batch.commit()
 
@@ -348,7 +359,7 @@ class FirebaseInventoryService {
     })
 
     const transRef = doc(db, `users/${userId}/inventoryTransactions`, transactionId)
-    batch.set(transRef, transaction)
+    batch.set(transRef, removeUndefined(transaction))
 
     await batch.commit()
 
@@ -408,8 +419,11 @@ class FirebaseInventoryService {
       updatedAt: new Date().toISOString()
     }
 
+    // Remove undefined values before saving to Firestore
+    const cleanedItem = removeUndefined(newItem)
+
     const itemRef = doc(db, `users/${userId}/inventory`, itemId)
-    await setDoc(itemRef, newItem)
+    await setDoc(itemRef, cleanedItem)
 
     return newItem
   }
@@ -428,11 +442,14 @@ class FirebaseInventoryService {
       delete updates.quantityOnHand
     }
 
-    const itemRef = doc(db, `users/${userId}/inventory`, itemId)
-    await updateDoc(itemRef, {
+    // Remove undefined values before saving to Firestore
+    const cleanedUpdates = removeUndefined({
       ...updates,
       updatedAt: new Date().toISOString()
     })
+
+    const itemRef = doc(db, `users/${userId}/inventory`, itemId)
+    await updateDoc(itemRef, cleanedUpdates)
 
     return { ...item, ...updates, updatedAt: new Date().toISOString() }
   }
