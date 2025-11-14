@@ -303,8 +303,9 @@ export async function POST(request: NextRequest) {
             conversationId: conversationId || `conv_${Date.now()}`,
           })
         }
-          // Execute the action
-          switch (actionData.action) {
+
+        // Execute the action
+        switch (actionData.action) {
             // Inventory actions
             case "addMedication":
               actionResult = await actionExecutor.addMedication(userId, actionData.params)
@@ -378,29 +379,28 @@ export async function POST(request: NextRequest) {
                 success: false,
                 message: `Unknown action: ${actionData.action}`,
               }
+        }
+
+        console.log('[Chat API] Action result:', {
+          action: actionData.action,
+          success: actionResult?.success,
+          message: actionResult?.message,
+          error: actionResult?.error
+        })
+
+        // If action was successful, format response based on action type
+        if (actionResult && actionResult.success) {
+          // Use AI-generated message or fallback to action result
+          finalMessage = actionData.message || actionResult.message
+
+          // For query actions, format the data in a user-friendly way
+          if (actionData.action.startsWith("get") && actionResult.data) {
+            finalMessage = await formatQueryResponse(actionData.action, actionResult.data, actionData.message)
           }
-
-          console.log('[Chat API] Action result:', {
-            action: actionData.action,
-            success: actionResult?.success,
-            message: actionResult?.message,
-            error: actionResult?.error
-          })
-
-          // If action was successful, format response based on action type
-          if (actionResult && actionResult.success) {
-            // Use AI-generated message or fallback to action result
-            finalMessage = actionData.message || actionResult.message
-
-            // For query actions, format the data in a user-friendly way
-            if (actionData.action.startsWith("get") && actionResult.data) {
-              finalMessage = await formatQueryResponse(actionData.action, actionResult.data, actionData.message)
-            }
-            console.log('[Chat API] Action successful, formatted message length:', finalMessage.length)
-          } else if (actionResult && !actionResult.success) {
-            finalMessage = `Sorry, I encountered an error: ${actionResult.message || actionResult.error}`
-            console.error('[Chat API] Action failed:', finalMessage)
-          }
+          console.log('[Chat API] Action successful, formatted message length:', finalMessage.length)
+        } else if (actionResult && !actionResult.success) {
+          finalMessage = `Sorry, I encountered an error: ${actionResult.message || actionResult.error}`
+          console.error('[Chat API] Action failed:', finalMessage)
         }
       }
     } catch (parseError) {
