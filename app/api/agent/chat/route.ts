@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import OpenAI from "openai"
 import { actionExecutor } from "@/lib/agent/action-executor"
+import { FarmContextBuilder } from "@/lib/ai/farm-context-builder"
 
 const SYSTEM_PROMPT = `You are a proactive, friendly Farm Assistant for a cattle management platform. Your goal is to make farm management as EASY and CONVERSATIONAL as possible. Guide farmers through tasks naturally.
 
@@ -268,19 +269,54 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Build comprehensive farm context for AI intelligence
+    console.log('[Chat API] Building farm context...')
+    const contextBuilder = new FarmContextBuilder(userId)
+    const farmContext = await contextBuilder.buildContext()
+    console.log('[Chat API] Farm context built:', {
+      cattle: farmContext.cattle.total,
+      pens: farmContext.pens.total,
+      inventory: farmContext.inventory.total
+    })
+
+    // Create enhanced system prompt with farm context
+    const enhancedSystemPrompt = `${SYSTEM_PROMPT}
+
+CURRENT FARM STATUS & CONTEXT:
+${farmContext.summary}
+
+Detailed Farm Data:
+- Cattle: ${farmContext.cattle.total} total (Avg weight: ${farmContext.cattle.avgWeight} lbs)
+  Status breakdown: ${JSON.stringify(farmContext.cattle.byStatus)}
+  Pen distribution: ${JSON.stringify(farmContext.cattle.byPen)}
+  ${farmContext.cattle.healthIssues.length > 0 ? `Health issues: ${farmContext.cattle.healthIssues.map((h: any) => `#${h.tagNumber} (${h.status})`).join(", ")}` : "No health issues"}
+
+- Pens: ${farmContext.pens.total} total, ${farmContext.pens.utilization}% utilized
+  ${farmContext.pens.overcrowded.length > 0 ? `Overcrowded: ${farmContext.pens.overcrowded.map((p: any) => p.name).join(", ")}` : ""}
+  ${farmContext.pens.empty.length > 0 ? `Empty pens: ${farmContext.pens.empty.map((p: any) => p.name).join(", ")}` : ""}
+
+- Inventory: ${farmContext.inventory.total} items (Total value: $${farmContext.inventory.totalValue})
+  ${farmContext.inventory.lowStock.length > 0 ? `LOW STOCK: ${farmContext.inventory.lowStock.map((i: any) => `${i.name} (${i.quantity} ${i.unit})`).join(", ")}` : "All items well-stocked"}
+
+- Recent Activity:
+  ${farmContext.cattle.recentAdditions.length > 0 ? `Recent cattle additions: ${farmContext.cattle.recentAdditions.slice(0, 3).map((c: any) => `#${c.tagNumber}`).join(", ")}` : "No recent additions"}
+  ${farmContext.health.recentTreatments.length > 0 ? `Recent treatments: ${farmContext.health.recentTreatments.slice(0, 3).map((t: any) => `#${t.cattleTag} (${t.medication})`).join(", ")}` : ""}
+
+Use this context to provide intelligent, informed responses. You know EVERYTHING about this farm!`
+
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     })
 
-    // Call OpenAI
+    // Call OpenAI with enhanced context
     const completion = await openai.chat.completions.create({
       model: "gpt-4-turbo-preview",
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: enhancedSystemPrompt },
         ...messages
       ],
       temperature: 0.7,
-      max_tokens: 1000,
+      max_tokens: 1500,
     })
 
     const assistantMessage = completion.choices[0].message.content || ""
