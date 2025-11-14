@@ -128,18 +128,12 @@ class AgentActionExecutor {
       }
     }
 
-    // Validate required parameters
-    if (!params.name || !params.category || params.quantity === undefined || params.quantity === null || !params.unit) {
-      const missing = []
-      if (!params.name) missing.push("medication name")
-      if (!params.category) missing.push("category")
-      if (params.quantity === undefined || params.quantity === null) missing.push("quantity")
-      if (!params.unit) missing.push("unit")
-
+    // Require at minimum a name
+    if (!params.name) {
       return {
         success: false,
-        message: `Missing required fields: ${missing.join(", ")}. Please provide all required information.`,
-        error: "MISSING_REQUIRED_FIELDS"
+        message: "Please provide a medication name",
+        error: "MISSING_NAME"
       }
     }
 
@@ -147,17 +141,22 @@ class AgentActionExecutor {
       const id = `inv_${Date.now()}_${Math.random().toString(36).substring(7)}`
       const now = new Date().toISOString()
 
+      // Use smart defaults for missing fields
+      const category = params.category || "antibiotic"
+      const quantity = params.quantity !== undefined && params.quantity !== null ? params.quantity : 1
+      const unit = params.unit || "ml"
+
       const inventoryItem: InventoryItem = {
         id,
         name: params.name,
-        category: params.category as any,
-        quantityOnHand: params.quantity,
-        unit: params.unit as any,
+        category: category as any,
+        quantityOnHand: quantity,
+        unit: unit as any,
         reorderPoint: 0,
         reorderQuantity: 0,
         lowStockAlertSent: false,
         costPerUnit: params.costPerUnit || 0,
-        totalValue: (params.costPerUnit || 0) * params.quantity,
+        totalValue: (params.costPerUnit || 0) * quantity,
         withdrawalPeriod: params.withdrawalPeriod,
         storageLocation: params.storageLocation || "Main Storage",
         notes: params.notes,
@@ -176,11 +175,11 @@ class AgentActionExecutor {
         itemName: params.name,
         type: "purchase",
         quantityBefore: 0,
-        quantityChange: params.quantity,
-        quantityAfter: params.quantity,
-        unit: params.unit as any,
+        quantityChange: quantity,
+        quantityAfter: quantity,
+        unit: unit as any,
         costPerUnit: params.costPerUnit || 0,
-        costImpact: (params.costPerUnit || 0) * params.quantity,
+        costImpact: (params.costPerUnit || 0) * quantity,
         reason: "Added via Farm Assistant",
         performedBy: userId,
         timestamp: now
@@ -191,7 +190,7 @@ class AgentActionExecutor {
 
       return {
         success: true,
-        message: `Successfully added ${params.quantity} ${params.unit} of ${params.name} to inventory`,
+        message: `Successfully added ${quantity} ${unit} of ${params.name} to inventory`,
         data: inventoryItem
       }
     } catch (error: any) {
@@ -846,36 +845,27 @@ class AgentActionExecutor {
       }
     }
 
-    // Validate required parameters
-    if (!params.tagNumber || !params.breed || !params.sex || params.weight === undefined || params.weight === null) {
-      const missing = []
-      if (!params.tagNumber) missing.push("tag number")
-      if (!params.breed) missing.push("breed")
-      if (!params.sex) missing.push("sex")
-      if (params.weight === undefined || params.weight === null) missing.push("weight")
-
-      return {
-        success: false,
-        message: `Missing required fields: ${missing.join(", ")}. Please provide all required information.`,
-        error: "MISSING_REQUIRED_FIELDS"
-      }
-    }
-
     try {
       const id = `cattle_${Date.now()}_${Math.random().toString(36).substring(7)}`
       const now = new Date().toISOString()
 
+      // Use smart defaults for missing fields
+      const tagNumber = params.tagNumber || `AUTO_${Math.random().toString().slice(2, 6)}`
+      const breed = params.breed || "Mixed"
+      const sex = (params.sex || "Unknown") as any
+      const weight = params.weight !== undefined && params.weight !== null ? params.weight : 0
+
       const cattle: Cattle = {
         id,
-        tagNumber: params.tagNumber,
+        tagNumber: tagNumber,
         name: params.name,
-        breed: params.breed,
-        sex: params.sex,
+        breed: breed,
+        sex: sex,
         birthDate: params.birthDate,
         purchaseDate: params.purchaseDate,
         purchasePrice: params.purchasePrice,
         purchaseWeight: params.purchaseWeight,
-        weight: params.weight,
+        weight: weight,
         penId: params.penId,
         barnId: params.barnId,
         batchId: params.batchId,
@@ -897,7 +887,7 @@ class AgentActionExecutor {
 
       return {
         success: true,
-        message: `Successfully added cattle #${params.tagNumber}`,
+        message: `Successfully added cattle #${tagNumber}`,
         data: cattle
       }
     } catch (error: any) {
@@ -1109,16 +1099,12 @@ class AgentActionExecutor {
       }
     }
 
-    // Validate required parameters
-    if (!params.name || !params.location) {
-      const missing = []
-      if (!params.name) missing.push("barn name")
-      if (!params.location) missing.push("location")
-
+    // Require at minimum a name
+    if (!params.name) {
       return {
         success: false,
-        message: `Missing required fields: ${missing.join(", ")}. Please provide all required information.`,
-        error: "MISSING_REQUIRED_FIELDS"
+        message: "Please provide a barn name",
+        error: "MISSING_NAME"
       }
     }
 
@@ -1126,10 +1112,13 @@ class AgentActionExecutor {
       const id = `barn_${Date.now()}_${Math.random().toString(36).substring(7)}`
       const now = new Date().toISOString()
 
+      // Use smart default for location
+      const location = params.location || "Main Area"
+
       const barn = {
         id,
         name: params.name,
-        location: params.location,
+        location: location,
         totalPens: 0,
         totalCapacity: 0,
         notes: params.notes,
@@ -1170,17 +1159,12 @@ class AgentActionExecutor {
       }
     }
 
-    // Validate required parameters
-    if (!params.name || !params.barnId || params.capacity === undefined || params.capacity === null) {
-      const missing = []
-      if (!params.name) missing.push("pen name")
-      if (!params.barnId) missing.push("barn ID")
-      if (params.capacity === undefined || params.capacity === null) missing.push("capacity")
-
+    // Require at minimum a name
+    if (!params.name) {
       return {
         success: false,
-        message: `Missing required fields: ${missing.join(", ")}. Please provide all required information.`,
-        error: "MISSING_REQUIRED_FIELDS"
+        message: "Please provide a pen name",
+        error: "MISSING_NAME"
       }
     }
 
@@ -1188,11 +1172,14 @@ class AgentActionExecutor {
       const id = `pen_${Date.now()}_${Math.random().toString(36).substring(7)}`
       const now = new Date().toISOString()
 
+      // Use smart defaults
+      const capacity = params.capacity !== undefined && params.capacity !== null ? params.capacity : 50
+
       const pen = {
         id,
         name: params.name,
         barnId: params.barnId,
-        capacity: params.capacity,
+        capacity: capacity,
         currentCount: 0,
         notes: params.notes,
         createdAt: now,
@@ -1207,7 +1194,7 @@ class AgentActionExecutor {
 
       return {
         success: true,
-        message: `Successfully added pen "${params.name}" with capacity ${params.capacity}`,
+        message: `Successfully added pen "${params.name}" with capacity ${capacity}`,
         data: pen
       }
     } catch (error: any) {
