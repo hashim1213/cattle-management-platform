@@ -105,7 +105,7 @@ export default function DashboardPage() {
   const [stageCounts, setStageCounts] = useState<Record<string, number>>({})
   const { stages, reorderStages, loading: stagesLoading } = useLifecycleConfig()
   const { isSetupCompleted, cattlePricePerLb } = useFarmSettings()
-  const { analytics, loading: analyticsLoading, loadAnalytics } = useAnalyticsCache(cattlePricePerLb)
+  const { analytics, loading: analyticsLoading, refreshData } = useAnalyticsCache(cattlePricePerLb)
   const router = useRouter()
   const [isQuickFeedOpen, setIsQuickFeedOpen] = useState(false)
   const [isQuickMedsOpen, setIsQuickMedsOpen] = useState(false)
@@ -144,8 +144,8 @@ export default function DashboardPage() {
 
     const loadData = async () => {
       try {
-        // Load analytics using cache (handled by useAnalyticsCache hook)
-        const data = await loadAnalytics()
+        // Refresh analytics (bypass cache to get latest data)
+        const data = await refreshData()
 
         // Get all cattle data
         const cattle = await firebaseDataStore.getCattle()
@@ -190,15 +190,13 @@ export default function DashboardPage() {
       }
     }
 
-    loadData()
-
     // Subscribe to data changes
     const unsubscribe = firebaseDataStore.subscribe(() => {
       loadData()
     })
 
     return () => unsubscribe()
-  }, [user, authLoading, cattlePricePerLb, loadAnalytics])
+  }, [user, authLoading, refreshData])
 
   const handleExportCattle = async () => {
     const cattle = await firebaseDataStore.getCattle()
