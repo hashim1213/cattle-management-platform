@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { TrendingUp, Package, DollarSign, Plus, Download, Sprout, MapPin, FileText, Utensils, MessageSquare, Loader2 } from "lucide-react"
+import { TrendingUp, Package, DollarSign, Plus, Download, Sprout, MapPin, FileText, Utensils, MessageSquare, Loader2, Pill } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { AlertCard } from "@/components/alert-card"
@@ -9,6 +9,8 @@ import { MetricCard } from "@/components/metric-card"
 import { LifecycleSettingsDialog } from "@/components/lifecycle-settings-dialog"
 import { FeedMetricsCard } from "@/components/feed-metrics-card"
 import { PenUtilizationCard } from "@/components/pen-utilization-card"
+import { QuickAddFeedDialog } from "@/components/quick-add-feed-dialog"
+import { QuickAddMedsDialog } from "@/components/quick-add-meds-dialog"
 import { useLifecycleConfig } from "@/hooks/use-lifecycle-config"
 import { useFarmSettings } from "@/hooks/use-farm-settings"
 import { useAuth } from "@/contexts/auth-context"
@@ -105,6 +107,8 @@ export default function DashboardPage() {
   const { isSetupCompleted, cattlePricePerLb } = useFarmSettings()
   const { analytics, loading: analyticsLoading, loadAnalytics } = useAnalyticsCache(cattlePricePerLb)
   const router = useRouter()
+  const [isQuickFeedOpen, setIsQuickFeedOpen] = useState(false)
+  const [isQuickMedsOpen, setIsQuickMedsOpen] = useState(false)
 
   // Onboarding disabled for now - users go straight to dashboard
   // useEffect(() => {
@@ -341,17 +345,32 @@ export default function DashboardPage() {
           </Card>
         </section>
 
-        {/* Alerts */}
-        {alerts.length > 0 && (
-          <section>
-            <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-foreground">Status Alerts</h2>
-            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {alerts.map((alert) => (
-                <AlertCard key={alert.id} {...alert} />
-              ))}
-            </div>
-          </section>
-        )}
+        {/* Quick Add Feed & Meds */}
+        <section>
+          <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-foreground">Quick Actions</h2>
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
+            <Card
+              className="hover:bg-muted/50 active:bg-muted transition-colors cursor-pointer h-full"
+              onClick={() => setIsQuickFeedOpen(true)}
+            >
+              <CardContent className="p-6 text-center min-h-[140px] flex flex-col items-center justify-center">
+                <Utensils className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 text-primary flex-shrink-0" />
+                <h3 className="font-semibold text-lg mb-1">Quick Add Feed</h3>
+                <p className="text-sm text-muted-foreground">Quickly allocate feed to a pen</p>
+              </CardContent>
+            </Card>
+            <Card
+              className="hover:bg-muted/50 active:bg-muted transition-colors cursor-pointer h-full"
+              onClick={() => setIsQuickMedsOpen(true)}
+            >
+              <CardContent className="p-6 text-center min-h-[140px] flex flex-col items-center justify-center">
+                <Pill className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 text-primary flex-shrink-0" />
+                <h3 className="font-semibold text-lg mb-1">Quick Add Meds</h3>
+                <p className="text-sm text-muted-foreground">Quickly administer medication to a pen</p>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
 
         {/* Key Metrics */}
         <section>
@@ -372,9 +391,9 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* Quick Actions */}
+        {/* Management Links */}
         <section>
-          <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-foreground">Quick Actions</h2>
+          <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-foreground">Management</h2>
           <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
             <Link href="/cattle" className="touch-manipulation">
               <Card className="hover:bg-muted/50 active:bg-muted transition-colors cursor-pointer h-full">
@@ -415,6 +434,10 @@ export default function DashboardPage() {
           </div>
         </section>
       </main>
+
+      {/* Quick Add Dialogs */}
+      <QuickAddFeedDialog open={isQuickFeedOpen} onOpenChange={setIsQuickFeedOpen} />
+      <QuickAddMedsDialog open={isQuickMedsOpen} onOpenChange={setIsQuickMedsOpen} />
     </div>
   )
 }
