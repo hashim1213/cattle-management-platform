@@ -62,9 +62,14 @@ export function PenOverviewCard() {
     return cattle.length
   }, [cattle])
 
-  const profit = projectedRevenue - totalSpent
-  const roi = totalSpent > 0 ? (profit / totalSpent) * 100 : 0
-  const profitColor = profit >= 0 ? "text-green-600" : "text-red-600"
+  const totalPurchasePrice = useMemo(() => {
+    return cattle.reduce((sum, c) => {
+      return sum + (c.purchasePrice || 0)
+    }, 0)
+  }, [cattle])
+
+  const estimatedProfit = projectedRevenue - totalPurchasePrice - totalSpent
+  const profitColor = estimatedProfit >= 0 ? "text-green-600" : "text-red-600"
 
   return (
     <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
@@ -125,24 +130,24 @@ export function PenOverviewCard() {
         </CardContent>
       </Card>
 
-      {/* ROI */}
+      {/* Estimated Profit */}
       <Card className="touch-manipulation">
         <CardContent className="p-4 sm:p-6">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
               <p className={`text-3xl sm:text-4xl font-bold mb-1 sm:mb-2 ${profitColor}`}>
-                {roi >= 0 ? "+" : ""}{roi.toFixed(1)}%
+                {estimatedProfit >= 0 ? "+" : "-"}${Math.abs(estimatedProfit).toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </p>
-              <p className="text-base sm:text-lg font-semibold text-foreground mb-1">ROI</p>
-              <p className={`text-sm ${profitColor}`}>
-                {profit >= 0 ? "+" : "-"}${Math.abs(profit).toLocaleString(undefined, { maximumFractionDigits: 0 })} profit
+              <p className="text-base sm:text-lg font-semibold text-foreground mb-1">Est. Profit/Loss</p>
+              <p className="text-sm text-muted-foreground">
+                Revenue - Purchase - Costs
               </p>
             </div>
             <div className={`relative w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 rounded-full flex items-center justify-center ${
-              profit >= 0 ? "bg-green-100" : "bg-red-100"
+              estimatedProfit >= 0 ? "bg-green-100" : "bg-red-100"
             }`}>
-              {profit >= 0 ? (
-                <TrendingUp className={`h-6 w-6 sm:h-7 sm:w-7 ${profit >= 0 ? "text-green-600" : "text-red-600"}`} />
+              {estimatedProfit >= 0 ? (
+                <TrendingUp className={`h-6 w-6 sm:h-7 sm:w-7 ${estimatedProfit >= 0 ? "text-green-600" : "text-red-600"}`} />
               ) : (
                 <TrendingDown className="h-6 w-6 sm:h-7 sm:w-7 text-red-600" />
               )}

@@ -30,16 +30,16 @@ export function MetricCard({ title, value, change, trend, icon: Icon }: MetricCa
 
   return (
     <Card>
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Icon className="h-5 w-5 text-primary" />
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
           </div>
-          <TrendIcon className={cn("h-4 w-4", trendConfig[trend].color)} />
+          <TrendIcon className={cn("h-4 w-4 flex-shrink-0", trendConfig[trend].color)} />
         </div>
         <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">{title}</p>
-          <p className="text-2xl font-bold text-foreground">{value}</p>
+          <p className="text-xs sm:text-sm text-muted-foreground">{title}</p>
+          <p className="text-xl sm:text-2xl font-bold text-foreground break-all">{value}</p>
           <p className="text-xs text-muted-foreground">{change}</p>
         </div>
       </CardContent>
