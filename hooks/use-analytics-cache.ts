@@ -112,6 +112,11 @@ export function useAnalyticsCache(cattlePricePerLb: number) {
     return loadAnalytics(false)
   }, [loadAnalytics])
 
+  // Auto-load analytics on mount and when cattlePricePerLb changes
+  useEffect(() => {
+    loadAnalytics()
+  }, [cattlePricePerLb, loadAnalytics])
+
   return {
     analytics,
     loading,
