@@ -1,0 +1,279 @@
+"use client"
+
+import { useState } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Upload, FileText, X } from "lucide-react"
+import { otherCostsService, type OtherCostInput, type OtherCost } from "@/lib/other-costs-service"
+import { useAuth } from "@/contexts/auth-context"
+import { useToast } from "@/hooks/use-toast"
+
+interface AddOtherCostDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSuccess: () => void
+}
+
+const CATEGORY_OPTIONS: { value: OtherCost["category"]; label: string; description: string }[] = [
+  { value: "labour", label: "Labour", description: "Wages and employee costs" },
+  { value: "utilities", label: "Utilities", description: "Water, electricity, gas" },
+  { value: "equipment", label: "Equipment", description: "Tools, machinery purchases" },
+  { value: "maintenance", label: "Maintenance", description: "Repairs and upkeep" },
+  { value: "transportation", label: "Transportation", description: "Fuel, vehicle costs" },
+  { value: "insurance", label: "Insurance", description: "Farm insurance premiums" },
+  { value: "taxes", label: "Property Taxes", description: "Land and property taxes" },
+  { value: "veterinary", label: "Veterinary Services", description: "Vet visits and services" },
+  { value: "other", label: "Other", description: "Miscellaneous expenses" },
+]
+
+export function AddOtherCostDialog({ open, onOpenChange, onSuccess }: AddOtherCostDialogProps) {
+  const { user } = useAuth()
+  const { toast } = useToast()
+  const [loading, setLoading] = useState(false)
+
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0])
+  const [category, setCategory] = useState<OtherCost["category"]>("labour")
+  const [description, setDescription] = useState("")
+  const [amount, setAmount] = useState("")
+  const [payee, setPayee] = useState("")
+  const [notes, setNotes] = useState("")
+  const [invoiceFile, setInvoiceFile] = useState<File | null>(null)
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate file type
+      const validTypes = ["image/jpeg", "image/jpg", "image/png", "application/pdf"]
+      if (!validTypes.includes(file.type)) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload a PDF or image file (JPG, PNG)",
+          variant: "destructive",
+        })
+        return
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please upload a file smaller than 5MB",
+          variant: "destructive",
+        })
+        return
+      }
+
+      setInvoiceFile(file)
+    }
+  }
+
+  const handleSubmit = async () => {
+    if (!user) return
+
+    if (!description || !amount) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (Number(amount) <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Amount must be greater than 0",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      const costInput: OtherCostInput = {
+        date,
+        category,
+        description,
+        amount: Number(amount),
+        payee: payee || undefined,
+        notes: notes || undefined,
+      }
+
+      await otherCostsService.addCost(user.uid, costInput, invoiceFile || undefined)
+
+      toast({
+        title: "Cost added",
+        description: "The cost record has been added successfully",
+      })
+
+      // Reset form
+      setDate(new Date().toISOString().split("T")[0])
+      setCategory("labour")
+      setDescription("")
+      setAmount("")
+      setPayee("")
+      setNotes("")
+      setInvoiceFile(null)
+
+      onSuccess()
+    } catch (error) {
+      console.error("Failed to add cost:", error)
+      toast({
+        title: "Error",
+        description: "Failed to add cost. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Add Operating Cost</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="date">Date *</Label>
+              <Input
+                id="date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="amount">Amount ($) *</Label>
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                placeholder="150.00"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="category">Category *</Label>
+            <Select value={category} onValueChange={(val) => setCategory(val as OtherCost["category"])}>
+              <SelectTrigger id="category">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORY_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{option.label}</span>
+                      <span className="text-xs text-muted-foreground">{option.description}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Description *</Label>
+            <Input
+              id="description"
+              placeholder="e.g., Weekly wages for 2 workers"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="payee">Paid To (Optional)</Label>
+            <Input
+              id="payee"
+              placeholder="e.g., John Smith, ABC Equipment Co."
+              value={payee}
+              onChange={(e) => setPayee(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes (Optional)</Label>
+            <Textarea
+              id="notes"
+              placeholder="Any additional details..."
+              rows={3}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="invoice">Invoice/Receipt (Optional)</Label>
+            <div className="border-2 border-dashed rounded-lg p-4">
+              {invoiceFile ? (
+                <div className="flex items-center justify-between bg-muted p-3 rounded">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">{invoiceFile.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(invoiceFile.size / 1024).toFixed(0)} KB
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setInvoiceFile(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <label htmlFor="invoice" className="cursor-pointer">
+                  <div className="flex flex-col items-center justify-center py-4">
+                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-sm font-medium text-foreground">
+                      Click to upload invoice or receipt
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      PDF or Image (JPG, PNG) • Max 5MB
+                    </p>
+                  </div>
+                  <input
+                    id="invoice"
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={handleFileChange}
+                  />
+                </label>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit} disabled={loading}>
+              {loading ? "Adding..." : "Add Cost"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}

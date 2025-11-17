@@ -13,12 +13,12 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
-  { name: "Cattle", href: "/cattle", icon: Beef },
+  { name: "My Cattle", href: "/cattle", icon: Beef },
   { name: "Pens & Barns", href: "/pens", icon: Warehouse },
-  { name: "Farm Assistant", href: "/agent", icon: MessageSquare },
-  { name: "Inventory", href: "/inventory", icon: Package2 },
-  { name: "Rations", href: "/rations", icon: Calculator },
-  { name: "Financial", href: "/costs", icon: DollarSign },
+  { name: "Ask AI Helper", href: "/agent", icon: MessageSquare },
+  { name: "Supplies", href: "/inventory", icon: Package2 },
+  { name: "Feed Planning", href: "/rations", icon: Calculator },
+  { name: "Costs & Money", href: "/costs", icon: DollarSign },
 ]
 
 const adminNavigation = []

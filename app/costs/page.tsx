@@ -6,6 +6,7 @@ import { CostBreakdownChart } from "@/components/cost-breakdown-chart"
 import { CostPerHeadTable } from "@/components/cost-per-head-table"
 import { CostOfGainChart } from "@/components/cost-of-gain-chart"
 import { TreatmentCostsCard } from "@/components/treatment-costs-card"
+import { OtherCostsCard } from "@/components/other-costs-card"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { firebaseDataStore } from "@/lib/data-store-firebase"
@@ -239,7 +240,8 @@ export default function CostsPage() {
               <Link href="/" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground mb-1 block touch-manipulation">
                 ← Back
               </Link>
-              <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">Cost Tracking</h1>
+              <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">Costs & Expenses</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">Track all your farm costs and see your profit projections</p>
             </div>
           </div>
         </div>
@@ -300,6 +302,9 @@ export default function CostsPage() {
 
         {/* Treatment Costs */}
         <TreatmentCostsCard />
+
+        {/* Operating Costs (Labour, Utilities, etc.) */}
+        <OtherCostsCard />
 
         {/* Cost Per Head Table */}
         <Card>

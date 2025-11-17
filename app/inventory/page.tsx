@@ -236,7 +236,8 @@ export default function InventoryPage() {
               <Link href="/" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground mb-1 block touch-manipulation">
                 ← Back
               </Link>
-              <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">Inventory</h1>
+              <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">Supplies</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">Manage your feed, medications, and supplies</p>
             </div>
             <div className="flex gap-2 flex-shrink-0">
               <Button
