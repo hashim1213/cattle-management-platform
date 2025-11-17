@@ -30,11 +30,8 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
     <>
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6">
-        <div className="relative h-10 w-10">
-          <Image src="/images/logo.png" alt="CattleOS Logo" fill className="object-contain" />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold text-sidebar-foreground">CattleOS</h1>
+        <div className="relative h-10 w-40">
+          <Image src="/cattleos_logo_white.png" alt="CattleOS Logo" fill className="object-contain" />
         </div>
       </div>
 
@@ -126,10 +123,9 @@ export function AppSidebar() {
           </SheetContent>
         </Sheet>
         <div className="ml-3 flex items-center gap-2 flex-1">
-          <div className="relative h-8 w-8 flex-shrink-0">
-            <Image src="/images/logo.png" alt="CattleOS Logo" fill className="object-contain" />
+          <div className="relative h-8 w-32 flex-shrink-0">
+            <Image src="/cattleos_logo_white.png" alt="CattleOS Logo" fill className="object-contain" />
           </div>
-          <h1 className="text-base sm:text-lg font-bold text-sidebar-foreground truncate">CattleOS</h1>
         </div>
       </div>
 
