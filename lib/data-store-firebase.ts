@@ -372,11 +372,29 @@ class FirebaseDataStore {
       ? Math.round(activeCattle.reduce((sum, c) => sum + (c.weight || 0), 0) / activeCattleCount)
       : 0
 
-    // Calculate average daily gain
-    const cattleWithGain = activeCattle.filter(c => (c.weight || 0) > 0 && (c.arrivalWeight || 0) > 0 && (c.daysOnFeed || 0) > 0)
+    // Helper function to calculate days on feed
+    const calculateDaysOnFeed = (cattle: any): number => {
+      const startDate = cattle.arrivalDate || cattle.purchaseDate
+      if (!startDate) return 0
+
+      const start = new Date(startDate)
+      const today = new Date()
+      const diffTime = Math.abs(today.getTime() - start.getTime())
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      return diffDays
+    }
+
+    // Calculate average daily gain using calculated daysOnFeed
+    const cattleWithGain = activeCattle.filter(c => {
+      const daysOnFeed = calculateDaysOnFeed(c)
+      return (c.weight || 0) > 0 && (c.arrivalWeight || c.purchaseWeight || 0) > 0 && daysOnFeed > 0
+    })
+
     const avgDailyGain = cattleWithGain.length > 0
       ? cattleWithGain.reduce((sum, c) => {
-          const gain = ((c.weight || 0) - (c.arrivalWeight || 0)) / (c.daysOnFeed || 1)
+          const daysOnFeed = calculateDaysOnFeed(c)
+          const startWeight = c.arrivalWeight || c.purchaseWeight || 0
+          const gain = ((c.weight || 0) - startWeight) / daysOnFeed
           return sum + gain
         }, 0) / cattleWithGain.length
       : 0
@@ -386,10 +404,22 @@ class FirebaseDataStore {
       return sum + ((c.weight || 0) * marketPricePerLb)
     }, 0)
 
-    // Calculate total inventory value (purchase price + costs)
+    // Get health record costs for all cattle
+    let totalHealthCosts = 0
+    for (const c of activeCattle) {
+      try {
+        const healthRecords = await this.getHealthRecords(c.id)
+        totalHealthCosts += healthRecords.reduce((sum, record) => sum + (record.cost || 0), 0)
+      } catch (error) {
+        // Continue if health records can't be loaded
+      }
+    }
+
+    // Calculate total inventory value (purchase price + health costs)
+    // Note: Feed costs are stored separately in localStorage and not included here
     const totalInventoryValue = activeCattle.reduce((sum, c) => {
       return sum + (c.purchasePrice || 0)
-    }, 0)
+    }, 0) + totalHealthCosts
 
     // Calculate cost per head
     const costPerHead = activeCattleCount > 0
