@@ -106,79 +106,14 @@ class TreatmentStore {
   }
 
   private load() {
-    if (typeof window === "undefined") return
-
-    const treatmentsData = localStorage.getItem("treatments")
-    if (treatmentsData) {
-      this.treatments = JSON.parse(treatmentsData)
-    }
-
-    const mortalityData = localStorage.getItem("mortalityRecords")
-    if (mortalityData) {
-      this.mortalityRecords = JSON.parse(mortalityData)
-    }
-
-    const productsData = localStorage.getItem("treatmentProducts")
-    if (productsData) {
-      this.products = JSON.parse(productsData)
-    } else {
-      // Initialize with sample products
-      this.products = [
-        {
-          id: "tp-1",
-          productName: "Ivermectin Pour-On",
-          manufacturer: "Boehringer Ingelheim",
-          treatmentType: "dewormer",
-          quantityOnHand: 10,
-          unit: "liter",
-          costPerUnit: 45.00,
-          expirationDate: "2026-06-30",
-          withdrawalPeriodDays: 35,
-          dosageGuidelines: "1 mL per 22 lbs body weight",
-          storageLocation: "Medicine Cabinet A",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "tp-2",
-          productName: "CyLence Pour-On",
-          manufacturer: "Bayer",
-          treatmentType: "lice-treatment",
-          quantityOnHand: 8,
-          unit: "liter",
-          costPerUnit: 52.00,
-          expirationDate: "2026-08-15",
-          withdrawalPeriodDays: 0,
-          dosageGuidelines: "1 mL per 10 lbs body weight",
-          storageLocation: "Medicine Cabinet A",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "tp-3",
-          productName: "Draxxin Injectable",
-          manufacturer: "Zoetis",
-          treatmentType: "antibiotic",
-          quantityOnHand: 5,
-          unit: "100mL bottle",
-          costPerUnit: 125.00,
-          expirationDate: "2025-12-31",
-          withdrawalPeriodDays: 18,
-          dosageGuidelines: "1.1 mL per 110 lbs body weight",
-          storageLocation: "Refrigerator",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ]
-      this.save()
-    }
+    // Removed localStorage caching for realtime data loading
+    this.treatments = []
+    this.mortalityRecords = []
+    this.products = []
   }
 
   private save() {
-    if (typeof window === "undefined") return
-    localStorage.setItem("treatments", JSON.stringify(this.treatments))
-    localStorage.setItem("mortalityRecords", JSON.stringify(this.mortalityRecords))
-    localStorage.setItem("treatmentProducts", JSON.stringify(this.products))
+    // Removed localStorage caching for realtime data loading
     this.notify()
   }
 

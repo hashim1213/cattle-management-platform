@@ -48,33 +48,14 @@ class PairsStore {
   }
 
   private loadPairs() {
-    if (typeof window === "undefined") return // Skip during SSR
-
-    try {
-      const storedPairs = localStorage.getItem(PAIRS_STORAGE_KEY)
-      const storedWeaning = localStorage.getItem(WEANING_STORAGE_KEY)
-
-      if (storedPairs) {
-        this.pairs = JSON.parse(storedPairs)
-      }
-      if (storedWeaning) {
-        this.weaningRecords = JSON.parse(storedWeaning)
-      }
-    } catch (error) {
-      console.error("Failed to load pairs:", error)
-    }
+    // Removed localStorage caching for realtime data loading
+    this.pairs = []
+    this.weaningRecords = []
   }
 
   private savePairs() {
-    if (typeof window === "undefined") return // Skip during SSR
-
-    try {
-      localStorage.setItem(PAIRS_STORAGE_KEY, JSON.stringify(this.pairs))
-      localStorage.setItem(WEANING_STORAGE_KEY, JSON.stringify(this.weaningRecords))
-      this.notifyListeners()
-    } catch (error) {
-      console.error("Failed to save pairs:", error)
-    }
+    // Removed localStorage caching for realtime data loading
+    this.notifyListeners()
   }
 
   private notifyListeners() {

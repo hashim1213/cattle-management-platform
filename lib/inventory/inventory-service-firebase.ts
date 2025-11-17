@@ -161,10 +161,10 @@ class FirebaseInventoryService {
   // ==================== CORE OPERATIONS ====================
 
   /**
-   * Check if sufficient inventory is available
+   * Check if sufficient inventory is available (always fetch fresh)
    */
   async checkAvailability(itemId: string, requiredQuantity: number): Promise<AvailabilityCheck> {
-    const item = this.inventory.find((i) => i.id === itemId)
+    const item = await this.getItem(itemId)
 
     if (!item) {
       throw new Error(`Inventory item not found: ${itemId}`)
@@ -189,8 +189,8 @@ class FirebaseInventoryService {
   async deduct(params: DeductParams): Promise<InventoryTransaction> {
     const userId = this.requireUser()
 
-    // Find item in local cache first
-    const item = this.inventory.find((i) => i.id === params.itemId)
+    // Always fetch fresh item from Firestore
+    const item = await this.getItem(params.itemId)
     if (!item) {
       throw new Error(`Inventory item not found: ${params.itemId}`)
     }
@@ -260,7 +260,7 @@ class FirebaseInventoryService {
   async add(params: AddParams): Promise<InventoryTransaction> {
     const userId = this.requireUser()
 
-    const item = this.inventory.find((i) => i.id === params.itemId)
+    const item = await this.getItem(params.itemId)
     if (!item) {
       throw new Error(`Inventory item not found: ${params.itemId}`)
     }
@@ -318,7 +318,7 @@ class FirebaseInventoryService {
   async adjust(params: AdjustParams): Promise<InventoryTransaction> {
     const userId = this.requireUser()
 
-    const item = this.inventory.find((i) => i.id === params.itemId)
+    const item = await this.getItem(params.itemId)
     if (!item) {
       throw new Error(`Inventory item not found: ${params.itemId}`)
     }
@@ -369,38 +369,64 @@ class FirebaseInventoryService {
   // ==================== INVENTORY MANAGEMENT ====================
 
   /**
-   * Get all inventory items (from local cache)
+   * Get all inventory items (always fetch fresh from Firestore for realtime data)
    */
-  getInventory(): InventoryItem[] {
-    return this.inventory
+  async getInventory(): Promise<InventoryItem[]> {
+    const userId = this.userId
+    if (!userId) return []
+
+    // Always fetch fresh data from Firestore
+    try {
+      const snapshot = await getDocs(collection(db, `users/${userId}/inventory`))
+      return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as InventoryItem))
+    } catch (error) {
+      console.error("Error fetching inventory:", error)
+      return []
+    }
   }
 
   /**
-   * Get inventory item by ID
+   * Get inventory item by ID (always fetch fresh from Firestore)
    */
-  getItem(itemId: string): InventoryItem | undefined {
-    return this.inventory.find((i) => i.id === itemId)
+  async getItem(itemId: string): Promise<InventoryItem | undefined> {
+    const userId = this.userId
+    if (!userId) return undefined
+
+    try {
+      const docRef = doc(db, `users/${userId}/inventory`, itemId)
+      const docSnap = await getDoc(docRef)
+      if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() } as InventoryItem
+      }
+      return undefined
+    } catch (error) {
+      console.error("Error fetching inventory item:", error)
+      return undefined
+    }
   }
 
   /**
-   * Get inventory by category
+   * Get inventory by category (always fetch fresh)
    */
-  getInventoryByCategory(category: InventoryCategory): InventoryItem[] {
-    return this.inventory.filter((i) => i.category === category)
+  async getInventoryByCategory(category: InventoryCategory): Promise<InventoryItem[]> {
+    const allItems = await this.getInventory()
+    return allItems.filter((i) => i.category === category)
   }
 
   /**
-   * Get all drugs
+   * Get all drugs (always fetch fresh)
    */
-  getDrugs(): InventoryItem[] {
-    return this.inventory.filter((i) => isDrugCategory(i.category))
+  async getDrugs(): Promise<InventoryItem[]> {
+    const allItems = await this.getInventory()
+    return allItems.filter((i) => isDrugCategory(i.category))
   }
 
   /**
-   * Get all feed
+   * Get all feed (always fetch fresh)
    */
-  getFeed(): InventoryItem[] {
-    return this.inventory.filter((i) => isFeedCategory(i.category))
+  async getFeed(): Promise<InventoryItem[]> {
+    const allItems = await this.getInventory()
+    return allItems.filter((i) => isFeedCategory(i.category))
   }
 
   /**
@@ -434,7 +460,7 @@ class FirebaseInventoryService {
   async updateInventoryItem(itemId: string, updates: Partial<InventoryItem>): Promise<InventoryItem | null> {
     const userId = this.requireUser()
 
-    const item = this.inventory.find((i) => i.id === itemId)
+    const item = await this.getItem(itemId)
     if (!item) return null
 
     // Don't allow direct quantity updates
@@ -460,7 +486,7 @@ class FirebaseInventoryService {
   async deleteInventoryItem(itemId: string): Promise<boolean> {
     const userId = this.requireUser()
 
-    const item = this.inventory.find((i) => i.id === itemId)
+    const item = await this.getItem(itemId)
     if (!item) return false
 
     if (item.quantityOnHand > 0) {
@@ -476,26 +502,55 @@ class FirebaseInventoryService {
   // ==================== TRANSACTION HISTORY ====================
 
   /**
-   * Get all transactions (from local cache)
+   * Get all transactions (always fetch fresh from Firestore)
    */
-  getTransactions(): InventoryTransaction[] {
-    return this.transactions
+  async getTransactions(): Promise<InventoryTransaction[]> {
+    const userId = this.userId
+    if (!userId) return []
+
+    try {
+      const q = query(
+        collection(db, `users/${userId}/inventoryTransactions`),
+        orderBy("timestamp", "desc"),
+        limit(1000)
+      )
+      const snapshot = await getDocs(q)
+      return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as InventoryTransaction))
+    } catch (error) {
+      console.error("Error fetching transactions:", error)
+      return []
+    }
   }
 
   /**
-   * Get transactions for specific item
+   * Get transactions for specific item (always fetch fresh)
    */
-  getItemTransactions(itemId: string): InventoryTransaction[] {
-    return this.transactions.filter((t) => t.itemId === itemId)
+  async getItemTransactions(itemId: string): Promise<InventoryTransaction[]> {
+    const userId = this.userId
+    if (!userId) return []
+
+    try {
+      const q = query(
+        collection(db, `users/${userId}/inventoryTransactions`),
+        where("itemId", "==", itemId),
+        orderBy("timestamp", "desc")
+      )
+      const snapshot = await getDocs(q)
+      return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as InventoryTransaction))
+    } catch (error) {
+      console.error("Error fetching item transactions:", error)
+      return []
+    }
   }
 
   /**
-   * Get transactions for date range
+   * Get transactions for date range (always fetch fresh)
    */
-  getTransactionsByDateRange(startDate: string, endDate: string): InventoryTransaction[] {
+  async getTransactionsByDateRange(startDate: string, endDate: string): Promise<InventoryTransaction[]> {
+    const allTransactions = await this.getTransactions()
     const start = new Date(startDate)
     const end = new Date(endDate)
-    return this.transactions.filter((t) => {
+    return allTransactions.filter((t) => {
       const date = new Date(t.timestamp)
       return date >= start && date <= end
     })
@@ -504,16 +559,18 @@ class FirebaseInventoryService {
   // ==================== ALERTS & MONITORING ====================
 
   /**
-   * Get inventory status summary
+   * Get inventory status summary (always fetch fresh)
    */
-  getInventoryStatus(): InventoryStatus {
-    const totalValue = this.inventory.reduce((sum, item) => sum + item.totalValue, 0)
-    const lowStockCount = this.inventory.filter((item) => item.quantityOnHand <= item.reorderPoint).length
-    const expiredCount = this.inventory.filter((item) => {
+  async getInventoryStatus(): Promise<InventoryStatus> {
+    const inventory = await this.getInventory()
+
+    const totalValue = inventory.reduce((sum, item) => sum + item.totalValue, 0)
+    const lowStockCount = inventory.filter((item) => item.quantityOnHand <= item.reorderPoint).length
+    const expiredCount = inventory.filter((item) => {
       if (!item.expirationDate) return false
       return new Date(item.expirationDate) < new Date()
     }).length
-    const expiringSoonCount = this.inventory.filter((item) => {
+    const expiringSoonCount = inventory.filter((item) => {
       if (!item.expirationDate) return false
       const expiryDate = new Date(item.expirationDate)
       const thirtyDaysFromNow = new Date()
@@ -522,7 +579,7 @@ class FirebaseInventoryService {
     }).length
 
     return {
-      totalItems: this.inventory.length,
+      totalItems: inventory.length,
       totalValue,
       lowStockCount,
       expiredCount,
@@ -532,27 +589,30 @@ class FirebaseInventoryService {
   }
 
   /**
-   * Get low stock items
+   * Get low stock items (always fetch fresh)
    */
-  getLowStockItems(): InventoryItem[] {
-    return this.inventory.filter((item) => item.quantityOnHand <= item.reorderPoint)
+  async getLowStockItems(): Promise<InventoryItem[]> {
+    const inventory = await this.getInventory()
+    return inventory.filter((item) => item.quantityOnHand <= item.reorderPoint)
   }
 
   /**
-   * Get expired items
+   * Get expired items (always fetch fresh)
    */
-  getExpiredItems(): InventoryItem[] {
-    return this.inventory.filter((item) => {
+  async getExpiredItems(): Promise<InventoryItem[]> {
+    const inventory = await this.getInventory()
+    return inventory.filter((item) => {
       if (!item.expirationDate) return false
       return new Date(item.expirationDate) < new Date()
     })
   }
 
   /**
-   * Get expiring soon items (within 30 days)
+   * Get expiring soon items (within 30 days, always fetch fresh)
    */
-  getExpiringSoonItems(): InventoryItem[] {
-    return this.inventory.filter((item) => {
+  async getExpiringSoonItems(): Promise<InventoryItem[]> {
+    const inventory = await this.getInventory()
+    return inventory.filter((item) => {
       if (!item.expirationDate) return false
       const expiryDate = new Date(item.expirationDate)
       const thirtyDaysFromNow = new Date()

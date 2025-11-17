@@ -78,35 +78,17 @@ class HealthEnhancedStore {
   }
 
   private loadAll() {
-    if (typeof window === "undefined") return
-
-    try {
-      const storedVaccinations = localStorage.getItem(VACCINATIONS_KEY)
-      const storedProtocols = localStorage.getItem(PROTOCOLS_KEY)
-      const storedAlerts = localStorage.getItem(ALERTS_KEY)
-      const storedAppointments = localStorage.getItem(APPOINTMENTS_KEY)
-
-      if (storedVaccinations) this.vaccinations = JSON.parse(storedVaccinations)
-      if (storedProtocols) this.protocols = JSON.parse(storedProtocols)
-      if (storedAlerts) this.alerts = JSON.parse(storedAlerts)
-      if (storedAppointments) this.appointments = JSON.parse(storedAppointments)
-    } catch (error) {
-      console.error("Failed to load health data:", error)
-    }
+    // Removed localStorage caching for realtime data loading
+    this.vaccinations = []
+    this.protocols = []
+    this.alerts = []
+    this.appointments = []
   }
 
   private saveAll() {
-    if (typeof window === "undefined") return
-
-    try {
-      localStorage.setItem(VACCINATIONS_KEY, JSON.stringify(this.vaccinations))
-      localStorage.setItem(PROTOCOLS_KEY, JSON.stringify(this.protocols))
-      localStorage.setItem(ALERTS_KEY, JSON.stringify(this.alerts))
-      localStorage.setItem(APPOINTMENTS_KEY, JSON.stringify(this.appointments))
-      this.notifyListeners()
-    } catch (error) {
-      console.error("Failed to save health data:", error)
-    }
+    // Removed localStorage caching for realtime data loading
+    this.notifyListeners()
+  }
   }
 
   private notifyListeners() {

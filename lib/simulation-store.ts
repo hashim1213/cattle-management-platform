@@ -71,19 +71,13 @@ class SimulationStore {
   private listeners: Array<() => void> = []
 
   constructor() {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("cattle-simulations")
-      if (stored) {
-        this.simulations = JSON.parse(stored)
-      }
-    }
+    // Removed localStorage caching for realtime data loading
+    this.simulations = []
   }
 
   private save() {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("cattle-simulations", JSON.stringify(this.simulations))
-      this.notifyListeners()
-    }
+    // Removed localStorage caching for realtime data loading
+    this.notifyListeners()
   }
 
   private notifyListeners() {
