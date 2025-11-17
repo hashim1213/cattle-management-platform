@@ -9,7 +9,6 @@ import { MetricCard } from "@/components/metric-card"
 import { LifecycleSettingsDialog } from "@/components/lifecycle-settings-dialog"
 import { FeedMetricsCard } from "@/components/feed-metrics-card"
 import { PenUtilizationCard } from "@/components/pen-utilization-card"
-import { PenOverviewCard } from "@/components/pen-overview-card"
 import { useLifecycleConfig } from "@/hooks/use-lifecycle-config"
 import { useFarmSettings } from "@/hooks/use-farm-settings"
 import { useAuth } from "@/contexts/auth-context"
@@ -340,12 +339,6 @@ export default function DashboardPage() {
               )}
             </CardContent>
           </Card>
-        </section>
-
-        {/* Pen Overview */}
-        <section>
-          <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-foreground">Pen Overview</h2>
-          <PenOverviewCard />
         </section>
 
         {/* Alerts */}
