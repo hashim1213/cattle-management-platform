@@ -54,9 +54,12 @@ export function QuickAddFeedDialog({
   // Load feed items from inventory
   useEffect(() => {
     if (open) {
-      const inventory = firebaseInventoryService.getInventory()
-      const feeds = inventory.filter(item => isFeedCategory(item.category))
-      setFeedItems(feeds)
+      const loadFeedItems = async () => {
+        const inventory = await firebaseInventoryService.getInventory()
+        const feeds = inventory.filter(item => isFeedCategory(item.category))
+        setFeedItems(feeds)
+      }
+      loadFeedItems()
     }
   }, [open])
 

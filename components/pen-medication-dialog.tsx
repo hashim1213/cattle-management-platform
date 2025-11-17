@@ -55,17 +55,22 @@ export function PenMedicationDialog({
 
   // Load medications from inventory
   useEffect(() => {
-    const inventory = firebaseInventoryService.getInventory()
-    const drugItems = inventory.filter(item =>
-      item.category === 'antibiotic' ||
-      item.category === 'antiparasitic' ||
-      item.category === 'vaccine' ||
-      item.category === 'anti-inflammatory' ||
-      item.category === 'hormone' ||
-      item.category === 'vitamin-injectable' ||
-      item.category === 'drug-other'
-    )
-    setMedications(drugItems)
+    const loadMedications = async () => {
+      const inventory = await firebaseInventoryService.getInventory()
+      const drugItems = inventory.filter(item =>
+        item.category === 'antibiotic' ||
+        item.category === 'antiparasitic' ||
+        item.category === 'vaccine' ||
+        item.category === 'anti-inflammatory' ||
+        item.category === 'hormone' ||
+        item.category === 'vitamin-injectable' ||
+        item.category === 'drug-other'
+      )
+      setMedications(drugItems)
+    }
+    if (open) {
+      loadMedications()
+    }
   }, [open])
 
   // Get selected medication details

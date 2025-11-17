@@ -49,8 +49,8 @@ export function FeedMetricsCard() {
     return () => unsubscribe()
   }, [isInitialized])
 
-  const loadMetrics = () => {
-    const inventory = inventoryService.getInventory()
+  const loadMetrics = async () => {
+    const inventory = await inventoryService.getInventory()
     const feedItems = inventory.filter((item: InventoryItem) => isFeedCategory(item.category))
 
     const totalFeedValue = feedItems.reduce((sum: number, item: InventoryItem) => sum + item.totalValue, 0)
