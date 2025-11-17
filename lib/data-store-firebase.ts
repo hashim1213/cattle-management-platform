@@ -160,22 +160,18 @@ class FirebaseDataStore {
 
   // CATTLE OPERATIONS
   /**
-   * Get all cattle (from cache if real-time listener is active, otherwise fetch once)
+   * Get all cattle (always fetch fresh from Firestore for realtime data)
    */
   async getCattle(): Promise<Cattle[]> {
     const userId = this.getUserId()
     if (!userId) return []
 
-    // If we have an active listener, return cached data
-    if (this.unsubscribeCattle && this.cattle.length >= 0) {
-      return this.cattle
-    }
-
-    // Otherwise, fetch once (fallback for components that haven't initialized)
+    // Always fetch fresh data from Firestore
     try {
       const snapshot = await getDocs(this.getCattleCollection(userId))
       return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Cattle))
     } catch (error) {
+      console.error("Error fetching cattle:", error)
       return []
     }
   }
@@ -184,13 +180,7 @@ class FirebaseDataStore {
     const userId = this.getUserId()
     if (!userId) return null
 
-    // If we have an active listener, check cache first
-    if (this.unsubscribeCattle) {
-      const cached = this.cattle.find(c => c.id === id)
-      if (cached) return cached
-    }
-
-    // Otherwise, fetch from Firestore
+    // Always fetch fresh from Firestore
     try {
       const docRef = doc(db, `users/${userId}/cattle`, id)
       const docSnap = await getDoc(docRef)
@@ -199,6 +189,7 @@ class FirebaseDataStore {
       }
       return null
     } catch (error) {
+      console.error("Error fetching cattle by ID:", error)
       return null
     }
   }

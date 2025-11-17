@@ -43,26 +43,13 @@ class TimeTrackingStore {
   }
 
   private loadData() {
-    if (typeof window === "undefined") return
-
-    try {
-      const stored = localStorage.getItem(TIME_TRACKING_STORAGE_KEY)
-      this.entries = stored ? JSON.parse(stored) : []
-    } catch (error) {
-      console.error("Failed to load time tracking data:", error)
-      this.entries = []
-    }
+    // Removed localStorage caching for realtime data loading
+    this.entries = []
   }
 
   private save() {
-    if (typeof window === "undefined") return
-
-    try {
-      localStorage.setItem(TIME_TRACKING_STORAGE_KEY, JSON.stringify(this.entries))
-      this.notifyListeners()
-    } catch (error) {
-      console.error("Failed to save time tracking data:", error)
-    }
+    // Removed localStorage caching for realtime data loading
+    this.notifyListeners()
   }
 
   private notifyListeners() {

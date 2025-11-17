@@ -181,102 +181,14 @@ class EnhancedFeedStore {
   }
 
   private load() {
-    if (typeof window === "undefined") return
-
-    const inventoryData = localStorage.getItem("enhancedFeedInventory")
-    if (inventoryData) {
-      this.inventory = JSON.parse(inventoryData)
-    } else {
-      // Initialize with sample data
-      this.inventory = [
-        {
-          id: "feed-1",
-          name: "1st Cut Hay",
-          category: "hay",
-          source: "self-produced",
-          quantityOnHand: 5000,
-          unit: "bales",
-          costPerUnit: 4.50,
-          totalCost: 22500,
-          harvestDate: "2025-06-15",
-          storageLocation: "Hay Barn 1",
-          quality: "excellent",
-          moistureContent: 12,
-          notes: "First cutting, timothy mix",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "feed-2",
-          name: "Corn Silage",
-          category: "corn-silage",
-          source: "self-produced",
-          quantityOnHand: 150,
-          unit: "tons",
-          costPerUnit: 45.00,
-          totalCost: 6750,
-          harvestDate: "2025-09-20",
-          storageLocation: "Bunker Silo 1",
-          quality: "good",
-          moistureContent: 65,
-          notes: "Chopped at 1/2 inch, well packed",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "feed-3",
-          name: "Protein Supplement 20%",
-          category: "supplement",
-          source: "purchased",
-          quantityOnHand: 80,
-          unit: "bags",
-          costPerUnit: 22.00,
-          totalCost: 1760,
-          supplier: "Purina Mills",
-          purchaseDate: "2025-10-01",
-          storageLocation: "Feed Room A",
-          quality: "excellent",
-          notes: "50 lb bags",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "feed-4",
-          name: "Trace Mineral Mix",
-          category: "mineral",
-          source: "purchased",
-          quantityOnHand: 45,
-          unit: "bags",
-          costPerUnit: 35.00,
-          totalCost: 1575,
-          supplier: "Purina Mills",
-          purchaseDate: "2025-10-15",
-          storageLocation: "Feed Room A",
-          quality: "excellent",
-          notes: "50 lb bags, loose mineral",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ]
-      this.save()
-    }
-
-    const allocationsData = localStorage.getItem("feedAllocations")
-    if (allocationsData) {
-      this.allocations = JSON.parse(allocationsData)
-    }
-
-    const batchesData = localStorage.getItem("feedMixerBatches")
-    if (batchesData) {
-      this.mixerBatches = JSON.parse(batchesData)
-    }
+    // Removed localStorage caching for realtime data loading
+    this.inventory = []
+    this.allocations = []
+    this.mixerBatches = []
   }
 
   private save() {
-    if (typeof window === "undefined") return
-    localStorage.setItem("enhancedFeedInventory", JSON.stringify(this.inventory))
-    localStorage.setItem("feedAllocations", JSON.stringify(this.allocations))
-    localStorage.setItem("feedMixerBatches", JSON.stringify(this.mixerBatches))
+    // Removed localStorage caching for realtime data loading
     this.notify()
   }
 

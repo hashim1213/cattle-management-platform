@@ -81,35 +81,15 @@ class RationStore {
   }
 
   private loadData() {
-    if (typeof window === "undefined") return
-
-    try {
-      const rationsStored = localStorage.getItem(RATIONS_STORAGE_KEY)
-      const assignmentsStored = localStorage.getItem(ASSIGNMENTS_STORAGE_KEY)
-      const schedulesStored = localStorage.getItem(SCHEDULES_STORAGE_KEY)
-
-      this.rations = rationsStored ? JSON.parse(rationsStored) : []
-      this.assignments = assignmentsStored ? JSON.parse(assignmentsStored) : []
-      this.schedules = schedulesStored ? JSON.parse(schedulesStored) : []
-    } catch (error) {
-      console.error("Failed to load ration data:", error)
-      this.rations = []
-      this.assignments = []
-      this.schedules = []
-    }
+    // Removed localStorage caching for realtime data loading
+    this.rations = []
+    this.assignments = []
+    this.schedules = []
   }
 
   private save() {
-    if (typeof window === "undefined") return
-
-    try {
-      localStorage.setItem(RATIONS_STORAGE_KEY, JSON.stringify(this.rations))
-      localStorage.setItem(ASSIGNMENTS_STORAGE_KEY, JSON.stringify(this.assignments))
-      localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(this.schedules))
-      this.notifyListeners()
-    } catch (error) {
-      console.error("Failed to save ration data:", error)
-    }
+    // Removed localStorage caching for realtime data loading
+    this.notifyListeners()
   }
 
   private notifyListeners() {

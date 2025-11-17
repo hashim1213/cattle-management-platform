@@ -56,32 +56,14 @@ class TaskStore {
   }
 
   private load() {
-    try {
-      const storedTasks = localStorage.getItem(TASKS_STORAGE_KEY)
-      const storedUsers = localStorage.getItem(USERS_STORAGE_KEY)
-
-      this.tasks = storedTasks ? JSON.parse(storedTasks) : DEFAULT_TASKS
-      this.users = storedUsers ? JSON.parse(storedUsers) : DEFAULT_USERS
-
-      if (!storedTasks) this.save()
-      if (!storedUsers) this.save()
-    } catch (error) {
-      console.error("Failed to load task data:", error)
-      this.tasks = DEFAULT_TASKS
-      this.users = DEFAULT_USERS
-    }
+    // Removed localStorage caching for realtime data loading
+    this.tasks = DEFAULT_TASKS
+    this.users = DEFAULT_USERS
   }
 
   private save() {
-    if (typeof window === "undefined") return
-
-    try {
-      localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(this.tasks))
-      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(this.users))
-      this.notifyListeners()
-    } catch (error) {
-      console.error("Failed to save task data:", error)
-    }
+    // Removed localStorage caching for realtime data loading
+    this.notifyListeners()
   }
 
   private notifyListeners() {

@@ -55,26 +55,13 @@ class ActivityStore {
   }
 
   private load() {
-    try {
-      const stored = localStorage.getItem(ACTIVITIES_STORAGE_KEY)
-      this.activities = stored ? JSON.parse(stored) : []
-    } catch (error) {
-      console.error("Failed to load activities:", error)
-      this.activities = []
-    }
+    // Removed localStorage caching for realtime data loading
+    this.activities = []
   }
 
   private save() {
-    if (typeof window === "undefined") return
-
-    try {
-      // Keep only the most recent activities
-      const toSave = this.activities.slice(-MAX_ACTIVITIES)
-      localStorage.setItem(ACTIVITIES_STORAGE_KEY, JSON.stringify(toSave))
-      this.notifyListeners()
-    } catch (error) {
-      console.error("Failed to save activities:", error)
-    }
+    // Removed localStorage caching for realtime data loading
+    this.notifyListeners()
   }
 
   private notifyListeners() {

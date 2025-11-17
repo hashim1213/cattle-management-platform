@@ -33,52 +33,13 @@ class BatchStore {
   }
 
   private loadData() {
-    if (typeof window === "undefined") return
-
-    try {
-      const stored = localStorage.getItem(BATCHES_STORAGE_KEY)
-      this.batches = stored ? JSON.parse(stored) : []
-
-      // Migrate old data
-      let needsSave = false
-      this.batches = this.batches.map((batch) => {
-        const updated: any = { ...batch, cattleIds: batch.cattleIds || [] }
-
-        // Migrate from per-head to per-pound pricing
-        if (batch.averagePurchasePrice && !batch.purchasePricePerPound) {
-          needsSave = true
-          // Convert old per-head price to per-pound
-          updated.purchasePricePerPound = batch.averagePurchasePrice / batch.averagePurchaseWeight
-        }
-
-        // Calculate totalInvestment if missing (using new per-pound method)
-        if (updated.totalInvestment === undefined || updated.totalInvestment === null) {
-          needsSave = true
-          const pricePerPound = updated.purchasePricePerPound || 0
-          updated.totalInvestment = batch.headCount * batch.averagePurchaseWeight * pricePerPound
-        }
-
-        return updated
-      })
-
-      if (needsSave) {
-        localStorage.setItem(BATCHES_STORAGE_KEY, JSON.stringify(this.batches))
-      }
-    } catch (error) {
-      console.error("Failed to load batch data:", error)
-      this.batches = []
-    }
+    // Removed localStorage caching for realtime data loading
+    this.batches = []
   }
 
   private save() {
-    if (typeof window === "undefined") return
-
-    try {
-      localStorage.setItem(BATCHES_STORAGE_KEY, JSON.stringify(this.batches))
-      this.notifyListeners()
-    } catch (error) {
-      console.error("Failed to save batch data:", error)
-    }
+    // Removed localStorage caching for realtime data loading
+    this.notifyListeners()
   }
 
   private notifyListeners() {

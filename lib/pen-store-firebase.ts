@@ -143,20 +143,14 @@ class FirebasePenStore {
 
   // BARNS
   /**
-   * Load barns (kept for backward compatibility, but real-time listener is preferred)
-   * If listener is active, this does nothing as data is already synced
+   * Load barns (always fetch fresh from Firestore for realtime data)
    */
   async loadBarns() {
     await this.waitForAuth()
     const userId = this.getUserId()
     if (!userId) return
 
-    // If real-time listener is active, data is already synced
-    if (this.unsubscribeBarns) {
-      return
-    }
-
-    // Otherwise, fetch once (fallback)
+    // Always fetch fresh data from Firestore
     try {
       const snapshot = await getDocs(collection(db, `users/${userId}/barns`))
       this.barns = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Barn))
@@ -243,20 +237,14 @@ class FirebasePenStore {
 
   // PENS
   /**
-   * Load pens (kept for backward compatibility, but real-time listener is preferred)
-   * If listener is active, this does nothing as data is already synced
+   * Load pens (always fetch fresh from Firestore for realtime data)
    */
   async loadPens() {
     await this.waitForAuth()
     const userId = this.getUserId()
     if (!userId) return
 
-    // If real-time listener is active, data is already synced
-    if (this.unsubscribePens) {
-      return
-    }
-
-    // Otherwise, fetch once (fallback)
+    // Always fetch fresh data from Firestore
     try {
       const snapshot = await getDocs(collection(db, `users/${userId}/pens`))
       this.pens = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Pen))
