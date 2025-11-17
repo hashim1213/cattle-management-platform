@@ -51,9 +51,12 @@ export function QuickAddMedsDialog({
   // Load medications from inventory
   useEffect(() => {
     if (open) {
-      const inventory = firebaseInventoryService.getInventory()
-      const drugs = inventory.filter(item => isDrugCategory(item.category))
-      setMedications(drugs)
+      const loadMedications = async () => {
+        const inventory = await firebaseInventoryService.getInventory()
+        const drugs = inventory.filter(item => isDrugCategory(item.category))
+        setMedications(drugs)
+      }
+      loadMedications()
     }
   }, [open])
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -59,9 +59,20 @@ export function CreateProtocolDialog({
   const [drugNotes, setDrugNotes] = useState("")
 
   const [isProcessing, setIsProcessing] = useState(false)
+  const [allInventory, setAllInventory] = useState<any[]>([])
+
+  // Load inventory
+  useEffect(() => {
+    const loadInventory = async () => {
+      const inventory = await inventoryService.getInventory()
+      setAllInventory(inventory)
+    }
+    if (open) {
+      loadInventory()
+    }
+  }, [open])
 
   // Get all drugs from inventory
-  const allInventory = inventoryService.getInventory()
   const availableDrugs = allInventory.filter(item => isDrugCategory(item.category))
 
   // Calculate estimated cost per head

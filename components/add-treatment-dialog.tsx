@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -52,10 +52,23 @@ export function AddTreatmentDialog({
   const [administrationRoute, setAdministrationRoute] = useState<"IM" | "SQ" | "IV" | "Oral" | "Intranasal">("IM")
   const [notes, setNotes] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
+  const [allCattle, setAllCattle] = useState<any[]>([])
+  const [allInventory, setAllInventory] = useState<any[]>([])
 
-  // Get all cattle and inventory
-  const allCattle = dataStore.getCattle()
-  const allInventory = inventoryService.getInventory()
+  // Load all cattle and inventory
+  useEffect(() => {
+    const loadData = async () => {
+      const [cattle, inventory] = await Promise.all([
+        dataStore.getCattle(),
+        inventoryService.getInventory()
+      ])
+      setAllCattle(cattle)
+      setAllInventory(inventory)
+    }
+    if (open) {
+      loadData()
+    }
+  }, [open])
 
   // Filter to only show drugs
   const drugs = useMemo(() =>

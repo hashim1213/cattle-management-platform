@@ -52,6 +52,10 @@ export default function InventoryPage() {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null)
   const [isTransactionsOpen, setIsTransactionsOpen] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
+  const [lowStockItems, setLowStockItems] = useState<InventoryItem[]>([])
+  const [expiredItems, setExpiredItems] = useState<InventoryItem[]>([])
+  const [expiringSoonItems, setExpiringSoonItems] = useState<InventoryItem[]>([])
+  const [status, setStatus] = useState<any>(null)
 
   // Initialize Firebase inventory service when user is available
   useEffect(() => {
@@ -88,9 +92,19 @@ export default function InventoryPage() {
     applyFilters()
   }, [inventory, searchQuery, categoryFilter, statusFilter])
 
-  const loadInventory = () => {
-    const items = inventoryService.getInventory()
+  const loadInventory = async () => {
+    const [items, inventoryStatus, lowStock, expired, expiringSoon] = await Promise.all([
+      inventoryService.getInventory(),
+      inventoryService.getInventoryStatus(),
+      inventoryService.getLowStockItems(),
+      inventoryService.getExpiredItems(),
+      inventoryService.getExpiringSoonItems()
+    ])
     setInventory(items)
+    setStatus(inventoryStatus)
+    setLowStockItems(lowStock)
+    setExpiredItems(expired)
+    setExpiringSoonItems(expiringSoon)
   }
 
   const applyFilters = () => {
@@ -167,12 +181,6 @@ export default function InventoryPage() {
       }
     }
   }
-
-  // Get inventory status
-  const status = inventoryService.getInventoryStatus()
-  const lowStockItems = inventoryService.getLowStockItems()
-  const expiredItems = inventoryService.getExpiredItems()
-  const expiringSoonItems = inventoryService.getExpiringSoonItems()
 
   // Get item status badge
   const getItemStatusBadge = (item: InventoryItem) => {
