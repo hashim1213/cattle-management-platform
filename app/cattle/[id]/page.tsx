@@ -605,7 +605,7 @@ export default function CattleDetailPage() {
                   <div className="flex justify-between py-2">
                     <span className="text-muted-foreground">Price per lb:</span>
                     <span className="font-medium text-foreground">
-                      ${(cattle.purchasePrice / cattle.purchaseWeight).toFixed(2)}
+                      ${cattle.purchasePrice && cattle.purchaseWeight ? (cattle.purchasePrice / cattle.purchaseWeight).toFixed(2) : "N/A"}
                     </span>
                   </div>
                 </CardContent>
@@ -690,7 +690,7 @@ export default function CattleDetailPage() {
                           <td className="p-4 text-sm text-foreground">{record.date}</td>
                           <td className="p-4 text-sm font-medium text-foreground">{record.weight} lbs</td>
                           <td className="p-4 text-sm text-foreground">{record.gain} lbs/day</td>
-                          <td className="p-4 text-sm text-green-600">+{record.weight - cattle.purchaseWeight} lbs</td>
+                          <td className="p-4 text-sm text-green-600">+{cattle.purchaseWeight ? (record.weight - cattle.purchaseWeight) : record.weight} lbs</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1002,9 +1002,9 @@ export default function CattleDetailPage() {
                     <div className="space-y-4">
                       <div>
                         <p className="text-sm text-muted-foreground mb-1">Purchase Price</p>
-                        <p className="text-2xl font-bold text-foreground">${cattle.purchasePrice}</p>
+                        <p className="text-2xl font-bold text-foreground">${cattle.purchasePrice || 0}</p>
                         <p className="text-xs text-muted-foreground">
-                          ${(cattle.purchasePrice / cattle.purchaseWeight).toFixed(2)}/lb
+                          ${cattle.purchasePrice && cattle.purchaseWeight ? (cattle.purchasePrice / cattle.purchaseWeight).toFixed(2) : "N/A"}/lb
                         </p>
                       </div>
                       <div>
@@ -1049,7 +1049,7 @@ export default function CattleDetailPage() {
                   <div className="space-y-3">
                     <div className="flex justify-between py-2 border-b border-border">
                       <span className="text-muted-foreground">Purchase Cost:</span>
-                      <span className="font-medium text-foreground">${cattle.purchasePrice.toFixed(2)}</span>
+                      <span className="font-medium text-foreground">${(cattle.purchasePrice || 0).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b border-border">
                       <div className="flex items-center gap-2">

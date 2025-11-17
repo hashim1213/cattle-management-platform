@@ -49,7 +49,8 @@ export default function CattlePage() {
               <Link href="/" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground mb-1 block touch-manipulation inline-flex items-center">
                 ← Back
               </Link>
-              <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">Cattle Inventory</h1>
+              <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">My Cattle</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">View and manage all your cattle records</p>
             </div>
             <div className="flex gap-2 flex-shrink-0">
               <Button

@@ -195,7 +195,9 @@ export default function DashboardPage() {
       loadData()
     })
 
-    return () => unsubscribe()
+    return () => {
+      unsubscribe()
+    }
   }, [user, authLoading, refreshData])
 
   const handleExportCattle = async () => {

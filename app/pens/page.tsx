@@ -79,6 +79,7 @@ export default function PensPage() {
                 ← Back
               </Link>
               <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">Pens & Barns</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">Organize cattle by location and track pen capacity</p>
             </div>
             <div className="flex gap-2 flex-shrink-0">
               <Button
