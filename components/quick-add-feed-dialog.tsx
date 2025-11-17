@@ -135,6 +135,17 @@ export function QuickAddFeedDialog({
     setLoading(true)
 
     try {
+      // Deduct feed from Firebase inventory
+      await firebaseInventoryService.deduct({
+        itemId: selectedFeed.id,
+        quantity: qty,
+        reason: `Feed delivered to ${selectedPen.name}`,
+        performedBy: "Quick Add",
+        relatedRecordType: "feed_allocation",
+        relatedRecordId: `allocation_${Date.now()}`,
+        notes: `${qty} ${selectedFeed.unit} ${selectedFeed.name} to ${selectedPen.name} (${selectedPen.currentCount} head)`
+      })
+
       // Add feed allocation
       addFeedAllocation({
         penId: selectedPen.id,
