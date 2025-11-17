@@ -51,6 +51,35 @@ export default function CattleDetailPage() {
   // Value update form state
   const [newValue, setNewValue] = useState<string>("")
 
+  // Health record form state
+  const [healthDate, setHealthDate] = useState<string>(new Date().toISOString().split('T')[0])
+  const [healthType, setHealthType] = useState<string>("")
+  const [healthDescription, setHealthDescription] = useState<string>("")
+  const [healthVet, setHealthVet] = useState<string>("")
+  const [healthCost, setHealthCost] = useState<string>("")
+  const [healthNotes, setHealthNotes] = useState<string>("")
+  const [healthNextVisit, setHealthNextVisit] = useState<string>("")
+
+  // Feed record form state
+  const [feedDialogOpen, setFeedDialogOpen] = useState(false)
+  const [feedDate, setFeedDate] = useState<string>(new Date().toISOString().split('T')[0])
+  const [feedType, setFeedType] = useState<string>("")
+  const [feedAmount, setFeedAmount] = useState<string>("")
+  const [feedUnit, setFeedUnit] = useState<string>("lbs")
+  const [feedCost, setFeedCost] = useState<string>("")
+  const [feedNotes, setFeedNotes] = useState<string>("")
+
+  // Medication record form state
+  const [medicationDialogOpen, setMedicationDialogOpen] = useState(false)
+  const [medicationDate, setMedicationDate] = useState<string>(new Date().toISOString().split('T')[0])
+  const [medicationName, setMedicationName] = useState<string>("")
+  const [medicationDosage, setMedicationDosage] = useState<string>("")
+  const [medicationUnit, setMedicationUnit] = useState<string>("ml")
+  const [medicationPurpose, setMedicationPurpose] = useState<string>("Treatment")
+  const [medicationCost, setMedicationCost] = useState<string>("")
+  const [medicationWithdrawal, setMedicationWithdrawal] = useState<string>("")
+  const [medicationNotes, setMedicationNotes] = useState<string>("")
+
   useEffect(() => {
     const loadCattle = async () => {
       const allCattle = await firebaseDataStore.getCattle()
@@ -188,6 +217,152 @@ export default function CattleDetailPage() {
       title: "Location updated",
       description: "Cattle has been assigned to the new location.",
     })
+  }
+
+  const handleAddHealthRecord = async () => {
+    if (!cattle || !healthType || !healthDescription) {
+      toast({
+        title: "Error",
+        description: "Please fill in type and description fields.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      const notes = [healthNotes, healthNextVisit ? `Next visit: ${healthNextVisit}` : ""]
+        .filter(Boolean)
+        .join(" | ")
+
+      await firebaseDataStore.addHealthRecord(cattle.id, {
+        date: healthDate,
+        type: healthType as "Vaccination" | "Treatment" | "Checkup" | "Surgery" | "Other",
+        description: healthDescription,
+        veterinarian: healthVet || undefined,
+        cost: healthCost ? Number(healthCost) : undefined,
+        notes: notes || undefined,
+      })
+
+      // Reset form
+      setHealthDate(new Date().toISOString().split('T')[0])
+      setHealthType("")
+      setHealthDescription("")
+      setHealthVet("")
+      setHealthCost("")
+      setHealthNotes("")
+      setHealthNextVisit("")
+      setIsAddHealthOpen(false)
+      setRefreshKey(prev => prev + 1)
+
+      toast({
+        title: "Health record added",
+        description: "Health record has been saved successfully.",
+      })
+    } catch (error) {
+      console.error("Failed to add health record:", error)
+      toast({
+        title: "Error",
+        description: "Failed to add health record.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleAddFeedRecord = async () => {
+    if (!cattle || !feedType || !feedAmount) {
+      toast({
+        title: "Error",
+        description: "Please fill in feed type and amount.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      // Add individual feed record to health records with type "Other" and special marker in notes
+      await firebaseDataStore.addHealthRecord(cattle.id, {
+        date: feedDate,
+        type: "Other",
+        description: `Feed: ${feedType} - ${feedAmount} ${feedUnit}`,
+        cost: feedCost ? Number(feedCost) : undefined,
+        notes: feedNotes ? `[FEED] ${feedNotes}` : "[FEED]",
+      })
+
+      // Reset form
+      setFeedDate(new Date().toISOString().split('T')[0])
+      setFeedType("")
+      setFeedAmount("")
+      setFeedUnit("lbs")
+      setFeedCost("")
+      setFeedNotes("")
+      setFeedDialogOpen(false)
+      setRefreshKey(prev => prev + 1)
+
+      toast({
+        title: "Feed record added",
+        description: "Individual feed record has been saved successfully.",
+      })
+    } catch (error) {
+      console.error("Failed to add feed record:", error)
+      toast({
+        title: "Error",
+        description: "Failed to add feed record.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleAddMedicationRecord = async () => {
+    if (!cattle || !medicationName || !medicationDosage) {
+      toast({
+        title: "Error",
+        description: "Please fill in medication name and dosage.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      // Add individual medication record to health records with type "Treatment" and special marker in notes
+      const description = `Medication: ${medicationName} - ${medicationDosage} ${medicationUnit} - ${medicationPurpose}`
+      const noteParts = [
+        "[MEDICATION]",
+        medicationNotes,
+        medicationWithdrawal ? `Withdrawal: ${medicationWithdrawal} days` : ""
+      ].filter(Boolean)
+
+      await firebaseDataStore.addHealthRecord(cattle.id, {
+        date: medicationDate,
+        type: "Treatment",
+        description,
+        cost: medicationCost ? Number(medicationCost) : undefined,
+        notes: noteParts.join(" | "),
+      })
+
+      // Reset form
+      setMedicationDate(new Date().toISOString().split('T')[0])
+      setMedicationName("")
+      setMedicationDosage("")
+      setMedicationUnit("ml")
+      setMedicationPurpose("Treatment")
+      setMedicationCost("")
+      setMedicationWithdrawal("")
+      setMedicationNotes("")
+      setMedicationDialogOpen(false)
+      setRefreshKey(prev => prev + 1)
+
+      toast({
+        title: "Medication record added",
+        description: "Individual medication record has been saved successfully.",
+      })
+    } catch (error) {
+      console.error("Failed to add medication record:", error)
+      toast({
+        title: "Error",
+        description: "Failed to add medication record.",
+        variant: "destructive",
+      })
+    }
   }
 
   if (!cattle) {
@@ -702,25 +877,155 @@ export default function CattleDetailPage() {
 
           <TabsContent value="feed" className="mt-6">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Wheat className="h-5 w-5" />
-                  Feed Allocation History
-                </CardTitle>
-                {currentPen && (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Showing feed allocations for {currentPen.name}. Costs are calculated per head.
-                  </p>
-                )}
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Wheat className="h-5 w-5" />
+                    Feed History
+                  </CardTitle>
+                  {currentPen && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Showing feed allocations for {currentPen.name}. Costs are calculated per head.
+                    </p>
+                  )}
+                </div>
+                <Dialog open={feedDialogOpen} onOpenChange={setFeedDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Feed
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add Individual Feed Record</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="feed-date">Date</Label>
+                        <Input
+                          id="feed-date"
+                          type="date"
+                          value={feedDate}
+                          onChange={(e) => setFeedDate(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="feed-type">Feed Type</Label>
+                        <Input
+                          id="feed-type"
+                          placeholder="e.g., Hay, Corn, Supplements"
+                          value={feedType}
+                          onChange={(e) => setFeedType(e.target.value)}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="feed-amount">Amount</Label>
+                          <Input
+                            id="feed-amount"
+                            type="number"
+                            placeholder="50"
+                            value={feedAmount}
+                            onChange={(e) => setFeedAmount(e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="feed-unit">Unit</Label>
+                          <Select value={feedUnit} onValueChange={setFeedUnit}>
+                            <SelectTrigger id="feed-unit">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="lbs">lbs</SelectItem>
+                              <SelectItem value="kg">kg</SelectItem>
+                              <SelectItem value="bales">bales</SelectItem>
+                              <SelectItem value="flakes">flakes</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="feed-cost">Cost ($) (optional)</Label>
+                        <Input
+                          id="feed-cost"
+                          type="number"
+                          placeholder="15"
+                          value={feedCost}
+                          onChange={(e) => setFeedCost(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="feed-notes">Notes (optional)</Label>
+                        <Textarea
+                          id="feed-notes"
+                          placeholder="Any observations..."
+                          value={feedNotes}
+                          onChange={(e) => setFeedNotes(e.target.value)}
+                        />
+                      </div>
+                      <Button className="w-full" onClick={handleAddFeedRecord}>Save Feed Record</Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </CardHeader>
               <CardContent>
-                {!cattle.penId ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>This cattle is not assigned to a pen.</p>
-                    <p className="text-sm mt-2">Assign to a pen to track feed allocations.</p>
-                  </div>
-                ) : costSummary && (costSummary.feedAllocations.length > 0 || costSummary.feedActivities.length > 0) ? (
-                  <div className="space-y-4">
+                {(() => {
+                  const individualFeedRecords = sortedHealthRecords.filter(r => r.notes?.includes("[FEED]"))
+                  const hasPenData = cattle.penId && costSummary && (costSummary.feedAllocations.length > 0 || costSummary.feedActivities.length > 0)
+                  const hasIndividualRecords = individualFeedRecords.length > 0
+
+                  if (!hasPenData && !hasIndividualRecords) {
+                    return (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p>No feed records yet.</p>
+                        <p className="text-sm mt-2">Add individual feed records or assign to a pen to track feed allocations.</p>
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <div className="space-y-6">
+                      {/* Individual Feed Records */}
+                      {hasIndividualRecords && (
+                        <div>
+                          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                            <Badge variant="outline">Individual Records</Badge>
+                          </h3>
+                          <div className="space-y-3">
+                            {individualFeedRecords.map((record) => (
+                              <div key={record.id} className="border border-border rounded-lg p-4 bg-blue-50">
+                                <div className="flex items-start justify-between mb-2">
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <h4 className="font-semibold text-foreground">{record.description}</h4>
+                                      <span className="text-sm text-muted-foreground">{record.date}</span>
+                                    </div>
+                                  </div>
+                                  {record.cost && (
+                                    <div className="text-right">
+                                      <p className="text-lg font-bold text-foreground">${record.cost.toFixed(2)}</p>
+                                    </div>
+                                  )}
+                                </div>
+                                {record.notes && (
+                                  <p className="text-xs text-muted-foreground mt-2 border-t border-border pt-2">
+                                    Notes: {record.notes}
+                                  </p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Pen-Level Allocations */}
+                      {hasPenData && (
+                        <div>
+                          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                            <Badge variant="outline">Pen Allocations</Badge>
+                          </h3>
+                          <div className="space-y-4">
                     {/* Detailed Feed Allocations (from feedService) */}
                     {costSummary.feedAllocations.map((feedHistory) => (
                       <div key={feedHistory.allocation.id} className="border border-border rounded-lg p-4">
@@ -793,44 +1098,198 @@ export default function CattleDetailPage() {
 
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-foreground">Total Feed Cost for this Cattle:</span>
+                        <span className="font-semibold text-foreground">Pen-Level Feed Cost:</span>
                         <span className="text-xl font-bold text-green-600">
                           ${costSummary.feedCost.toFixed(2)}
                         </span>
                       </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>No feed allocations recorded yet.</p>
-                    <p className="text-sm mt-2">Feed allocations will appear here when added to the pen.</p>
-                  </div>
-                )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="medication" className="mt-6">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Pill className="h-5 w-5" />
-                  Medication History
-                </CardTitle>
-                {currentPen && (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Showing pen-level medication activities for {currentPen.name}. Costs are per head.
-                  </p>
-                )}
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Pill className="h-5 w-5" />
+                    Medication History
+                  </CardTitle>
+                  {currentPen && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Showing pen-level medication activities for {currentPen.name}. Costs are per head.
+                    </p>
+                  )}
+                </div>
+                <Dialog open={medicationDialogOpen} onOpenChange={setMedicationDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Medication
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add Individual Medication Record</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="medication-date">Date</Label>
+                        <Input
+                          id="medication-date"
+                          type="date"
+                          value={medicationDate}
+                          onChange={(e) => setMedicationDate(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="medication-name">Medication Name</Label>
+                        <Input
+                          id="medication-name"
+                          placeholder="e.g., Penicillin, Ivermectin"
+                          value={medicationName}
+                          onChange={(e) => setMedicationName(e.target.value)}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="medication-dosage">Dosage</Label>
+                          <Input
+                            id="medication-dosage"
+                            type="number"
+                            placeholder="5"
+                            value={medicationDosage}
+                            onChange={(e) => setMedicationDosage(e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="medication-unit">Unit</Label>
+                          <Select value={medicationUnit} onValueChange={setMedicationUnit}>
+                            <SelectTrigger id="medication-unit">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="ml">ml</SelectItem>
+                              <SelectItem value="cc">cc</SelectItem>
+                              <SelectItem value="mg">mg</SelectItem>
+                              <SelectItem value="g">g</SelectItem>
+                              <SelectItem value="tablets">tablets</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="medication-purpose">Purpose</Label>
+                        <Select value={medicationPurpose} onValueChange={setMedicationPurpose}>
+                          <SelectTrigger id="medication-purpose">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Treatment">Treatment</SelectItem>
+                            <SelectItem value="Prevention">Prevention</SelectItem>
+                            <SelectItem value="Vaccination">Vaccination</SelectItem>
+                            <SelectItem value="Parasite Control">Parasite Control</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="medication-cost">Cost ($) (optional)</Label>
+                        <Input
+                          id="medication-cost"
+                          type="number"
+                          placeholder="25"
+                          value={medicationCost}
+                          onChange={(e) => setMedicationCost(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="medication-withdrawal">Withdrawal Period (days) (optional)</Label>
+                        <Input
+                          id="medication-withdrawal"
+                          type="number"
+                          placeholder="14"
+                          value={medicationWithdrawal}
+                          onChange={(e) => setMedicationWithdrawal(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="medication-notes">Notes (optional)</Label>
+                        <Textarea
+                          id="medication-notes"
+                          placeholder="Any observations..."
+                          value={medicationNotes}
+                          onChange={(e) => setMedicationNotes(e.target.value)}
+                        />
+                      </div>
+                      <Button className="w-full" onClick={handleAddMedicationRecord}>Save Medication Record</Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </CardHeader>
               <CardContent>
-                {!cattle.penId ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>This cattle is not assigned to a pen.</p>
-                    <p className="text-sm mt-2">Assign to a pen to track medications.</p>
-                  </div>
-                ) : costSummary && costSummary.medications.length > 0 ? (
-                  <div className="space-y-4">
+                {(() => {
+                  const individualMedicationRecords = sortedHealthRecords.filter(r => r.notes?.includes("[MEDICATION]"))
+                  const hasPenData = cattle.penId && costSummary && costSummary.medications.length > 0
+                  const hasIndividualRecords = individualMedicationRecords.length > 0
+
+                  if (!hasPenData && !hasIndividualRecords) {
+                    return (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p>No medication records yet.</p>
+                        <p className="text-sm mt-2">Add individual medication records or assign to a pen to track medications.</p>
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <div className="space-y-6">
+                      {/* Individual Medication Records */}
+                      {hasIndividualRecords && (
+                        <div>
+                          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                            <Badge variant="outline">Individual Records</Badge>
+                          </h3>
+                          <div className="space-y-3">
+                            {individualMedicationRecords.map((record) => (
+                              <div key={record.id} className="border border-border rounded-lg p-4 bg-purple-50">
+                                <div className="flex items-start justify-between mb-2">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <h4 className="font-semibold text-foreground">{record.description}</h4>
+                                      <span className="text-sm text-muted-foreground">{record.date}</span>
+                                    </div>
+                                  </div>
+                                  {record.cost && (
+                                    <div className="text-right">
+                                      <p className="text-lg font-bold text-foreground">${record.cost.toFixed(2)}</p>
+                                    </div>
+                                  )}
+                                </div>
+                                {record.notes && (
+                                  <p className="text-xs text-muted-foreground mt-2 border-t border-border pt-2">
+                                    {record.notes}
+                                  </p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Pen-Level Medications */}
+                      {hasPenData && (
+                        <div>
+                          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                            <Badge variant="outline">Pen Medications</Badge>
+                          </h3>
+                          <div className="space-y-4">
                     {costSummary.medications.map((medHistory) => (
                       <div key={medHistory.activity.id} className="border border-border rounded-lg p-4">
                         <div className="flex items-start justify-between mb-2">
@@ -871,19 +1330,18 @@ export default function CattleDetailPage() {
                     ))}
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-foreground">Total Medication Cost for this Cattle:</span>
+                        <span className="font-semibold text-foreground">Pen-Level Medication Cost:</span>
                         <span className="text-xl font-bold text-green-600">
                           ${costSummary.medicationCost.toFixed(2)}
                         </span>
                       </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>No medications recorded yet.</p>
-                    <p className="text-sm mt-2">Medication activities will appear here when added to the pen.</p>
-                  </div>
-                )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
               </CardContent>
             </Card>
           </TabsContent>
@@ -906,29 +1364,75 @@ export default function CattleDetailPage() {
                     <div className="space-y-4 py-4">
                       <div className="space-y-2">
                         <Label htmlFor="health-date">Date</Label>
-                        <Input id="health-date" type="date" />
+                        <Input
+                          id="health-date"
+                          type="date"
+                          value={healthDate}
+                          onChange={(e) => setHealthDate(e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="health-type">Type</Label>
-                        <Input id="health-type" placeholder="Vaccination, Checkup, Treatment..." />
+                        <Select value={healthType} onValueChange={setHealthType}>
+                          <SelectTrigger id="health-type">
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Vaccination">Vaccination</SelectItem>
+                            <SelectItem value="Treatment">Treatment</SelectItem>
+                            <SelectItem value="Checkup">Checkup</SelectItem>
+                            <SelectItem value="Surgery">Surgery</SelectItem>
+                            <SelectItem value="Other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="health-description">Description</Label>
-                        <Textarea id="health-description" placeholder="Details of the visit..." />
+                        <Textarea
+                          id="health-description"
+                          placeholder="Details of the visit..."
+                          value={healthDescription}
+                          onChange={(e) => setHealthDescription(e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="health-vet">Veterinarian</Label>
-                        <Input id="health-vet" placeholder="Dr. Smith" />
+                        <Label htmlFor="health-vet">Veterinarian (optional)</Label>
+                        <Input
+                          id="health-vet"
+                          placeholder="Dr. Smith"
+                          value={healthVet}
+                          onChange={(e) => setHealthVet(e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="health-cost">Cost ($)</Label>
-                        <Input id="health-cost" type="number" placeholder="75" />
+                        <Label htmlFor="health-cost">Cost ($) (optional)</Label>
+                        <Input
+                          id="health-cost"
+                          type="number"
+                          placeholder="75"
+                          value={healthCost}
+                          onChange={(e) => setHealthCost(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="health-notes">Notes (optional)</Label>
+                        <Textarea
+                          id="health-notes"
+                          placeholder="Any additional notes..."
+                          value={healthNotes}
+                          onChange={(e) => setHealthNotes(e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="health-next">Next Visit (optional)</Label>
-                        <Input id="health-next" type="date" />
+                        <Input
+                          id="health-next"
+                          type="date"
+                          value={healthNextVisit}
+                          onChange={(e) => setHealthNextVisit(e.target.value)}
+                        />
                       </div>
-                      <Button className="w-full">Save Health Record</Button>
+                      <Button className="w-full" onClick={handleAddHealthRecord}>Save Health Record</Button>
                     </div>
                   </DialogContent>
                 </Dialog>
