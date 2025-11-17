@@ -287,7 +287,7 @@ export default function InventoryPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{status.totalItems}</div>
+              <div className="text-2xl font-bold">{status?.totalItems || 0}</div>
               <p className="text-xs text-muted-foreground">
                 {inventory.filter((i) => isDrugCategory(i.category)).length} drugs,{" "}
                 {inventory.filter((i) => isFeedCategory(i.category)).length} feed
@@ -303,7 +303,7 @@ export default function InventoryPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${status.totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+              <div className="text-2xl font-bold">${(status?.totalValue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
               <p className="text-xs text-muted-foreground">Current inventory value</p>
             </CardContent>
           </Card>
@@ -316,7 +316,7 @@ export default function InventoryPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-amber-600">{status.lowStockCount}</div>
+              <div className="text-2xl font-bold text-amber-600">{status?.lowStockCount || 0}</div>
               <p className="text-xs text-muted-foreground">
                 Items at or below reorder point
               </p>
@@ -332,17 +332,17 @@ export default function InventoryPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-orange-600">
-                {status.expiredCount + status.expiringSoonCount}
+                {(status?.expiredCount || 0) + (status?.expiringSoonCount || 0)}
               </div>
               <p className="text-xs text-muted-foreground">
-                {status.expiredCount} expired, {status.expiringSoonCount} expiring soon
+                {status?.expiredCount || 0} expired, {status?.expiringSoonCount || 0} expiring soon
               </p>
             </CardContent>
           </Card>
         </div>
 
         {/* Alerts Panel */}
-        {status.alerts.length > 0 && (
+        {status?.alerts && status.alerts.length > 0 && (
           <div className="mb-6">
             <InventoryAlertsPanel alerts={status.alerts} />
           </div>

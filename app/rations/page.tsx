@@ -60,8 +60,8 @@ export default function RationsPage() {
     }
   }, [user?.uid])
 
-  const loadAvailableFeeds = () => {
-    const allInventory = inventoryService.getInventory()
+  const loadAvailableFeeds = async () => {
+    const allInventory = await inventoryService.getInventory()
     const feeds = allInventory.filter(item =>
       isFeedCategory(item.category) || isSupplementCategory(item.category)
     )
