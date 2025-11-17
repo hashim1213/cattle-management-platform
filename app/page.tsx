@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { TrendingUp, Package, DollarSign, Plus, Download, Sprout, MapPin, FileText, Heart, MessageSquare, Loader2 } from "lucide-react"
+import { TrendingUp, Package, DollarSign, Plus, Download, Sprout, MapPin, FileText, Utensils, MessageSquare, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { AlertCard } from "@/components/alert-card"
@@ -392,12 +392,12 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
             </Link>
-            <Link href="/health" className="touch-manipulation">
+            <Link href="/rations" className="touch-manipulation">
               <Card className="hover:bg-muted/50 active:bg-muted transition-colors cursor-pointer h-full">
                 <CardContent className="p-4 sm:p-6 text-center min-h-[100px] flex flex-col items-center justify-center">
-                  <Heart className="h-7 w-7 sm:h-8 sm:w-8 mx-auto mb-2 text-primary flex-shrink-0" />
-                  <h3 className="font-semibold text-sm sm:text-base">Health</h3>
-                  <p className="text-xs text-muted-foreground hidden md:block mt-1">Track health records</p>
+                  <Utensils className="h-7 w-7 sm:h-8 sm:w-8 mx-auto mb-2 text-primary flex-shrink-0" />
+                  <h3 className="font-semibold text-sm sm:text-base">Rations</h3>
+                  <p className="text-xs text-muted-foreground hidden md:block mt-1">Manage feed rations</p>
                 </CardContent>
               </Card>
             </Link>
