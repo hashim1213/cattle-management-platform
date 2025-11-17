@@ -18,6 +18,7 @@ import { CattleGrowthTimeline } from "@/components/cattle-growth-timeline"
 import { firebaseDataStore, type Cattle, type WeightRecord, type HealthRecord } from "@/lib/data-store-firebase"
 import { feedService, type FeedAllocationRecord } from "@/lib/feed/feed-service"
 import { cattleCostService, type CattleCostSummary } from "@/lib/cattle-cost-service"
+import { penActivityStore } from "@/lib/pen-activity-store"
 import { usePenStore } from "@/hooks/use-pen-store"
 import { useToast } from "@/hooks/use-toast"
 import { useFarmSettings } from "@/hooks/use-farm-settings"
@@ -82,6 +83,10 @@ export default function CattleDetailPage() {
 
   useEffect(() => {
     const loadCattle = async () => {
+      // Load pen activity data from Firebase FIRST (required for cost calculations)
+      await penActivityStore.loadFeedActivities()
+      await penActivityStore.loadMedicationActivities()
+
       const allCattle = await firebaseDataStore.getCattle()
       const foundCattle = allCattle.find((c) => c.id === params.id)
       if (foundCattle) {
