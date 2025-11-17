@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { ArrowLeft, Edit, Trash2, Activity, TrendingUp, Calendar, DollarSign, Plus, Building2, MapPin } from "lucide-react"
+import { ArrowLeft, Edit, Trash2, Activity, TrendingUp, Calendar, DollarSign, Plus, Building2, MapPin, Pill, Wheat } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -17,6 +17,7 @@ import { EditCattleDialog } from "@/components/edit-cattle-dialog"
 import { CattleGrowthTimeline } from "@/components/cattle-growth-timeline"
 import { firebaseDataStore, type Cattle, type WeightRecord, type HealthRecord } from "@/lib/data-store-firebase"
 import { feedService, type FeedAllocationRecord } from "@/lib/feed/feed-service"
+import { cattleCostService, type CattleCostSummary } from "@/lib/cattle-cost-service"
 import { usePenStore } from "@/hooks/use-pen-store"
 import { useToast } from "@/hooks/use-toast"
 import { useFarmSettings } from "@/hooks/use-farm-settings"
@@ -37,6 +38,7 @@ export default function CattleDetailPage() {
   const [weightRecords, setWeightRecords] = useState<WeightRecord[]>([])
   const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([])
   const [feedAllocations, setFeedAllocations] = useState<FeedAllocationRecord[]>([])
+  const [costSummary, setCostSummary] = useState<CattleCostSummary | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [selectedBarnId, setSelectedBarnId] = useState<string>("")
   const [selectedPenId, setSelectedPenId] = useState<string>("")
@@ -69,6 +71,10 @@ export default function CattleDetailPage() {
         // Load feed allocations (all allocations, filtered by pen in component)
         const allocations = feedService.getAllocations()
         setFeedAllocations(allocations)
+
+        // Load cost summary (feed + medication costs)
+        const costs = await cattleCostService.getCattleCostSummary(params.id as string)
+        setCostSummary(costs)
       }
     }
     loadCattle()
@@ -462,6 +468,20 @@ export default function CattleDetailPage() {
                 <span className="lg:hidden">Weight</span>
               </TabsTrigger>
               <TabsTrigger
+                value="feed"
+                className="flex-1 sm:flex-initial whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 touch-manipulation min-h-[44px]"
+              >
+                <span className="hidden lg:inline">Feed History</span>
+                <span className="lg:hidden">Feed</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="medication"
+                className="flex-1 sm:flex-initial whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 touch-manipulation min-h-[44px]"
+              >
+                <span className="hidden lg:inline">Medications</span>
+                <span className="lg:hidden">Meds</span>
+              </TabsTrigger>
+              <TabsTrigger
                 value="health"
                 className="flex-1 sm:flex-initial whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 touch-manipulation min-h-[44px]"
               >
@@ -680,6 +700,194 @@ export default function CattleDetailPage() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="feed" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Wheat className="h-5 w-5" />
+                  Feed Allocation History
+                </CardTitle>
+                {currentPen && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Showing feed allocations for {currentPen.name}. Costs are calculated per head.
+                  </p>
+                )}
+              </CardHeader>
+              <CardContent>
+                {!cattle.penId ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>This cattle is not assigned to a pen.</p>
+                    <p className="text-sm mt-2">Assign to a pen to track feed allocations.</p>
+                  </div>
+                ) : costSummary && (costSummary.feedAllocations.length > 0 || costSummary.feedActivities.length > 0) ? (
+                  <div className="space-y-4">
+                    {/* Detailed Feed Allocations (from feedService) */}
+                    {costSummary.feedAllocations.map((feedHistory) => (
+                      <div key={feedHistory.allocation.id} className="border border-border rounded-lg p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline">{feedHistory.allocation.penName}</Badge>
+                              <span className="text-sm text-muted-foreground">{feedHistory.allocation.date}</span>
+                              <Badge className="bg-blue-100 text-blue-800">Detailed</Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {feedHistory.allocation.headCount} head • {feedHistory.cattleShare.toFixed(1)}% share for this cattle
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-lg font-bold text-foreground">${feedHistory.cattleCost.toFixed(2)}</p>
+                            <p className="text-xs text-muted-foreground">This cattle's cost</p>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          {feedHistory.allocation.feedItems.map((item, idx) => (
+                            <div key={idx} className="flex items-center justify-between text-sm bg-muted/50 p-2 rounded">
+                              <span className="font-medium">{item.feedName}</span>
+                              <span className="text-muted-foreground">
+                                {(item.quantity / feedHistory.allocation.headCount).toFixed(2)} {item.unit} per head
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        {feedHistory.allocation.notes && (
+                          <p className="text-xs text-muted-foreground mt-2 border-t border-border pt-2">
+                            Notes: {feedHistory.allocation.notes}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+
+                    {/* Simple Feed Activities (from penActivityStore) */}
+                    {costSummary.feedActivities.map((feedActivity) => (
+                      <div key={feedActivity.activity.id} className="border border-border rounded-lg p-4 bg-muted/20">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold text-foreground">{feedActivity.activity.feedType}</h4>
+                              <Badge variant="outline">Quick Feed</Badge>
+                              <span className="text-sm text-muted-foreground">{feedActivity.activity.date}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {feedActivity.activity.cattleCount} head in pen
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-lg font-bold text-foreground">${feedActivity.cattleCost.toFixed(2)}</p>
+                            <p className="text-xs text-muted-foreground">This cattle's cost</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between text-sm bg-muted/50 p-2 rounded">
+                          <span className="text-muted-foreground">Amount per head:</span>
+                          <span className="font-medium">
+                            {feedActivity.cattleAmount.toFixed(2)} {feedActivity.activity.unit}
+                          </span>
+                        </div>
+                        {feedActivity.activity.notes && (
+                          <p className="text-xs text-muted-foreground mt-2 border-t border-border pt-2">
+                            Notes: {feedActivity.activity.notes}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-foreground">Total Feed Cost for this Cattle:</span>
+                        <span className="text-xl font-bold text-green-600">
+                          ${costSummary.feedCost.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>No feed allocations recorded yet.</p>
+                    <p className="text-sm mt-2">Feed allocations will appear here when added to the pen.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="medication" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Pill className="h-5 w-5" />
+                  Medication History
+                </CardTitle>
+                {currentPen && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Showing pen-level medication activities for {currentPen.name}. Costs are per head.
+                  </p>
+                )}
+              </CardHeader>
+              <CardContent>
+                {!cattle.penId ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>This cattle is not assigned to a pen.</p>
+                    <p className="text-sm mt-2">Assign to a pen to track medications.</p>
+                  </div>
+                ) : costSummary && costSummary.medications.length > 0 ? (
+                  <div className="space-y-4">
+                    {costSummary.medications.map((medHistory) => (
+                      <div key={medHistory.activity.id} className="border border-border rounded-lg p-4">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-semibold text-foreground">{medHistory.activity.medicationName}</h4>
+                              <Badge variant="outline">{medHistory.activity.purpose}</Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground">{medHistory.activity.date}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-lg font-bold text-foreground">${medHistory.cattleCost.toFixed(2)}</p>
+                            <p className="text-xs text-muted-foreground">Cost per head</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 mt-3 text-sm">
+                          <div className="bg-muted/50 p-3 rounded">
+                            <p className="text-muted-foreground text-xs mb-1">Dosage (This Cattle)</p>
+                            <p className="font-semibold">{medHistory.cattleDosage} {medHistory.activity.unit}</p>
+                          </div>
+                          <div className="bg-muted/50 p-3 rounded">
+                            <p className="text-muted-foreground text-xs mb-1">Total Treated</p>
+                            <p className="font-semibold">{medHistory.activity.cattleCount} head</p>
+                          </div>
+                          {medHistory.activity.withdrawalPeriod && (
+                            <div className="bg-amber-50 p-3 rounded col-span-2">
+                              <p className="text-muted-foreground text-xs mb-1">Withdrawal Period</p>
+                              <p className="font-semibold text-amber-800">{medHistory.activity.withdrawalPeriod} days</p>
+                            </div>
+                          )}
+                        </div>
+                        {medHistory.activity.notes && (
+                          <p className="text-xs text-muted-foreground mt-2 border-t border-border pt-2">
+                            Notes: {medHistory.activity.notes}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-foreground">Total Medication Cost for this Cattle:</span>
+                        <span className="text-xl font-bold text-green-600">
+                          ${costSummary.medicationCost.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>No medications recorded yet.</p>
+                    <p className="text-sm mt-2">Medication activities will appear here when added to the pen.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="health" className="mt-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
@@ -833,39 +1041,73 @@ export default function CattleDetailPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Cost Breakdown</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Real-time cost tracking based on actual feed and medication allocations
+                  </p>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     <div className="flex justify-between py-2 border-b border-border">
                       <span className="text-muted-foreground">Purchase Cost:</span>
-                      <span className="font-medium text-foreground">${cattle.purchasePrice}</span>
+                      <span className="font-medium text-foreground">${cattle.purchasePrice.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b border-border">
-                      <span className="text-muted-foreground">Feed Costs (est.):</span>
-                      <span className="font-medium text-foreground">$485</span>
-                    </div>
-                    <div className="flex justify-between py-2 border-b border-border">
-                      <span className="text-muted-foreground">Health Costs:</span>
+                      <div className="flex items-center gap-2">
+                        <Wheat className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Feed Costs:</span>
+                      </div>
                       <span className="font-medium text-foreground">
-                        ${healthRecords.reduce((sum, r) => sum + (r.cost || 0), 0)}
+                        ${costSummary?.feedCost.toFixed(2) || "0.00"}
                       </span>
                     </div>
                     <div className="flex justify-between py-2 border-b border-border">
-                      <span className="text-muted-foreground">Other Costs:</span>
-                      <span className="font-medium text-foreground">$125</span>
+                      <div className="flex items-center gap-2">
+                        <Pill className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Medication Costs:</span>
+                      </div>
+                      <span className="font-medium text-foreground">
+                        ${costSummary?.medicationCost.toFixed(2) || "0.00"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-2 border-b border-border">
+                      <div className="flex items-center gap-2">
+                        <Activity className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Veterinary Costs:</span>
+                      </div>
+                      <span className="font-medium text-foreground">
+                        ${costSummary?.healthRecordCost.toFixed(2) || "0.00"}
+                      </span>
                     </div>
                     <div className="flex justify-between py-3 bg-muted/50 px-2 rounded">
+                      <span className="font-semibold text-foreground">Total Variable Costs:</span>
+                      <span className="font-bold text-foreground">
+                        ${costSummary?.totalVariableCost.toFixed(2) || "0.00"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-3 bg-blue-50 px-2 rounded">
                       <span className="font-semibold text-foreground">Total Investment:</span>
                       <span className="font-bold text-foreground">
-                        ${cattle.purchasePrice + 485 + healthRecords.reduce((sum, r) => sum + (r.cost || 0), 0) + 125}
+                        ${((cattle.purchasePrice || 0) + (costSummary?.totalVariableCost || 0)).toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between py-3 bg-green-50 px-2 rounded">
-                      <span className="font-semibold text-foreground">Projected Profit:</span>
-                      <span className="font-bold text-green-600">
-                        $
-                        {targetValue.toFixed(0) -
-                          ((cattle.purchasePrice || 0) + 485 + healthRecords.reduce((sum, r) => sum + (r.cost || 0), 0) + 125)}
+                      <span className="font-semibold text-foreground">Current Profit/Loss:</span>
+                      <span className={`font-bold ${
+                        currentValue - ((cattle.purchasePrice || 0) + (costSummary?.totalVariableCost || 0)) >= 0
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}>
+                        ${(currentValue - ((cattle.purchasePrice || 0) + (costSummary?.totalVariableCost || 0))).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-3 bg-amber-50 px-2 rounded">
+                      <span className="font-semibold text-foreground">Projected Profit at Target:</span>
+                      <span className={`font-bold ${
+                        targetValue - ((cattle.purchasePrice || 0) + (costSummary?.totalVariableCost || 0)) >= 0
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}>
+                        ${(targetValue - ((cattle.purchasePrice || 0) + (costSummary?.totalVariableCost || 0))).toFixed(2)}
                       </span>
                     </div>
                   </div>
