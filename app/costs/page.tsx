@@ -304,7 +304,7 @@ export default function CostsPage() {
         {/* Cost Per Head Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Cost Per Head by Lot</CardTitle>
+            <CardTitle>Cost Per Head by Pen</CardTitle>
           </CardHeader>
           <CardContent>
             <CostPerHeadTable />

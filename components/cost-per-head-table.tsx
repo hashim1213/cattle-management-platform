@@ -1,9 +1,9 @@
 "use client"
 
 export function CostPerHeadTable() {
-  const lots = [
+  const pens = [
     {
-      lotNumber: "LOT-A",
+      penName: "Pen A",
       headCount: 125,
       avgPurchasePrice: 1650,
       feedCost: 1145,
@@ -13,7 +13,7 @@ export function CostPerHeadTable() {
       projectedBreakeven: 1.48,
     },
     {
-      lotNumber: "LOT-B",
+      penName: "Pen B",
       headCount: 98,
       avgPurchasePrice: 1670,
       feedCost: 1089,
@@ -23,7 +23,7 @@ export function CostPerHeadTable() {
       projectedBreakeven: 1.45,
     },
     {
-      lotNumber: "LOT-C",
+      penName: "Pen C",
       headCount: 24,
       avgPurchasePrice: 1625,
       feedCost: 892,
@@ -39,7 +39,7 @@ export function CostPerHeadTable() {
       <table className="w-full">
         <thead className="bg-muted/50 border-b border-border">
           <tr>
-            <th className="text-left p-4 text-sm font-semibold text-foreground">Lot</th>
+            <th className="text-left p-4 text-sm font-semibold text-foreground">Pen</th>
             <th className="text-left p-4 text-sm font-semibold text-foreground">Head Count</th>
             <th className="text-left p-4 text-sm font-semibold text-foreground">Purchase Price</th>
             <th className="text-left p-4 text-sm font-semibold text-foreground">Feed Cost</th>
@@ -50,16 +50,16 @@ export function CostPerHeadTable() {
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
-          {lots.map((lot) => (
-            <tr key={lot.lotNumber} className="hover:bg-muted/50 transition-colors">
-              <td className="p-4 font-medium text-foreground">{lot.lotNumber}</td>
-              <td className="p-4 text-sm text-muted-foreground">{lot.headCount}</td>
-              <td className="p-4 text-sm text-foreground">${lot.avgPurchasePrice}</td>
-              <td className="p-4 text-sm text-foreground">${lot.feedCost}</td>
-              <td className="p-4 text-sm text-foreground">${lot.otherCosts}</td>
-              <td className="p-4 text-sm font-semibold text-foreground">${lot.totalCostPerHead.toLocaleString()}</td>
-              <td className="p-4 text-sm text-muted-foreground">{lot.avgWeight} lbs</td>
-              <td className="p-4 text-sm text-foreground">${lot.projectedBreakeven}/lb</td>
+          {pens.map((pen) => (
+            <tr key={pen.penName} className="hover:bg-muted/50 transition-colors">
+              <td className="p-4 font-medium text-foreground">{pen.penName}</td>
+              <td className="p-4 text-sm text-muted-foreground">{pen.headCount}</td>
+              <td className="p-4 text-sm text-foreground">${pen.avgPurchasePrice}</td>
+              <td className="p-4 text-sm text-foreground">${pen.feedCost}</td>
+              <td className="p-4 text-sm text-foreground">${pen.otherCosts}</td>
+              <td className="p-4 text-sm font-semibold text-foreground">${pen.totalCostPerHead.toLocaleString()}</td>
+              <td className="p-4 text-sm text-muted-foreground">{pen.avgWeight} lbs</td>
+              <td className="p-4 text-sm text-foreground">${pen.projectedBreakeven}/lb</td>
             </tr>
           ))}
         </tbody>
