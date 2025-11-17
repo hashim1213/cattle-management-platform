@@ -46,8 +46,8 @@ export function CattleGrid({ searchQuery, filters }: CattleGridProps) {
     loadCattle()
 
     // Subscribe to updates
-    const unsubscribe = dataStore.subscribe(() => {
-      const cattleData = dataStore.getCattle()
+    const unsubscribe = dataStore.subscribe(async () => {
+      const cattleData = await dataStore.getCattle()
       // Only update if it's a valid array
       if (Array.isArray(cattleData)) {
         setCattle(cattleData)
