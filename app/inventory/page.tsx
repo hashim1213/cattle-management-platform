@@ -78,7 +78,9 @@ export default function InventoryPage() {
     const unsubscribe = inventoryService.subscribe(() => {
       loadInventory()
     })
-    return unsubscribe
+    return () => {
+      unsubscribe()
+    }
   }, [isInitialized])
 
   // Apply filters when inventory or filters change

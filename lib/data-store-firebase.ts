@@ -33,9 +33,13 @@ export interface Cattle {
   currentValue?: number
   weight: number
   targetWeight?: number
+  projectedWeight?: number
+  daysOnFeed?: number
   dam?: string
   sire?: string
+  conceptionMethod?: string
   lot: string
+  lotNumber?: string
   pasture?: string
   penId?: string
   barnId?: string
@@ -52,6 +56,8 @@ export interface Cattle {
   identificationMethod: string
   rfidTag?: string
   visualTag?: string
+  earTag?: string
+  brand?: string
   brandNumber?: string
   arrivalDate?: string
   arrivalWeight?: number
