@@ -13,6 +13,7 @@ import { PenOverviewCard } from "@/components/pen-overview-card"
 import { useLifecycleConfig } from "@/hooks/use-lifecycle-config"
 import { useFarmSettings } from "@/hooks/use-farm-settings"
 import { useAuth } from "@/contexts/auth-context"
+import { useAnalyticsCache } from "@/hooks/use-analytics-cache"
 import Link from "next/link"
 import Image from "next/image"
 import { firebaseDataStore } from "@/lib/data-store-firebase"
@@ -99,12 +100,11 @@ function SortableStage({
 
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth()
-  const [analytics, setAnalytics] = useState<any>(null)
   const [alerts, setAlerts] = useState<any[]>([])
   const [stageCounts, setStageCounts] = useState<Record<string, number>>({})
-  const [dataLoading, setDataLoading] = useState(true)
   const { stages, reorderStages, loading: stagesLoading } = useLifecycleConfig()
   const { isSetupCompleted, cattlePricePerLb } = useFarmSettings()
+  const { analytics, loading: analyticsLoading, loadAnalytics } = useAnalyticsCache(cattlePricePerLb)
   const router = useRouter()
 
   // Onboarding disabled for now - users go straight to dashboard
@@ -141,11 +141,8 @@ export default function DashboardPage() {
 
     const loadData = async () => {
       try {
-        setDataLoading(true)
-
-        // Load analytics with configurable market price
-        const data = await firebaseDataStore.getAnalytics(cattlePricePerLb)
-        setAnalytics(data)
+        // Load analytics using cache (handled by useAnalyticsCache hook)
+        const data = await loadAnalytics()
 
         // Get all cattle data
         const cattle = await firebaseDataStore.getCattle()
@@ -187,22 +184,6 @@ export default function DashboardPage() {
         setAlerts(newAlerts)
       } catch (error) {
         console.error("Failed to load dashboard data:", error)
-        setAnalytics({
-          totalCattle: 0,
-          activeCattle: 0,
-          healthyCount: 0,
-          sickCount: 0,
-          avgWeight: 0,
-          avgDailyGain: 0,
-          totalValue: 0,
-          totalInventoryValue: 0,
-          costPerHead: 0,
-          bulls: { count: 0, herdSires: 0, herdSireProspects: 0 },
-          cows: { count: 0, pregnant: 0, open: 0, exposed: 0 },
-          calves: { count: 0, unweaned: 0, weaned: 0 },
-        })
-      } finally {
-        setDataLoading(false)
       }
     }
 
@@ -214,7 +195,7 @@ export default function DashboardPage() {
     })
 
     return () => unsubscribe()
-  }, [user, authLoading, cattlePricePerLb])
+  }, [user, authLoading, cattlePricePerLb, loadAnalytics])
 
   const handleExportCattle = async () => {
     const cattle = await firebaseDataStore.getCattle()
@@ -223,13 +204,15 @@ export default function DashboardPage() {
   }
 
   // Show loading state while waiting for auth or data
-  if (authLoading || dataLoading || !analytics) {
+  if (authLoading || analyticsLoading || !analytics) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
           <p className="text-lg font-semibold text-foreground">Loading your farm dashboard...</p>
-          <p className="text-sm text-muted-foreground mt-2">This may take a moment</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            {analyticsLoading ? "Using cached data where available..." : "This may take a moment"}
+          </p>
         </div>
       </div>
     )
