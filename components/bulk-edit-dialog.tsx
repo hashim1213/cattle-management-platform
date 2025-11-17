@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
@@ -22,7 +23,6 @@ import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
 import { firebaseDataStore } from "@/lib/data-store-firebase"
 import { usePenStore } from "@/hooks/use-pen-store"
-import { useBatchStore } from "@/hooks/use-batch-store"
 import { useLifecycleConfig } from "@/hooks/use-lifecycle-config"
 import { Checkbox } from "@/components/ui/checkbox"
 
@@ -42,7 +42,6 @@ export function BulkEditDialog({
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const { pens = [], barns = [] } = usePenStore()
-  const { batches = [] } = useBatchStore()
   const { stages } = useLifecycleConfig()
 
   // Fields to edit
@@ -50,19 +49,25 @@ export function BulkEditDialog({
   const [updateStatus, setUpdateStatus] = useState(false)
   const [updateHealthStatus, setUpdateHealthStatus] = useState(false)
   const [updatePen, setUpdatePen] = useState(false)
-  const [updateBatch, setUpdateBatch] = useState(false)
+  const [updateSex, setUpdateSex] = useState(false)
+  const [updateBreed, setUpdateBreed] = useState(false)
+  const [updateCost, setUpdateCost] = useState(false)
+  const [updateWeight, setUpdateWeight] = useState(false)
 
   // Values
   const [stage, setStage] = useState("")
   const [status, setStatus] = useState("")
   const [healthStatus, setHealthStatus] = useState("")
   const [penId, setPenId] = useState("")
-  const [batchId, setBatchId] = useState("")
+  const [sex, setSex] = useState("")
+  const [breed, setBreed] = useState("")
+  const [cost, setCost] = useState("")
+  const [weight, setWeight] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!updateStage && !updateStatus && !updateHealthStatus && !updatePen && !updateBatch) {
+    if (!updateStage && !updateStatus && !updateHealthStatus && !updatePen && !updateSex && !updateBreed && !updateCost && !updateWeight) {
       toast({
         title: "No Changes",
         description: "Please select at least one field to update",
@@ -86,7 +91,10 @@ export function BulkEditDialog({
           updates.barnId = pen.barnId
         }
       }
-      if (updateBatch && batchId) updates.batchId = batchId === "none" ? undefined : batchId
+      if (updateSex && sex) updates.sex = sex
+      if (updateBreed && breed) updates.breed = breed
+      if (updateCost && cost) updates.purchasePrice = parseFloat(cost)
+      if (updateWeight && weight) updates.weight = parseFloat(weight)
 
       // Update all selected cattle
       let successCount = 0
@@ -109,12 +117,18 @@ export function BulkEditDialog({
       setUpdateStatus(false)
       setUpdateHealthStatus(false)
       setUpdatePen(false)
-      setUpdateBatch(false)
+      setUpdateSex(false)
+      setUpdateBreed(false)
+      setUpdateCost(false)
+      setUpdateWeight(false)
       setStage("")
       setStatus("")
       setHealthStatus("")
       setPenId("")
-      setBatchId("")
+      setSex("")
+      setBreed("")
+      setCost("")
+      setWeight("")
 
       onComplete()
     } catch (error) {
@@ -256,33 +270,107 @@ export function BulkEditDialog({
               </div>
             </div>
 
-            {/* Batch */}
+            {/* Sex */}
             <div className="flex items-start gap-3">
               <Checkbox
-                id="updateBatch"
-                checked={updateBatch}
-                onCheckedChange={(checked) => setUpdateBatch(checked as boolean)}
+                id="updateSex"
+                checked={updateSex}
+                onCheckedChange={(checked) => setUpdateSex(checked as boolean)}
                 className="mt-2"
               />
               <div className="flex-1 space-y-2">
-                <Label htmlFor="batch">Pen Group</Label>
+                <Label htmlFor="sex">Sex</Label>
                 <Select
-                  value={batchId}
-                  onValueChange={setBatchId}
-                  disabled={!updateBatch}
+                  value={sex}
+                  onValueChange={setSex}
+                  disabled={!updateSex}
                 >
-                  <SelectTrigger id="batch">
-                    <SelectValue placeholder="Select pen group" />
+                  <SelectTrigger id="sex">
+                    <SelectValue placeholder="Select sex" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">No Pen Group</SelectItem>
-                    {batches.map((batch) => (
-                      <SelectItem key={batch.id} value={batch.id}>
-                        {batch.name}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="Bull">Bull</SelectItem>
+                    <SelectItem value="Steer">Steer</SelectItem>
+                    <SelectItem value="Heifer">Heifer</SelectItem>
+                    <SelectItem value="Cow">Cow</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            {/* Breed */}
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="updateBreed"
+                checked={updateBreed}
+                onCheckedChange={(checked) => setUpdateBreed(checked as boolean)}
+                className="mt-2"
+              />
+              <div className="flex-1 space-y-2">
+                <Label htmlFor="breed">Breed</Label>
+                <Select
+                  value={breed}
+                  onValueChange={setBreed}
+                  disabled={!updateBreed}
+                >
+                  <SelectTrigger id="breed">
+                    <SelectValue placeholder="Select breed" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="angus">Angus</SelectItem>
+                    <SelectItem value="hereford">Hereford</SelectItem>
+                    <SelectItem value="charolais">Charolais</SelectItem>
+                    <SelectItem value="simmental">Simmental</SelectItem>
+                    <SelectItem value="limousin">Limousin</SelectItem>
+                    <SelectItem value="brahman">Brahman</SelectItem>
+                    <SelectItem value="crossbred">Crossbred</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Cost */}
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="updateCost"
+                checked={updateCost}
+                onCheckedChange={(checked) => setUpdateCost(checked as boolean)}
+                className="mt-2"
+              />
+              <div className="flex-1 space-y-2">
+                <Label htmlFor="cost">Purchase Price</Label>
+                <Input
+                  id="cost"
+                  type="number"
+                  step="0.01"
+                  placeholder="Enter cost"
+                  value={cost}
+                  onChange={(e) => setCost(e.target.value)}
+                  disabled={!updateCost}
+                />
+              </div>
+            </div>
+
+            {/* Weight */}
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="updateWeight"
+                checked={updateWeight}
+                onCheckedChange={(checked) => setUpdateWeight(checked as boolean)}
+                className="mt-2"
+              />
+              <div className="flex-1 space-y-2">
+                <Label htmlFor="weight">Weight (lbs)</Label>
+                <Input
+                  id="weight"
+                  type="number"
+                  step="0.01"
+                  placeholder="Enter weight"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                  disabled={!updateWeight}
+                />
               </div>
             </div>
           </div>
