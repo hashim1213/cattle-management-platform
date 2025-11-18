@@ -39,14 +39,36 @@ export async function POST(request: NextRequest) {
           content: [
             {
               type: 'text',
-              text: `Extract all RFID tag numbers from this image or PDF. Look for:
+              text: `Extract all cattle information from this image or PDF document. Look for:
+
+**RFID/Tag Numbers** (REQUIRED - extract all you find):
 1. Electronic RFID numbers (usually 15-16 digits, often starting with 840 for US or 124 for Canada)
 2. Visual tag numbers (usually 4-6 digits)
 3. McCall Livestock format: 4 digits followed by 12 digits
 4. CCIA format: "CA" or "CAN" followed by 3-4 digits and 12 digits
 5. Formatted numbers with dashes or spaces like "840-003-123456789"
 
-Return ONLY the numbers, one per line, with no additional text or formatting. If a number has dashes or spaces, remove them. Extract all unique tag numbers you can find.`
+**Additional Cattle Data** (if available in the document):
+- Weight (in pounds or lbs)
+- Breed (e.g., Angus, Hereford, Holstein, etc.)
+- Sex (Bull, Heifer, Steer, Cow, etc.)
+- Visual Tag (separate visual ID if different from RFID)
+- Purchase Price or Cost (in dollars)
+- Lot number or Batch ID
+- Date information (arrival date, purchase date)
+
+**Output Format:**
+Return the data in a structured format. For each animal, use this format:
+RFID: [tag number]
+Visual Tag: [visual tag if available]
+Weight: [weight in lbs if available]
+Breed: [breed if available]
+Sex: [sex if available]
+Price: [price if available]
+---
+
+If only RFID numbers are available, list them one per line without additional fields.
+Remove dashes and spaces from RFID numbers. Extract all unique cattle records you can find.`
             },
             {
               type: 'image_url',
@@ -57,7 +79,7 @@ Return ONLY the numbers, one per line, with no additional text or formatting. If
           ],
         },
       ],
-      max_tokens: 1000,
+      max_tokens: 2000,
     })
 
     const extractedText = response.choices[0]?.message?.content || ''

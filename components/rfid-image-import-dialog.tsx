@@ -62,8 +62,9 @@ export function RFIDImageImportDialog({
   const [isCameraActive, setIsCameraActive] = useState(false)
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [isImporting, setIsImporting] = useState(false)
-  const [useOpenAI, setUseOpenAI] = useState(false)
+  const [useOpenAI, setUseOpenAI] = useState(true) // Enable OpenAI by default for better PDF processing
   const [cattleDetails, setCattleDetails] = useState<CattleDetails[]>([])
+  const [extractedCattleData, setExtractedCattleData] = useState<Partial<Record<string, any>>>({})
 
   // Load pens and batches when dialog opens
   useEffect(() => {
@@ -261,18 +262,16 @@ export function RFIDImageImportDialog({
 
         if (data.success && data.text) {
           allText += `\n--- Page ${pageNum} ---\n${data.text}\n`
-
-          // Parse RFIDs from this page
-          const pageRFIDs = parseRFIDsFromText(data.text)
-          allRFIDs.push(...pageRFIDs)
         }
       }
 
-      // Remove duplicates
-      const uniqueRFIDs = Array.from(new Set(allRFIDs))
+      // Parse structured cattle data from all pages combined
+      const parsed = parseStructuredCattleData(allText)
+      const uniqueRFIDs = parsed.rfids
 
       setExtractedText(allText)
       setParsedRFIDs(uniqueRFIDs)
+      setExtractedCattleData(parsed.details)
       setStep("review")
 
       if (uniqueRFIDs.length === 0) {
@@ -282,9 +281,10 @@ export function RFIDImageImportDialog({
           variant: "destructive",
         })
       } else {
+        const hasAdditionalData = Object.keys(parsed.details).length > 0
         toast({
           title: "PDF Processed with AI",
-          description: `Found ${uniqueRFIDs.length} RFID number(s) from ${pdf.numPages} page(s) using OpenAI Vision`,
+          description: `Found ${uniqueRFIDs.length} RFID number(s) from ${pdf.numPages} page(s)${hasAdditionalData ? ' with additional cattle data' : ''}`,
         })
       }
     } catch (error: any) {
@@ -301,6 +301,56 @@ export function RFIDImageImportDialog({
     } finally {
       setIsProcessing(false)
     }
+  }
+
+  // Enhanced parsing function to extract structured cattle data
+  const parseStructuredCattleData = (text: string): { rfids: string[], details: Partial<Record<string, any>> } => {
+    const rfids: string[] = []
+    const details: Partial<Record<string, any>> = {}
+
+    // Try to parse structured format first (output from enhanced OpenAI prompt)
+    const structuredBlocks = text.split('---').filter(block => block.trim())
+
+    for (const block of structuredBlocks) {
+      const lines = block.split('\n').map(l => l.trim()).filter(Boolean)
+      let currentRFID = ''
+      let currentData: any = {}
+
+      for (const line of lines) {
+        const rfidMatch = line.match(/^RFID:\s*(.+)$/i)
+        const visualTagMatch = line.match(/^Visual Tag:\s*(.+)$/i)
+        const weightMatch = line.match(/^Weight:\s*([\d.]+)/i)
+        const breedMatch = line.match(/^Breed:\s*(.+)$/i)
+        const sexMatch = line.match(/^Sex:\s*(.+)$/i)
+        const priceMatch = line.match(/^Price:\s*\$?([\d.,]+)/i)
+
+        if (rfidMatch) {
+          currentRFID = rfidMatch[1].replace(/[-\s]/g, '').trim()
+          if (currentRFID) {
+            rfids.push(currentRFID)
+            currentData = {}
+          }
+        } else if (currentRFID) {
+          if (visualTagMatch) currentData.visualTag = visualTagMatch[1]
+          if (weightMatch) currentData.weight = parseFloat(weightMatch[1])
+          if (breedMatch) currentData.breed = breedMatch[1]
+          if (sexMatch) currentData.sex = sexMatch[1]
+          if (priceMatch) currentData.cost = parseFloat(priceMatch[1].replace(/,/g, ''))
+        }
+      }
+
+      if (currentRFID && Object.keys(currentData).length > 0) {
+        details[currentRFID] = currentData
+      }
+    }
+
+    // If structured parsing didn't work, fall back to regular RFID extraction
+    if (rfids.length === 0) {
+      const fallbackRFIDs = parseRFIDsFromText(text)
+      return { rfids: fallbackRFIDs, details: {} }
+    }
+
+    return { rfids: Array.from(new Set(rfids)), details }
   }
 
   const parseRFIDsFromText = (text: string): string[] => {
@@ -391,10 +441,12 @@ export function RFIDImageImportDialog({
       const text = data.text
       setExtractedText(text)
 
-      // Parse RFID numbers from extracted text
-      const uniqueRFIDs = parseRFIDsFromText(text)
+      // Parse structured cattle data from extracted text
+      const parsed = parseStructuredCattleData(text)
+      const uniqueRFIDs = parsed.rfids
 
       setParsedRFIDs(uniqueRFIDs)
+      setExtractedCattleData(parsed.details)
       setStep("review")
 
       if (uniqueRFIDs.length === 0) {
@@ -404,9 +456,10 @@ export function RFIDImageImportDialog({
           variant: "destructive",
         })
       } else {
+        const hasAdditionalData = Object.keys(parsed.details).length > 0
         toast({
           title: "OCR Complete (OpenAI)",
-          description: `Found ${uniqueRFIDs.length} RFID number(s) using advanced AI`,
+          description: `Found ${uniqueRFIDs.length} RFID number(s)${hasAdditionalData ? ' with additional cattle data' : ''}`,
         })
       }
     } catch (error: any) {
@@ -592,6 +645,7 @@ export function RFIDImageImportDialog({
       setExtractedText("")
       setParsedRFIDs([])
       setCattleDetails([])
+      setExtractedCattleData({})
       onOpenChange(false)
 
       // Call onSuccess callback if provided
@@ -615,6 +669,7 @@ export function RFIDImageImportDialog({
     setStep("input")
     setExtractedText("")
     setParsedRFIDs([])
+    setExtractedCattleData({})
     onOpenChange(false)
   }
 
@@ -837,6 +892,7 @@ export function RFIDImageImportDialog({
               rfids={parsedRFIDs}
               onComplete={handleImport}
               onBack={() => setStep("review")}
+              initialData={extractedCattleData}
             />
           )}
           </div>{/* End scrollable content wrapper */}
@@ -856,6 +912,7 @@ export function RFIDImageImportDialog({
                     setStep("input")
                     setExtractedText("")
                     setParsedRFIDs([])
+                    setExtractedCattleData({})
                   }}
                   className="w-full sm:w-auto"
                 >
