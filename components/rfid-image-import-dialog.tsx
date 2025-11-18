@@ -275,7 +275,12 @@ export function RFIDImageImportDialog({
 
         const data = await response.json()
 
-        if (data.success && data.text) {
+        // If OpenAI API fails, throw error to trigger Tesseract fallback
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || 'OpenAI API not available')
+        }
+
+        if (data.text) {
           allText += `\n--- Page ${pageNum} ---\n${data.text}\n`
         }
       }
