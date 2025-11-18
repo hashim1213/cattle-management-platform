@@ -187,16 +187,16 @@ class CattleCostService {
    * Get complete cost summary for a cattle
    */
   async getCattleCostSummary(cattleId: string, startDate?: string, endDate?: string): Promise<CattleCostSummary> {
-    // Get feed costs and history from both sources
-    const feedCost = await this.getCattleFeedCost(cattleId, startDate, endDate)
+    // Get feed costs and history from both pen-level sources
+    const penFeedCost = await this.getCattleFeedCost(cattleId, startDate, endDate)
     const feedAllocations = await this.getCattleFeedHistory(cattleId, startDate, endDate)
     const feedActivities = await this.getCattleFeedActivityHistory(cattleId, startDate, endDate)
 
-    // Get medication costs and history
-    const medicationCost = await this.getCattleMedicationCost(cattleId, startDate, endDate)
+    // Get medication costs and history from pen-level sources
+    const penMedicationCost = await this.getCattleMedicationCost(cattleId, startDate, endDate)
     const medications = await this.getCattleMedicationHistory(cattleId, startDate, endDate)
 
-    // Get health record costs (veterinary costs from individual health records)
+    // Get health record costs and separate individual feed/medication from true veterinary costs
     const healthRecords = await firebaseDataStore.getHealthRecords(cattleId)
     let filteredHealthRecords = healthRecords
 
@@ -207,7 +207,24 @@ class CattleCostService {
       filteredHealthRecords = filteredHealthRecords.filter(h => h.date <= endDate)
     }
 
-    const healthRecordCost = filteredHealthRecords.reduce((sum, r) => sum + (r.cost || 0), 0)
+    // Separate individual feed costs (health records with [FEED] marker)
+    const individualFeedCost = filteredHealthRecords
+      .filter(r => r.notes?.includes("[FEED]"))
+      .reduce((sum, r) => sum + (r.cost || 0), 0)
+
+    // Separate individual medication costs (health records with [MEDICATION] marker)
+    const individualMedicationCost = filteredHealthRecords
+      .filter(r => r.notes?.includes("[MEDICATION]"))
+      .reduce((sum, r) => sum + (r.cost || 0), 0)
+
+    // True veterinary costs (health records without [FEED] or [MEDICATION] markers)
+    const healthRecordCost = filteredHealthRecords
+      .filter(r => !r.notes?.includes("[FEED]") && !r.notes?.includes("[MEDICATION]"))
+      .reduce((sum, r) => sum + (r.cost || 0), 0)
+
+    // Combine pen-level and individual costs
+    const feedCost = penFeedCost + individualFeedCost
+    const medicationCost = penMedicationCost + individualMedicationCost
 
     // Calculate total variable costs
     const totalVariableCost = feedCost + medicationCost + healthRecordCost

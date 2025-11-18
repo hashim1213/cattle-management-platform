@@ -83,36 +83,45 @@ export default function CattleDetailPage() {
 
   useEffect(() => {
     const loadCattle = async () => {
-      // Load pen activity data from Firebase FIRST (required for cost calculations)
-      await penActivityStore.loadFeedActivities()
-      await penActivityStore.loadMedicationActivities()
+      try {
+        // Load pen activity data from Firebase FIRST (required for cost calculations)
+        await penActivityStore.loadFeedActivities()
+        await penActivityStore.loadMedicationActivities()
 
-      const allCattle = await firebaseDataStore.getCattle()
-      const foundCattle = allCattle.find((c) => c.id === params.id)
-      if (foundCattle) {
-        setCattle(foundCattle)
-        setSelectedBarnId(foundCattle.barnId || "")
-        setSelectedPenId(foundCattle.penId || "")
+        const allCattle = await firebaseDataStore.getCattle()
+        const foundCattle = allCattle.find((c) => c.id === params.id)
+        if (foundCattle) {
+          setCattle(foundCattle)
+          setSelectedBarnId(foundCattle.barnId || "")
+          setSelectedPenId(foundCattle.penId || "")
 
-        // Load weight records
-        const weights = await firebaseDataStore.getWeightRecords(params.id as string)
-        setWeightRecords(weights)
+          // Load weight records
+          const weights = await firebaseDataStore.getWeightRecords(params.id as string)
+          setWeightRecords(weights)
 
-        // Load health records
-        const health = await firebaseDataStore.getHealthRecords(params.id as string)
-        setHealthRecords(health)
+          // Load health records
+          const health = await firebaseDataStore.getHealthRecords(params.id as string)
+          setHealthRecords(health)
 
-        // Load feed allocations (all allocations, filtered by pen in component)
-        const allocations = feedService.getAllocations()
-        setFeedAllocations(allocations)
+          // Load feed allocations (all allocations, filtered by pen in component)
+          const allocations = feedService.getAllocations()
+          setFeedAllocations(allocations)
 
-        // Load cost summary (feed + medication costs)
-        const costs = await cattleCostService.getCattleCostSummary(params.id as string)
-        setCostSummary(costs)
+          // Load cost summary (feed + medication costs)
+          const costs = await cattleCostService.getCattleCostSummary(params.id as string)
+          setCostSummary(costs)
+        }
+      } catch (error) {
+        console.error("Error loading cattle data:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load cattle data. Please refresh the page.",
+          variant: "destructive",
+        })
       }
     }
     loadCattle()
-  }, [params.id, refreshKey])
+  }, [params.id, refreshKey, toast])
 
   const handleAddWeight = async () => {
     if (!cattle || !weightValue) {
@@ -1535,13 +1544,6 @@ export default function CattleDetailPage() {
                           increase
                         </p>
                       </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-1">Target Sale Price</p>
-                        <p className="text-2xl font-bold text-foreground">${targetValue.toFixed(0)}</p>
-                        <p className="text-xs text-muted-foreground">
-                          ${(targetWeight > 0 ? (targetValue / targetWeight).toFixed(2) : "0.00")}/lb
-                        </p>
-                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -1607,16 +1609,6 @@ export default function CattleDetailPage() {
                           : "text-red-600"
                       }`}>
                         ${(currentValue - ((cattle.purchasePrice || 0) + (costSummary?.totalVariableCost || 0))).toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between py-3 bg-amber-50 px-2 rounded">
-                      <span className="font-semibold text-foreground">Projected Profit at Target:</span>
-                      <span className={`font-bold ${
-                        targetValue - ((cattle.purchasePrice || 0) + (costSummary?.totalVariableCost || 0)) >= 0
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }`}>
-                        ${(targetValue - ((cattle.purchasePrice || 0) + (costSummary?.totalVariableCost || 0))).toFixed(2)}
                       </span>
                     </div>
                   </div>
