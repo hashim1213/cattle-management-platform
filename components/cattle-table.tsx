@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { MoreVertical, Edit, Trash2, Eye, Loader2, X, CheckSquare } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { firebaseDataStore, type Cattle } from "@/lib/data-store-firebase"
@@ -31,6 +32,9 @@ export function CattleTable({ searchQuery, filters }: CattleTableProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
   const [selectionMode, setSelectionMode] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [cattleToDelete, setCattleToDelete] = useState<Cattle | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const { pens = [] } = usePenStore()
   const router = useRouter()
 
@@ -123,6 +127,28 @@ export function CattleTable({ searchQuery, filters }: CattleTableProps) {
   const proceedToBulkEdit = () => {
     if (selectedIds.size > 0) {
       setIsBulkEditOpen(true)
+    }
+  }
+
+  const handleDeleteClick = (animal: Cattle) => {
+    setCattleToDelete(animal)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!cattleToDelete) return
+
+    setIsDeleting(true)
+    try {
+      await firebaseDataStore.deleteCattle(cattleToDelete.id)
+      setDeleteDialogOpen(false)
+      setCattleToDelete(null)
+      await loadCattle()
+    } catch (error) {
+      console.error("Error deleting cattle:", error)
+      alert("Failed to delete cattle. Please try again.")
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -300,7 +326,13 @@ export function CattleTable({ searchQuery, filters }: CattleTableProps) {
                                 <Edit className="h-4 w-4 mr-2" />
                                 Edit
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="text-destructive">
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDeleteClick(animal)
+                                }}
+                              >
                                 <Trash2 className="h-4 w-4 mr-2" />
                                 Delete
                               </DropdownMenuItem>
@@ -323,6 +355,41 @@ export function CattleTable({ searchQuery, filters }: CattleTableProps) {
         selectedIds={Array.from(selectedIds)}
         onComplete={handleBulkEditComplete}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Cattle</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete cattle #{cattleToDelete?.tagNumber}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
