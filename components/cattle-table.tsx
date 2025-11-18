@@ -50,8 +50,8 @@ export function CattleTable({ searchQuery, filters }: CattleTableProps) {
     loadCattle()
 
     // Subscribe to real-time updates instead of polling
-    const unsubscribe = firebaseDataStore.subscribe(() => {
-      loadCattle()
+    const unsubscribe = firebaseDataStore.subscribe(async () => {
+      await loadCattle()
     })
 
     return () => unsubscribe()
