@@ -35,6 +35,8 @@ export default function CattleDetailPage() {
   const [isUpdateValueOpen, setIsUpdateValueOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isAssignLocationOpen, setIsAssignLocationOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [cattle, setCattle] = useState<Cattle | null>(null)
   const [weightRecords, setWeightRecords] = useState<WeightRecord[]>([])
   const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([])
@@ -379,6 +381,39 @@ export default function CattleDetailPage() {
     }
   }
 
+  const handleDeleteCattle = async () => {
+    if (!cattle) return
+
+    setIsDeleting(true)
+    try {
+      // Delete the cattle record
+      await firebaseDataStore.deleteCattle(cattle.id)
+
+      // Update pen count if cattle was assigned to a pen
+      if (cattle.penId) {
+        updatePenCount(cattle.penId, -1)
+      }
+
+      toast({
+        title: "Cattle deleted",
+        description: `Cattle #${cattle.tagNumber} has been deleted successfully.`,
+      })
+
+      // Navigate back to cattle list
+      router.push("/cattle")
+    } catch (error) {
+      console.error("Failed to delete cattle:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete cattle. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsDeleting(false)
+      setIsDeleteDialogOpen(false)
+    }
+  }
+
   if (!cattle) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -480,6 +515,7 @@ export default function CattleDetailPage() {
               </Button>
               <Button
                 variant="outline"
+                onClick={() => setIsDeleteDialogOpen(true)}
                 className="text-destructive bg-transparent touch-manipulation min-h-[44px] flex-1 sm:flex-none"
               >
                 <Trash2 className="h-5 w-5 sm:h-4 sm:w-4 sm:mr-2" />
@@ -1722,6 +1758,36 @@ export default function CattleDetailPage() {
                 Update Value
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Cattle</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to delete cattle #{cattle?.tagNumber}? This action cannot be undone and will remove all associated records including weight history, health records, and feed allocations.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteCattle}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete Cattle"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

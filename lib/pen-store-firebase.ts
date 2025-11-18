@@ -226,11 +226,34 @@ class FirebasePenStore {
     if (!userId) throw new Error("Not authenticated")
 
     try {
+      // First, get all cattle in this barn and clear their penId/barnId
+      const cattleSnapshot = await getDocs(collection(db, `users/${userId}/cattle`))
+      const updatePromises: Promise<void>[] = []
+
+      cattleSnapshot.docs.forEach(cattleDoc => {
+        const cattleData = cattleDoc.data()
+        if (cattleData.barnId === id) {
+          // Clear penId and barnId for cattle in this barn
+          updatePromises.push(
+            updateDoc(doc(db, `users/${userId}/cattle`, cattleDoc.id), {
+              penId: null,
+              barnId: null,
+              updatedAt: new Date().toISOString()
+            })
+          )
+        }
+      })
+
+      // Wait for all cattle updates to complete
+      await Promise.all(updatePromises)
+
+      // Then delete the barn
       const docRef = doc(db, `users/${userId}/barns`, id)
       await deleteDoc(docRef)
       // Real-time listener will update local state automatically
       // Note: Pens in this barn should be deleted separately or handled with Cloud Functions
     } catch (error) {
+      console.error("Error deleting barn:", error)
       throw new Error("Failed to delete barn")
     }
   }
@@ -340,10 +363,33 @@ class FirebasePenStore {
     if (!userId) throw new Error("Not authenticated")
 
     try {
+      // First, get all cattle in this pen and clear their penId/barnId
+      const cattleSnapshot = await getDocs(collection(db, `users/${userId}/cattle`))
+      const updatePromises: Promise<void>[] = []
+
+      cattleSnapshot.docs.forEach(cattleDoc => {
+        const cattleData = cattleDoc.data()
+        if (cattleData.penId === id) {
+          // Clear penId and barnId for cattle in this pen
+          updatePromises.push(
+            updateDoc(doc(db, `users/${userId}/cattle`, cattleDoc.id), {
+              penId: null,
+              barnId: null,
+              updatedAt: new Date().toISOString()
+            })
+          )
+        }
+      })
+
+      // Wait for all cattle updates to complete
+      await Promise.all(updatePromises)
+
+      // Then delete the pen
       const docRef = doc(db, `users/${userId}/pens`, id)
       await deleteDoc(docRef)
       // Real-time listener will update local state automatically
     } catch (error) {
+      console.error("Error deleting pen:", error)
       throw new Error("Failed to delete pen")
     }
   }
