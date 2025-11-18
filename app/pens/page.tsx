@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, Warehouse, Grid3x3, Loader2 } from "lucide-react"
+import { Plus, Warehouse, Grid3x3, Loader2, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -9,6 +9,7 @@ import { firebasePenStore } from "@/lib/pen-store-firebase"
 import { AddBarnDialog } from "@/components/add-barn-dialog"
 import { AddPenDialog } from "@/components/add-pen-dialog"
 import { PenCard } from "@/components/pen-card"
+import { PensSettings } from "@/components/pens-settings"
 import { useAuth } from "@/contexts/auth-context"
 import Link from "next/link"
 import type { Barn, Pen } from "@/lib/pen-store-firebase"
@@ -19,6 +20,7 @@ export default function PensPage() {
   const [pens, setPens] = useState<Pen[]>([])
   const [isAddBarnOpen, setIsAddBarnOpen] = useState(false)
   const [isAddPenOpen, setIsAddPenOpen] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [selectedBarnId, setSelectedBarnId] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -82,6 +84,14 @@ export default function PensPage() {
               <p className="text-xs sm:text-sm text-muted-foreground mt-1">Organize cattle by location and track pen capacity</p>
             </div>
             <div className="flex gap-2 flex-shrink-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsSettingsOpen(true)}
+                className="touch-manipulation min-h-[44px] px-2 sm:px-3"
+              >
+                <Settings className="h-5 w-5" />
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
@@ -230,6 +240,12 @@ export default function PensPage() {
           if (!open) setSelectedBarnId(null)
         }}
         defaultBarnId={selectedBarnId || undefined}
+      />
+      <PensSettings
+        open={isSettingsOpen}
+        onOpenChange={setIsSettingsOpen}
+        barns={barns}
+        pens={pens}
       />
     </div>
   )
