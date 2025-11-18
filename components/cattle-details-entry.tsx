@@ -12,6 +12,7 @@ interface CattleDetailsEntryProps {
   rfids: string[]
   onComplete: (details: CattleDetails[]) => void
   onBack: () => void
+  initialData?: Partial<Record<string, any>> // Pre-populated data from OCR
 }
 
 export interface CattleDetails {
@@ -22,23 +23,49 @@ export interface CattleDetails {
   costPerPound: number
 }
 
-export function CattleDetailsEntry({ rfids, onComplete, onBack }: CattleDetailsEntryProps) {
-  const [weightMode, setWeightMode] = useState<"total" | "individual" | "same">("total")
-  const [costMode, setCostMode] = useState<"total" | "individual" | "same">("total")
+export function CattleDetailsEntry({ rfids, onComplete, onBack, initialData = {} }: CattleDetailsEntryProps) {
+  // Determine initial mode based on extracted data
+  const hasIndividualWeights = rfids.some(rfid => initialData[rfid]?.weight)
+  const hasIndividualCosts = rfids.some(rfid => initialData[rfid]?.cost)
+
+  const [weightMode, setWeightMode] = useState<"total" | "individual" | "same">(
+    hasIndividualWeights ? "individual" : "total"
+  )
+  const [costMode, setCostMode] = useState<"total" | "individual" | "same">(
+    hasIndividualCosts ? "individual" : "total"
+  )
 
   const [totalWeight, setTotalWeight] = useState("")
   const [sameWeight, setSameWeight] = useState("")
-  const [individualWeights, setIndividualWeights] = useState<Record<string, string>>({})
+  // Pre-populate individual weights from extracted data
+  const [individualWeights, setIndividualWeights] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {}
+    rfids.forEach(rfid => {
+      if (initialData[rfid]?.weight) {
+        initial[rfid] = initialData[rfid].weight.toString()
+      }
+    })
+    return initial
+  })
 
   const [totalCost, setTotalCost] = useState("")
   const [sameCost, setSameCost] = useState("")
-  const [individualCosts, setIndividualCosts] = useState<Record<string, string>>({})
+  // Pre-populate individual costs from extracted data
+  const [individualCosts, setIndividualCosts] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {}
+    rfids.forEach(rfid => {
+      if (initialData[rfid]?.cost) {
+        initial[rfid] = initialData[rfid].cost.toString()
+      }
+    })
+    return initial
+  })
 
-  // Initialize visual tags with last 4 digits of RFID by default
+  // Initialize visual tags from extracted data or default to last 4 digits of RFID
   const [visualTags, setVisualTags] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {}
     rfids.forEach(rfid => {
-      initial[rfid] = rfid.slice(-4)
+      initial[rfid] = initialData[rfid]?.visualTag || rfid.slice(-4)
     })
     return initial
   })
