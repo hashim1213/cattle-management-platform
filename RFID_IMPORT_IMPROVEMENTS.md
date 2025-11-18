@@ -5,11 +5,11 @@ Enhanced the RFID PDF/Image import functionality with better OCR accuracy and fl
 
 ## New Features
 
-### 1. OpenAI Vision OCR Integration
-- **Better Accuracy**: Uses GPT-4o Vision API for superior text extraction from images and PDFs
+### 1. AI-Powered OCR with Automatic Fallback
+- **OpenAI Vision (Primary)**: Uses GPT-4o Vision API for superior text extraction from images and PDFs
 - **Automatic Fallback**: If OpenAI fails or is not configured, automatically falls back to Tesseract OCR
-- **Toggle Control**: Users can enable/disable OpenAI OCR via a switch in the import dialog
-- **Configuration**: Requires `OPENAI_API_KEY` environment variable (see `.env.example`)
+- **No User Action Required**: System intelligently chooses the best available method
+- **Optional Configuration**: Add `OPENAI_API_KEY` environment variable for enhanced accuracy (see `.env.example`)
 
 ### 2. Enhanced Cattle Entry Workflow
 After RFID numbers are extracted, users now enter detailed information before final import:
@@ -66,12 +66,11 @@ All imported cattle now include:
 ## User Flow
 
 1. **Step 1: Input**
-   - Toggle OpenAI OCR on/off
    - Upload PDF/Image, capture photo, or paste text
 
 2. **Step 2: Processing**
-   - OCR extraction (OpenAI or Tesseract)
-   - Automatic RFID parsing
+   - Automatic OCR extraction (tries OpenAI first, falls back to Tesseract)
+   - RFID parsing from extracted text
 
 3. **Step 3: Review**
    - Review detected RFID numbers
@@ -98,13 +97,13 @@ OPENAI_API_KEY=your_openai_api_key_here
 
 Get your API key from: https://platform.openai.com/api-keys
 
-### Without OpenAI
-The system works perfectly without OpenAI:
-- Simply leave the OpenAI toggle off (or it will auto-fallback if API key is not configured)
+### Without OpenAI API Key
+The system works perfectly without an OpenAI API key:
+- System automatically uses Tesseract OCR when OpenAI is not available
 - **PDFs are converted to images** and processed with Tesseract OCR
 - Works great for scanned PDFs and image-based documents
 - **No API key required** - completely free
-- All other features work normally
+- All features work normally
 
 ## Technical Implementation
 

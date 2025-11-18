@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { Camera, Upload, Loader2, CheckCircle2, XCircle, FileText, Sparkles } from "lucide-react"
+import { Camera, Upload, Loader2, CheckCircle2, XCircle, FileText } from "lucide-react"
 import Tesseract from "tesseract.js"
 import { firebaseDataStore } from "@/lib/data-store-firebase"
 import { firebasePenStore, type Pen } from "@/lib/pen-store-firebase"
@@ -29,7 +29,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useEffect } from "react"
 import { CattleDetailsEntry, type CattleDetails } from "@/components/cattle-details-entry"
-import { Switch } from "@/components/ui/switch"
 
 interface RFIDImageImportDialogProps {
   open: boolean
@@ -62,7 +61,6 @@ export function RFIDImageImportDialog({
   const [isCameraActive, setIsCameraActive] = useState(false)
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [isImporting, setIsImporting] = useState(false)
-  const [useOpenAI, setUseOpenAI] = useState(true) // Enable OpenAI by default for better PDF processing
   const [cattleDetails, setCattleDetails] = useState<CattleDetails[]>([])
   const [extractedCattleData, setExtractedCattleData] = useState<Partial<Record<string, any>>>({})
 
@@ -137,14 +135,8 @@ export function RFIDImageImportDialog({
     setStep("processing")
 
     try {
-      // If OpenAI is enabled, use it for better accuracy
-      if (useOpenAI) {
-        await processPDFWithOpenAI(pdfFile)
-        return
-      }
-
-      // Convert PDF to images and use Tesseract OCR (works for scanned PDFs)
-      await processPDFWithTesseract(pdfFile)
+      // Try OpenAI Vision first for best accuracy, automatically fallback to Tesseract if not available
+      await processPDFWithOpenAI(pdfFile)
     } catch (error: any) {
       const errorMessage = error?.message || "Unknown error"
       toast({
@@ -563,11 +555,8 @@ export function RFIDImageImportDialog({
   }
 
   const processImage = async (imageFile: Blob) => {
-    if (useOpenAI) {
-      await processImageWithOpenAI(imageFile)
-    } else {
-      await processImageWithTesseract(imageFile)
-    }
+    // Try OpenAI Vision first for best accuracy, automatically fallback to Tesseract if not available
+    await processImageWithOpenAI(imageFile)
   }
 
   const handleManualEdit = (text: string) => {
@@ -718,29 +707,6 @@ export function RFIDImageImportDialog({
 
           {step === "input" && (
             <div className="space-y-4 py-4">
-              <Card className="bg-muted/50">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-primary" />
-                      <Label htmlFor="use-openai" className="cursor-pointer">
-                        Use OpenAI Vision (Recommended for PDFs)
-                      </Label>
-                    </div>
-                    <Switch
-                      id="use-openai"
-                      checked={useOpenAI}
-                      onCheckedChange={setUseOpenAI}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {useOpenAI
-                      ? "Using GPT-4o for enhanced OCR accuracy. Best for complex PDFs and images."
-                      : "Using Tesseract OCR. PDFs are converted to images for processing. No API key required."}
-                  </p>
-                </CardContent>
-              </Card>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button
                   onClick={() => fileInputRef.current?.click()}
@@ -826,9 +792,7 @@ export function RFIDImageImportDialog({
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
               <p className="text-lg font-medium">Processing Document...</p>
               <p className="text-sm text-muted-foreground">
-                {useOpenAI
-                  ? "Extracting RFID numbers using AI Vision OCR"
-                  : "Extracting RFID numbers using standard OCR"}
+                Extracting RFID numbers with AI-powered OCR
               </p>
             </div>
           )}
