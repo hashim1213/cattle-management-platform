@@ -3,7 +3,6 @@
 import { DollarSign, TrendingUp, TrendingDown, Calculator, AlertCircle, Loader2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CostBreakdownChart } from "@/components/cost-breakdown-chart"
-import { CostPerHeadTable } from "@/components/cost-per-head-table"
 import { CostOfGainChart } from "@/components/cost-of-gain-chart"
 import { TreatmentCostsCard } from "@/components/treatment-costs-card"
 import { OtherCostsCard } from "@/components/other-costs-card"
@@ -305,16 +304,6 @@ export default function CostsPage() {
 
         {/* Operating Costs (Labour, Utilities, etc.) */}
         <OtherCostsCard />
-
-        {/* Cost Per Head Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Cost Per Head by Pen</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <CostPerHeadTable />
-          </CardContent>
-        </Card>
 
         {/* Pen Profitability */}
         <Card>
