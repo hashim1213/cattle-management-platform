@@ -59,6 +59,7 @@ All under `/users/{userId}/`:
 - `rations` - Feed ration formulations
 - `activities` - Activity logs
 - `pastures` - Pasture management
+- `otherCosts` - Operating costs (labour, utilities, equipment, etc.)
 
 ## Security Principles
 
