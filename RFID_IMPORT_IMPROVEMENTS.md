@@ -100,8 +100,10 @@ Get your API key from: https://platform.openai.com/api-keys
 
 ### Without OpenAI
 The system works perfectly without OpenAI:
-- Simply leave the OpenAI toggle off
-- Uses standard Tesseract OCR (free, no API key required)
+- Simply leave the OpenAI toggle off (or it will auto-fallback if API key is not configured)
+- **PDFs are converted to images** and processed with Tesseract OCR
+- Works great for scanned PDFs and image-based documents
+- **No API key required** - completely free
 - All other features work normally
 
 ## Technical Implementation
@@ -121,25 +123,30 @@ The system works perfectly without OpenAI:
 
 ## Benefits
 
-1. **Accuracy**: OpenAI Vision provides significantly better OCR results than Tesseract, especially for:
+1. **PDF Support**: Both text-based and scanned/image-based PDFs are now supported:
+   - **OpenAI Vision** (optional): Best accuracy for low-quality scans, handwritten numbers, complex layouts
+   - **Tesseract OCR** (free): Automatic PDF to image conversion handles scanned PDFs without API key
+   - **No more timeouts**: Both methods reliably process multi-page PDFs
+
+2. **Accuracy**: OpenAI Vision provides significantly better OCR results than Tesseract, especially for:
    - Low-quality scans
    - Handwritten numbers
    - Complex document layouts
    - Poor lighting conditions
 
-2. **Flexibility**: Weight/cost entry modes accommodate different farmer workflows:
+3. **Flexibility**: Weight/cost entry modes accommodate different farmer workflows:
    - Some farmers weigh cattle as a group
    - Some weigh individually
    - Some have uniform lots
 
-3. **Financial Tracking**: Automatic cost per pound calculation helps farmers:
+4. **Financial Tracking**: Automatic cost per pound calculation helps farmers:
    - Track investment per animal
    - Compare costs across batches
    - Calculate ROI at sale time
 
-4. **Data Integrity**: Real-time validation and preview prevents data entry errors
+5. **Data Integrity**: Real-time validation and preview prevents data entry errors
 
-5. **User Experience**: Step-by-step workflow is intuitive and prevents mistakes
+6. **User Experience**: Step-by-step workflow is intuitive and prevents mistakes
 
 ## Future Enhancements
 

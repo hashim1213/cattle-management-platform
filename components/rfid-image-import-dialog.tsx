@@ -143,69 +143,92 @@ export function RFIDImageImportDialog({
         return
       }
 
-      // Fallback to pdf.js text extraction (legacy method)
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("PDF processing timed out after 60 seconds. Try enabling OpenAI Vision for better results.")), 60000)
-      })
-
-      const pdfPromise = async () => {
-        // Dynamically import pdfjs-dist only on client side
-        const pdfjsLib = await import("pdfjs-dist")
-
-        // Configure worker - try HTTPS first
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
-
-        const arrayBuffer = await pdfFile.arrayBuffer()
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
-
-        let fullText = ""
-
-        // Extract text from all pages
-        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-          const page = await pdf.getPage(pageNum)
-          const textContent = await page.getTextContent()
-          const pageText = textContent.items
-            .map((item: any) => item.str)
-            .join(" ")
-          fullText += pageText + "\n"
-        }
-
-        return fullText
-      }
-
-      const fullText = await Promise.race([pdfPromise(), timeoutPromise]) as string
-
-      setExtractedText(fullText)
-
-      // Parse RFID numbers from extracted text
-      const rfids = parseRFIDsFromText(fullText)
-
-      setParsedRFIDs(rfids)
-      setStep("review")
-
-      if (rfids.length === 0) {
-        toast({
-          title: "No RFID Numbers Found",
-          description: "Unable to detect RFID numbers in the PDF. Try enabling OpenAI Vision or enter manually.",
-          variant: "destructive",
-        })
-      } else {
-        toast({
-          title: "PDF Processed",
-          description: `Found ${rfids.length} RFID number(s)`,
-        })
-      }
+      // Convert PDF to images and use Tesseract OCR (works for scanned PDFs)
+      await processPDFWithTesseract(pdfFile)
     } catch (error: any) {
       const errorMessage = error?.message || "Unknown error"
       toast({
         title: "PDF Processing Error",
-        description: `Failed to process PDF: ${errorMessage}. Please try enabling OpenAI Vision or paste text manually.`,
+        description: `Failed to process PDF: ${errorMessage}. Please try again or paste text manually.`,
         variant: "destructive",
       })
       setStep("input")
     } finally {
       setIsProcessing(false)
+    }
+  }
+
+  const processPDFWithTesseract = async (pdfFile: File) => {
+    try {
+      // Dynamically import pdfjs-dist to convert pages to images
+      const pdfjsLib = await import("pdfjs-dist")
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+
+      const arrayBuffer = await pdfFile.arrayBuffer()
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+
+      let allRFIDs: string[] = []
+      let allText = ""
+
+      // Process each page
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum)
+
+        // Render page to canvas
+        const viewport = page.getViewport({ scale: 2.0 }) // Higher scale for better OCR
+        const canvas = document.createElement('canvas')
+        const context = canvas.getContext('2d')
+        if (!context) continue
+
+        canvas.width = viewport.width
+        canvas.height = viewport.height
+
+        await page.render({
+          canvasContext: context,
+          viewport: viewport,
+        }).promise
+
+        // Convert canvas to blob
+        const blob = await new Promise<Blob | null>((resolve) => {
+          canvas.toBlob(resolve, 'image/png')
+        })
+
+        if (!blob) continue
+
+        // Process with Tesseract OCR
+        const result = await Tesseract.recognize(blob, "eng", {
+          logger: (m) => {
+            if (m.status === "recognizing text") {
+              // Progress feedback
+            }
+          },
+        })
+
+        const pageText = result.data.text
+        allText += `\n--- Page ${pageNum} ---\n${pageText}\n`
+      }
+
+      // Parse RFID numbers from all pages combined
+      const uniqueRFIDs = parseRFIDsFromText(allText)
+
+      setExtractedText(allText)
+      setParsedRFIDs(uniqueRFIDs)
+      setStep("review")
+
+      if (uniqueRFIDs.length === 0) {
+        toast({
+          title: "No RFID Numbers Found",
+          description: "Unable to detect RFID numbers in the PDF. Please try again or enter manually.",
+          variant: "destructive",
+        })
+      } else {
+        toast({
+          title: "PDF Processed with OCR",
+          description: `Found ${uniqueRFIDs.length} RFID number(s) from ${pdf.numPages} page(s)`,
+        })
+      }
+    } catch (error: any) {
+      throw new Error(`PDF to image conversion failed: ${error?.message || "Unknown error"}`)
     }
   }
 
@@ -290,14 +313,21 @@ export function RFIDImageImportDialog({
     } catch (error: any) {
       const errorMessage = error?.message || "Unknown error"
       toast({
-        title: "PDF Processing Error",
-        description: `${errorMessage}. Falling back to standard text extraction...`,
-        variant: "destructive",
+        title: "OpenAI Processing Failed",
+        description: `${errorMessage}. Falling back to Tesseract OCR...`,
       })
 
-      // Fallback to standard PDF text extraction
-      setUseOpenAI(false)
-      await processPDF(pdfFile)
+      // Fallback to Tesseract OCR with PDF to image conversion
+      try {
+        await processPDFWithTesseract(pdfFile)
+      } catch (fallbackError: any) {
+        toast({
+          title: "PDF Processing Error",
+          description: `Failed to process PDF: ${fallbackError?.message || "Unknown error"}. Please try again or paste text manually.`,
+          variant: "destructive",
+        })
+        setStep("input")
+      }
     } finally {
       setIsProcessing(false)
     }
@@ -705,8 +735,8 @@ export function RFIDImageImportDialog({
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
                     {useOpenAI
-                      ? "Using GPT-4o for enhanced OCR. Works great for both images and PDFs. Prevents timeouts."
-                      : "Using standard text extraction. May timeout on large or scanned PDFs."}
+                      ? "Using GPT-4o for enhanced OCR accuracy. Best for complex PDFs and images."
+                      : "Using Tesseract OCR. PDFs are converted to images for processing. No API key required."}
                   </p>
                 </CardContent>
               </Card>
