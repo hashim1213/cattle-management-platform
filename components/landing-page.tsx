@@ -25,7 +25,10 @@ import {
   Scale,
   Link as LinkIcon,
   Calendar,
-  Rocket
+  Rocket,
+  Shield,
+  Lock,
+  Eye
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -240,9 +243,9 @@ export function LandingPage() {
               <p className="text-sm font-semibold text-primary-foreground">AI-Powered & Launching Q2 2026</p>
             </div>
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-8 leading-tight drop-shadow-2xl">
-              Stop Guessing Your Cost of Gain.
+              Your Spreadsheets Are So Messy,
               <br />
-              <span className="text-green-400 drop-shadow-2xl">Start Knowing.</span>
+              <span className="text-green-400 drop-shadow-2xl">Even The Cattle Are Confused.</span>
             </h1>
             <p className="text-xl md:text-2xl text-white mb-10 max-w-3xl mx-auto drop-shadow-lg font-medium">
               The <strong className="text-green-300">AI-native</strong> inventory management system built for cattle operations.
@@ -528,6 +531,114 @@ export function LandingPage() {
               <Button variant="outline" size="lg" onClick={() => document.getElementById('loi-form')?.scrollIntoView({ behavior: 'smooth' })}>
                 Contact Us About Custom Integrations
               </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Data Privacy & Security Section */}
+      <section className="py-16 md:py-20 bg-primary/5">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12 md:mb-16">
+              <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-primary/10 rounded-full">
+                <Shield className="h-5 w-5 text-primary" />
+                <span className="text-sm font-semibold text-primary">Security & Privacy First</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
+                Your Data Stays Yours. Always.
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                We know your operation data is sensitive business information. That's why we built CattleOS with privacy at its core.
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+              <Card className="border-2 border-primary/20 hover:border-primary/40 transition-colors">
+                <CardHeader>
+                  <Lock className="h-10 w-10 md:h-12 md:w-12 text-primary mb-3 md:mb-4" />
+                  <CardTitle className="text-lg md:text-xl">Never Shared or Sold</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm md:text-base text-muted-foreground mb-4">
+                    Your cattle data, costs, and operations information is <strong>never shared, sold, or used for any purpose</strong> other than powering your CattleOS experience.
+                  </p>
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      <span>No third-party data sharing</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      <span>No advertising partners</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      <span>Your data is not our business model</span>
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-primary/20 hover:border-primary/40 transition-colors">
+                <CardHeader>
+                  <Shield className="h-10 w-10 md:h-12 md:w-12 text-primary mb-3 md:mb-4" />
+                  <CardTitle className="text-lg md:text-xl">Bank-Level Encryption</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm md:text-base text-muted-foreground mb-4">
+                    All your data is encrypted in transit and at rest using industry-standard AES-256 encryption, the same security banks use.
+                  </p>
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      <span>SSL/TLS encryption for all connections</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      <span>Encrypted database storage</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      <span>Secure cloud infrastructure</span>
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-primary/20 hover:border-primary/40 transition-colors sm:col-span-2 lg:col-span-1">
+                <CardHeader>
+                  <Eye className="h-10 w-10 md:h-12 md:w-12 text-primary mb-3 md:mb-4" />
+                  <CardTitle className="text-lg md:text-xl">You're In Control</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm md:text-base text-muted-foreground mb-4">
+                    Your data belongs to you. Export it anytime, delete it whenever you want, and control exactly who on your team has access.
+                  </p>
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      <span>One-click data export</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      <span>Granular access controls</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      <span>Delete your data anytime</span>
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="mt-12 text-center bg-card border border-primary/20 rounded-lg p-6 md:p-8">
+              <h3 className="text-xl md:text-2xl font-bold mb-3 text-foreground">Our Privacy Promise</h3>
+              <p className="text-base md:text-lg text-muted-foreground max-w-3xl mx-auto">
+                We make money from subscriptions, not from your data. Your operation's information is confidential business data,
+                and we treat it that way. <strong className="text-foreground">We will never share, sell, or monetize your cattle data.</strong> Period.
+              </p>
             </div>
           </div>
         </div>
