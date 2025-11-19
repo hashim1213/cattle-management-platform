@@ -310,7 +310,11 @@ class FirebaseDataStore {
 
     try {
       const docRef = doc(db, `users/${userId}/cattle/${cattleId}/weightRecords`, id)
-      await setDoc(docRef, newRecord)
+      // Filter out undefined values for Firestore
+      const recordData = Object.fromEntries(
+        Object.entries(newRecord).filter(([_, v]) => v !== undefined)
+      )
+      await setDoc(docRef, recordData)
       return newRecord
     } catch (error) {
       throw new Error("Failed to add weight record")
@@ -463,7 +467,11 @@ class FirebaseDataStore {
 
     try {
       const docRef = doc(db, `users/${userId}/cattle/${cattleId}/healthRecords`, id)
-      await setDoc(docRef, newRecord)
+      // Filter out undefined values for Firestore
+      const recordData = Object.fromEntries(
+        Object.entries(newRecord).filter(([_, v]) => v !== undefined)
+      )
+      await setDoc(docRef, recordData)
       return newRecord
     } catch (error) {
       throw new Error("Failed to add health record")

@@ -45,7 +45,7 @@ export function MortalityTrackingDialog({
 
   const [formData, setFormData] = useState({
     cattleId: cattleId || "",
-    penId: penId || preselectedCattle?.penId || "",
+    penId: penId || preselectedCattle?.penId || "all",
     dateOfDeath: new Date().toISOString().split("T")[0],
     causeOfDeath: "",
     category: "unknown" as "illness" | "injury" | "calving" | "predator" | "unknown" | "other",
@@ -59,7 +59,7 @@ export function MortalityTrackingDialog({
   })
 
   const selectedCattle = formData.cattleId ? dataStore.getCattleById(formData.cattleId) : null
-  const selectedPen = formData.penId ? getPen(formData.penId) : null
+  const selectedPen = formData.penId && formData.penId !== "all" ? getPen(formData.penId) : null
 
   // Auto-calculate estimated loss
   const autoCalculatedLoss = selectedCattle
@@ -142,7 +142,7 @@ export function MortalityTrackingDialog({
     // Reset form
     setFormData({
       cattleId: "",
-      penId: "",
+      penId: "all",
       dateOfDeath: new Date().toISOString().split("T")[0],
       causeOfDeath: "",
       category: "unknown",
@@ -158,7 +158,7 @@ export function MortalityTrackingDialog({
     onOpenChange(false)
   }
 
-  const availableCattle = formData.penId
+  const availableCattle = formData.penId && formData.penId !== "all"
     ? dataStore.getCattleSync().filter((c) => c.penId === formData.penId && c.status === "Active")
     : dataStore.getCattleSync().filter((c) => c.status === "Active")
 
@@ -185,7 +185,7 @@ export function MortalityTrackingDialog({
                 <SelectValue placeholder="Select pen or leave blank for all cattle" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Cattle</SelectItem>
+                <SelectItem value="all">All Cattle</SelectItem>
                 {pens.map((pen) => (
                   <SelectItem key={pen.id} value={pen.id}>
                     {pen.name} - {pen.currentCount} head
