@@ -580,7 +580,7 @@ export default function CattleDetailPage() {
                   <p className="text-sm text-muted-foreground mb-1">Current Weight</p>
                   <p className="text-2xl font-bold text-foreground">{currentWeight} lbs</p>
                   <p className="text-xs text-green-600 mt-1">
-                    +{currentWeight - startWeight} lbs total
+                    +{(currentWeight - startWeight).toFixed(0)} lbs total
                   </p>
                 </div>
                 <Activity className="h-5 w-5 text-primary" />
@@ -607,7 +607,7 @@ export default function CattleDetailPage() {
                 <div className="flex-1">
                   <p className="text-sm text-muted-foreground mb-1">Current Value</p>
                   <p className="text-2xl font-bold text-foreground">${currentValue.toFixed(0)}</p>
-                  <p className="text-xs text-green-600 mt-1">+${((cattle.purchasePrice || 0) > 0 ? (currentValue - (cattle.purchasePrice || 0)).toFixed(0) : 0)} gain</p>
+                  <p className="text-xs text-green-600 mt-1">+${((cattle.purchasePrice || 0) > 0 ? (currentValue - (cattle.purchasePrice || 0)).toFixed(0) : "0")} gain</p>
                   {cattle.currentValue && (
                     <p className="text-xs text-muted-foreground mt-1">Manual value set</p>
                   )}
@@ -1002,8 +1002,8 @@ export default function CattleDetailPage() {
                         <tr key={index} className="hover:bg-muted/50">
                           <td className="p-4 text-sm text-foreground">{record.date}</td>
                           <td className="p-4 text-sm font-medium text-foreground">{record.weight} lbs</td>
-                          <td className="p-4 text-sm text-foreground">{record.gain} lbs/day</td>
-                          <td className="p-4 text-sm text-green-600">+{cattle.purchaseWeight ? (record.weight - cattle.purchaseWeight) : record.weight} lbs</td>
+                          <td className="p-4 text-sm text-foreground">{record.gain.toFixed(2)} lbs/day</td>
+                          <td className="p-4 text-sm text-green-600">+{cattle.purchaseWeight ? (record.weight - cattle.purchaseWeight).toFixed(0) : record.weight} lbs</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1637,10 +1637,10 @@ export default function CattleDetailPage() {
                       <div>
                         <p className="text-sm text-muted-foreground mb-1">Total Gain</p>
                         <p className="text-2xl font-bold text-green-600">
-                          +${((cattle.purchasePrice || 0) > 0 ? (currentValue - (cattle.purchasePrice || 0)).toFixed(0) : 0)}
+                          +${((cattle.purchasePrice || 0) > 0 ? (currentValue - (cattle.purchasePrice || 0)).toFixed(0) : "0")}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {((cattle.purchasePrice || 0) > 0 ? (((currentValue - (cattle.purchasePrice || 0)) / (cattle.purchasePrice || 1)) * 100).toFixed(1) : 0)}%
+                          {((cattle.purchasePrice || 0) > 0 ? (((currentValue - (cattle.purchasePrice || 0)) / (cattle.purchasePrice || 1)) * 100).toFixed(1) : "0")}%
                           increase
                         </p>
                       </div>
