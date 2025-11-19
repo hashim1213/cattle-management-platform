@@ -389,14 +389,15 @@ class GrowthTrackingService {
     cattle: Cattle,
     weightRecords: WeightRecord[],
     feedAllocations: FeedAllocationRecord[],
-    targetWeight?: number
+    targetWeight?: number,
+    targetDailyGain: number = 2.5
   ): CattleGrowthMetrics {
     const currentADG = this.getCurrentADG(weightRecords)
     const lifetimeADG = this.getLifetimeADG(cattle, weightRecords)
     const last30DaysADG = this.getRecentADG(weightRecords, 30)
 
-    // Use the most recent ADG for projections, or lifetime if not available
-    const projectionADG = currentADG?.adg || lifetimeADG?.adg || 2.5 // Default 2.5 lbs/day
+    // Use the most recent ADG for projections, or lifetime if not available, or user-configured target
+    const projectionADG = currentADG?.adg || lifetimeADG?.adg || targetDailyGain
 
     // Create projections for 30, 60, 90, 120 days
     const projections: WeightProjection[] = [30, 60, 90, 120].map(days =>

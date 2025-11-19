@@ -24,6 +24,9 @@ export interface FarmSettings {
   pricing: {
     cattlePricePerLb: number // Market price per pound for cattle
   }
+  growth: {
+    targetDailyGain: number // Target average daily gain in lbs/day
+  }
 }
 
 class FarmSettingsStore {
@@ -45,6 +48,12 @@ class FarmSettingsStore {
         if (!data.pricing) {
           data.pricing = {
             cattlePricePerLb: 6.97,
+          }
+        }
+        // Ensure growth field exists for backward compatibility
+        if (!data.growth) {
+          data.growth = {
+            targetDailyGain: 2.5,
           }
         }
         this.settings = data
@@ -121,6 +130,9 @@ class FarmSettingsStore {
       pricing: {
         cattlePricePerLb: 6.97, // Default market price per pound
       },
+      growth: {
+        targetDailyGain: 2.5, // Default target ADG in lbs/day
+      },
     }
     await this.saveSettings(userId)
   }
@@ -160,6 +172,21 @@ class FarmSettingsStore {
 
   getCattlePricePerLb(): number {
     return this.settings?.pricing?.cattlePricePerLb || 6.97
+  }
+
+  async updateGrowth(growth: Partial<FarmSettings["growth"]>, userId: string) {
+    if (!this.settings) return
+
+    this.settings.growth = {
+      ...this.settings.growth,
+      ...growth,
+    }
+    this.settings.updatedAt = new Date().toISOString()
+    await this.saveSettings(userId)
+  }
+
+  getTargetDailyGain(): number {
+    return this.settings?.growth?.targetDailyGain || 2.5
   }
 
   clearSettings() {

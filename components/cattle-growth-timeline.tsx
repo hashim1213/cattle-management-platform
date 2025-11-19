@@ -29,6 +29,7 @@ interface CattleGrowthTimelineProps {
   weightRecords: WeightRecord[]
   feedAllocations: FeedAllocationRecord[]
   targetWeight?: number
+  targetDailyGain?: number
 }
 
 export function CattleGrowthTimeline({
@@ -36,6 +37,7 @@ export function CattleGrowthTimeline({
   weightRecords,
   feedAllocations,
   targetWeight = 1200, // Default market weight
+  targetDailyGain = 2.5, // Default target ADG
 }: CattleGrowthTimelineProps) {
   const [metrics, setMetrics] = useState<CattleGrowthMetrics | null>(null)
 
@@ -44,10 +46,11 @@ export function CattleGrowthTimeline({
       cattle,
       weightRecords,
       feedAllocations,
-      targetWeight
+      targetWeight,
+      targetDailyGain
     )
     setMetrics(calculated)
-  }, [cattle, weightRecords, feedAllocations, targetWeight])
+  }, [cattle, weightRecords, feedAllocations, targetWeight, targetDailyGain])
 
   if (!metrics) {
     return (
@@ -222,7 +225,7 @@ export function CattleGrowthTimeline({
               <CardTitle>Weight Projections</CardTitle>
               <CardDescription>
                 Estimated future weights based on current ADG of{" "}
-                {metrics.currentADG?.adg.toFixed(2) || metrics.lifetimeADG?.adg.toFixed(2) || "2.50"}{" "}
+                {metrics.currentADG?.adg.toFixed(2) || metrics.lifetimeADG?.adg.toFixed(2) || targetDailyGain.toFixed(2)}{" "}
                 lbs/day
               </CardDescription>
             </CardHeader>

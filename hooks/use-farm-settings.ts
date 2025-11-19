@@ -32,6 +32,7 @@ export function useFarmSettings() {
     isBackgrounderEnabled: farmSettingsStore.isBackgrounderEnabled(),
     isFeedlotEnabled: farmSettingsStore.isFeedlotEnabled(),
     cattlePricePerLb: farmSettingsStore.getCattlePricePerLb(),
+    targetDailyGain: farmSettingsStore.getTargetDailyGain(),
     initializeSettings: async (farmName: string, sector: FarmSector) => {
       if (user) {
         await farmSettingsStore.initializeSettings(farmName, sector, user.uid)
@@ -50,6 +51,11 @@ export function useFarmSettings() {
     updatePricing: async (pricing: Partial<FarmSettings["pricing"]>) => {
       if (user) {
         await farmSettingsStore.updatePricing(pricing, user.uid)
+      }
+    },
+    updateGrowth: async (growth: Partial<FarmSettings["growth"]>) => {
+      if (user) {
+        await farmSettingsStore.updateGrowth(growth, user.uid)
       }
     },
   }
