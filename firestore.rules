@@ -115,6 +115,12 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
 
+    // Letter of Intent - allow anyone to create (for landing page form)
+    match /letterOfIntent/{documentId} {
+      allow create: if true;
+      allow read, update, delete: if false;
+    }
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;
