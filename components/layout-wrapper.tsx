@@ -37,12 +37,12 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     )
   }
 
-  // For public routes (login/signup), show without sidebar
-  if (isPublicRoute) {
+  // For login/signup pages, always show without sidebar
+  if (pathname === "/login" || pathname === "/signup") {
     return <>{children}</>
   }
 
-  // For protected routes, show with sidebar if authenticated
+  // For authenticated users (including on "/" dashboard), show with sidebar
   if (user) {
     return (
       <div className="flex h-screen overflow-hidden safe-top safe-bottom">
@@ -50,6 +50,11 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
         <main className="flex-1 overflow-y-auto pt-14 lg:pt-0 pb-safe">{children}</main>
       </div>
     )
+  }
+
+  // For unauthenticated users on "/" (landing page), show without sidebar
+  if (pathname === "/") {
+    return <>{children}</>
   }
 
   // Fallback (should not reach here due to useEffect redirect)
