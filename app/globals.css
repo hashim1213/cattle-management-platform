@@ -205,6 +205,11 @@
     width: 100%;
   }
 
+  /* Smooth scrolling behavior */
+  html {
+    scroll-behavior: smooth;
+  }
+
   /* Mobile sticky headers should account for top bar */
   @media (max-width: 1024px) {
     .sticky-mobile {

@@ -28,7 +28,9 @@ import {
   Rocket,
   Shield,
   Lock,
-  Eye
+  Eye,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -36,6 +38,7 @@ import Image from "next/image"
 export function LandingPage() {
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState({
     fullName: "",
     farmName: "",
@@ -180,6 +183,57 @@ export function LandingPage() {
       description: "Make data-driven decisions with real-time analytics and reporting.",
     },
   ]
+
+  const walkthroughSteps = [
+    {
+      number: 1,
+      title: "Add Your Cattle",
+      description: "Import or manually add cattle to your inventory. Record weight, purchase price, tag numbers, and arrival dates.",
+      details: ["Quick bulk import from spreadsheets", "Scan EID tags for instant entry", "Voice entry while working in the field"],
+      icon: "🐮",
+      color: "from-blue-500 to-blue-600"
+    },
+    {
+      number: 2,
+      title: "Organize Into Pens",
+      description: "Group cattle into pens based on weight, age, or any criteria that fits your operation.",
+      details: ["Drag-and-drop pen management", "Track pen capacity and utilization", "Create custom pen categories"],
+      icon: "📋",
+      color: "from-green-500 to-green-600"
+    },
+    {
+      number: 3,
+      title: "Track Costs",
+      description: "Record feed deliveries, medication purchases, and all other expenses. CattleOS automatically allocates costs to pens.",
+      details: ["Scan receipts to auto-capture costs", "Link expenses to specific pens", "Track vendor and supplier information"],
+      icon: "💰",
+      color: "from-orange-500 to-orange-600"
+    },
+    {
+      number: 4,
+      title: "Monitor Performance",
+      description: "View real-time dashboards showing cost per head, average daily gain, and break-even analysis for each pen.",
+      details: ["Live cost of gain calculations", "Performance trends and forecasts", "Identify underperforming pens instantly"],
+      icon: "📊",
+      color: "from-purple-500 to-purple-600"
+    },
+    {
+      number: 5,
+      title: "Make Smart Decisions",
+      description: "Use AI-powered insights to optimize marketing timing, adjust rations, and maximize profitability.",
+      details: ["AI recommendations for marketing windows", "Predictive health alerts", "Automated anomaly detection"],
+      icon: "🎯",
+      color: "from-red-500 to-red-600"
+    },
+  ]
+
+  const nextStep = () => {
+    setCurrentStep((prev) => (prev + 1) % walkthroughSteps.length)
+  }
+
+  const prevStep = () => {
+    setCurrentStep((prev) => (prev - 1 + walkthroughSteps.length) % walkthroughSteps.length)
+  }
 
   return (
     <>
@@ -352,6 +406,156 @@ export function LandingPage() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works - Walkthrough Carousel */}
+      <section className="py-16 md:py-20 bg-muted/50">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12 md:mb-16">
+              <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-primary/10 rounded-full">
+                <Sparkles className="h-5 w-5 text-primary" />
+                <span className="text-sm font-semibold text-primary">Step-by-Step Guide</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
+                How It Works
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Get up and running in minutes. Here's how CattleOS makes cattle management effortless.
+              </p>
+            </div>
+
+            {/* Carousel */}
+            <div className="relative">
+              <Card className="border-2 shadow-xl overflow-hidden">
+                <CardContent className="p-0">
+                  <div className="grid md:grid-cols-2 gap-0">
+                    {/* Left Side - Step Content */}
+                    <div className="p-6 sm:p-8 md:p-12 flex flex-col justify-center bg-card order-2 md:order-1">
+                      <div className="mb-6">
+                        <div className={`inline-flex w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br ${walkthroughSteps[currentStep].color} items-center justify-center mb-4 shadow-lg transition-all duration-300`}>
+                          <span className="text-4xl md:text-5xl">{walkthroughSteps[currentStep].icon}</span>
+                        </div>
+                        <div className="flex items-center gap-3 mb-4">
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold shadow-sm">
+                            {walkthroughSteps[currentStep].number}
+                          </span>
+                          <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
+                            {walkthroughSteps[currentStep].title}
+                          </h3>
+                        </div>
+                      </div>
+                      <p className="text-sm sm:text-base md:text-lg text-muted-foreground mb-6 leading-relaxed">
+                        {walkthroughSteps[currentStep].description}
+                      </p>
+                      <ul className="space-y-3 mb-8">
+                        {walkthroughSteps[currentStep].details.map((detail, idx) => (
+                          <li key={idx} className="flex items-start gap-3">
+                            <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                            <span className="text-sm md:text-base text-muted-foreground">{detail}</span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      {/* Navigation Buttons */}
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <Button
+                          variant="outline"
+                          size="lg"
+                          onClick={prevStep}
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 hover:bg-primary/5 transition-colors"
+                        >
+                          <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+                          <span className="hidden sm:inline">Previous</span>
+                          <span className="sm:hidden">Prev</span>
+                        </Button>
+                        <Button
+                          size="lg"
+                          onClick={nextStep}
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 hover:shadow-lg transition-all"
+                        >
+                          <span className="hidden sm:inline">Next</span>
+                          <span className="sm:hidden">Next</span>
+                          <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Right Side - Progress Indicator */}
+                    <div className="bg-gradient-to-br from-muted/30 to-muted/50 p-6 sm:p-8 md:p-12 flex flex-col justify-center order-1 md:order-2 border-b md:border-b-0 md:border-l">
+                      <div className="space-y-3 md:space-y-4">
+                        <p className="text-xs sm:text-sm font-semibold text-muted-foreground mb-4 md:mb-6 uppercase tracking-wide">
+                          Your Journey
+                        </p>
+                        {walkthroughSteps.map((step, idx) => (
+                          <div
+                            key={idx}
+                            onClick={() => setCurrentStep(idx)}
+                            className={`flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg cursor-pointer transition-all duration-300 ${
+                              idx === currentStep
+                                ? 'bg-primary/10 border-2 border-primary shadow-md md:scale-105 transform'
+                                : 'bg-card/80 border border-transparent hover:border-primary/30 hover:shadow-sm hover:bg-card'
+                            }`}
+                          >
+                            <div className={`flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center transition-all duration-300 ${
+                              idx === currentStep
+                                ? `bg-gradient-to-br ${step.color} text-white shadow-md`
+                                : 'bg-muted text-muted-foreground'
+                            }`}>
+                              <span className="text-lg sm:text-xl">{step.icon}</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-0.5 sm:mb-1">
+                                <span className={`text-xs font-bold transition-colors ${
+                                  idx === currentStep ? 'text-primary' : 'text-muted-foreground'
+                                }`}>
+                                  STEP {step.number}
+                                </span>
+                              </div>
+                              <h4 className={`text-sm md:text-base font-semibold transition-colors ${
+                                idx === currentStep ? 'text-foreground' : 'text-muted-foreground'
+                              }`}>
+                                {step.title}
+                              </h4>
+                            </div>
+                            {idx === currentStep && (
+                              <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0 animate-in fade-in duration-300" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Step Indicator Dots */}
+              <div className="flex justify-center gap-2 mt-8">
+                {walkthroughSteps.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentStep(idx)}
+                    className={`h-2.5 rounded-full transition-all duration-300 ${
+                      idx === currentStep
+                        ? 'w-8 bg-primary'
+                        : 'w-2.5 bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                    }`}
+                    aria-label={`Go to step ${idx + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-12 text-center">
+              <p className="text-lg text-muted-foreground mb-6">
+                Ready to transform your cattle operation?
+              </p>
+              <Button size="lg" onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}>
+                View Pricing <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
       </section>
