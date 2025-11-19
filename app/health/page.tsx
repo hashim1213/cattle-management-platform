@@ -230,13 +230,13 @@ export default function HealthOverviewPage() {
     <div className="min-h-screen bg-background">
       {/* Header - Mobile optimized */}
       <header className="border-b border-border bg-card/95 backdrop-blur-md sticky top-0 z-40 lg:static">
-        <div className="w-full px-4 sm:px-6 py-3 sm:py-4">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                <Heart className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
+        <div className="w-full px-4 sm:px-6 py-4 sm:py-5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <Heart className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
               </div>
-              <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">Health Overview</h1>
+              <h1 className="text-xl sm:text-3xl font-bold text-foreground tracking-tight truncate">Health Overview</h1>
             </div>
             <div className="flex gap-2 flex-shrink-0">
               <Button
@@ -252,7 +252,7 @@ export default function HealthOverviewPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setAddTreatmentOpen(true)}
-                className="hidden sm:flex touch-manipulation min-h-[44px]"
+                className="hidden sm:flex touch-manipulation min-h-[48px] px-4"
               >
                 <Syringe className="h-4 w-4 mr-2" />
                 Add
@@ -261,41 +261,41 @@ export default function HealthOverviewPage() {
                 size="sm"
                 onClick={handleBulkTreatment}
                 disabled={selectedCattle.length === 0}
-                className="touch-manipulation min-h-[44px] px-3"
+                className="touch-manipulation min-h-[48px] px-4 sm:px-5 active:scale-95 transition-transform"
               >
-                <Syringe className="h-4 w-4 sm:mr-2" />
+                <Syringe className="h-5 w-5 sm:mr-2" />
                 <span className="hidden sm:inline">Bulk ({selectedCattle.length})</span>
-                <span className="sm:hidden">{selectedCattle.length}</span>
+                <span className="sm:hidden font-semibold">{selectedCattle.length}</span>
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="w-full px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-safe">
+      <main className="w-full px-4 sm:px-6 py-5 sm:py-8 space-y-6 sm:space-y-8 pb-24 md:pb-8">
         {/* Health Score & Key Metrics */}
-        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           <Card className="sm:col-span-2 lg:col-span-1 touch-manipulation">
-            <CardContent className="p-4 sm:p-6">
+            <CardContent className="p-6 sm:p-7">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs sm:text-sm font-medium text-muted-foreground">Overall Health Score</p>
-                  <p className={`text-3xl sm:text-4xl font-bold mt-1 sm:mt-2 ${getHealthScoreColor(stats.healthScore)}`}>
+                <div className="flex-1">
+                  <p className="text-sm sm:text-base font-medium text-muted-foreground mb-1">Overall Health Score</p>
+                  <p className={`text-4xl sm:text-5xl font-bold mt-2 ${getHealthScoreColor(stats.healthScore)}`}>
                     {stats.healthScore}/100
                   </p>
                 </div>
-                <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full ${stats.healthScore >= 80 ? "bg-green-100" : stats.healthScore >= 60 ? "bg-yellow-100" : "bg-red-100"} flex items-center justify-center flex-shrink-0`}>
-                  <Heart className={`h-6 w-6 sm:h-8 sm:w-8 ${stats.healthScore >= 80 ? "text-green-600" : stats.healthScore >= 60 ? "text-yellow-600" : "text-red-600"}`} />
+                <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full ${stats.healthScore >= 80 ? "bg-green-100" : stats.healthScore >= 60 ? "bg-yellow-100" : "bg-red-100"} flex items-center justify-center flex-shrink-0`}>
+                  <Heart className={`h-7 w-7 sm:h-8 sm:w-8 ${stats.healthScore >= 80 ? "text-green-600" : stats.healthScore >= 60 ? "text-yellow-600" : "text-red-600"}`} />
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="touch-manipulation">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                  <TrendingDown className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
+            <CardContent className="p-6 sm:p-7">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                  <TrendingDown className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs sm:text-sm font-medium text-muted-foreground">Mortality Rate</p>

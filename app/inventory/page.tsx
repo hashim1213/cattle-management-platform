@@ -240,13 +240,13 @@ export default function InventoryPage() {
     <div className="min-h-screen bg-background">
       {/* Header - Mobile optimized */}
       <header className="border-b border-border bg-card/95 backdrop-blur-md sticky top-0 z-40 lg:static">
-        <div className="w-full px-4 sm:px-6 py-3 sm:py-4">
-          <div className="flex items-center justify-between gap-2">
+        <div className="w-full px-4 sm:px-6 py-4 sm:py-5">
+          <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <Link href="/" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground mb-1 block touch-manipulation">
+              <Link href="/" className="text-sm sm:text-base text-muted-foreground hover:text-foreground mb-2 block touch-manipulation inline-flex items-center gap-1 active:scale-95 transition-transform">
                 ← Back
               </Link>
-              <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">Supplies</h1>
+              <h1 className="text-xl sm:text-3xl font-bold text-foreground tracking-tight truncate">Supplies</h1>
               <p className="text-xs sm:text-sm text-muted-foreground mt-1">Manage your feed, medications, and supplies</p>
             </div>
             <div className="flex gap-2 flex-shrink-0">
