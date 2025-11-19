@@ -152,12 +152,20 @@ export function RFIDImageImportDialog({
 
   const processPDFWithTesseract = async (pdfFile: File) => {
     try {
+      console.log('Starting PDF processing with Tesseract for file:', pdfFile.name, 'Size:', pdfFile.size)
+
       // Dynamically import pdfjs-dist to convert pages to images
       const pdfjsLib = await import("pdfjs-dist")
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+
+      // Configure worker - use jsdelivr CDN which is more reliable than cdnjs
+      const pdfjsVersion = pdfjsLib.version || '4.0.379'
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.mjs`
+      console.log('PDF.js worker configured with version:', pdfjsVersion)
 
       const arrayBuffer = await pdfFile.arrayBuffer()
+      console.log('PDF file loaded, converting to PDF document...')
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+      console.log('PDF loaded successfully, pages:', pdf.numPages)
 
       let allRFIDs: string[] = []
       let allText = ""
@@ -180,12 +188,22 @@ export function RFIDImageImportDialog({
           viewport: viewport,
         }).promise
 
-        // Convert canvas to blob
-        const blob = await new Promise<Blob | null>((resolve) => {
-          canvas.toBlob(resolve, 'image/png')
+        // Convert canvas to blob with timeout and quality settings
+        const blob = await new Promise<Blob | null>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error(`Timeout converting page ${pageNum} to blob`))
+          }, 10000)
+
+          canvas.toBlob((blob) => {
+            clearTimeout(timeout)
+            resolve(blob)
+          }, 'image/png', 1.0)
         })
 
-        if (!blob) continue
+        if (!blob) {
+          console.error(`Failed to create blob for page ${pageNum}`)
+          continue
+        }
 
         // Process with Tesseract OCR
         const result = await Tesseract.recognize(blob, "eng", {
@@ -229,12 +247,20 @@ export function RFIDImageImportDialog({
     setStep("processing")
 
     try {
+      console.log('Starting PDF processing with OpenAI for file:', pdfFile.name, 'Size:', pdfFile.size)
+
       // Dynamically import pdfjs-dist to convert pages to images
       const pdfjsLib = await import("pdfjs-dist")
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+
+      // Configure worker - use jsdelivr CDN which is more reliable than cdnjs
+      const pdfjsVersion = pdfjsLib.version || '4.0.379'
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.mjs`
+      console.log('PDF.js worker configured with version:', pdfjsVersion)
 
       const arrayBuffer = await pdfFile.arrayBuffer()
+      console.log('PDF file loaded, converting to PDF document...')
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+      console.log('PDF loaded successfully, pages:', pdf.numPages)
 
       let allRFIDs: string[] = []
       let allText = ""
@@ -257,12 +283,22 @@ export function RFIDImageImportDialog({
           viewport: viewport,
         }).promise
 
-        // Convert canvas to blob
-        const blob = await new Promise<Blob | null>((resolve) => {
-          canvas.toBlob(resolve, 'image/png')
+        // Convert canvas to blob with timeout and quality settings
+        const blob = await new Promise<Blob | null>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error(`Timeout converting page ${pageNum} to blob`))
+          }, 10000)
+
+          canvas.toBlob((blob) => {
+            clearTimeout(timeout)
+            resolve(blob)
+          }, 'image/png', 1.0)
         })
 
-        if (!blob) continue
+        if (!blob) {
+          console.error(`Failed to create blob for page ${pageNum}`)
+          continue
+        }
 
         // Send to OpenAI OCR
         const formData = new FormData()
