@@ -81,66 +81,65 @@ export default function CostsPage() {
     const deceasedCattle = cattle.filter(c => c.status === "Deceased")
 
     let totalInvestment = 0
-    let totalFeedCost = 0
-    let totalProjectedRevenue = 0
+    let totalActualRevenue = 0
+    let totalHealthCosts = 0
     let deceasedTotalLoss = 0
     const cattleAnalyses: CattleWithAnalysis[] = []
     const penFinancials: Record<string, { investment: number; revenue: number; weight: number; count: number; penName: string }> = {}
 
-    // Calculate deceased cattle losses
-    deceasedCattle.forEach(animal => {
-      const daysOnFeed = animal.daysOnFeed ||
-        (animal.deathDate && animal.purchaseDate
-          ? Math.ceil((new Date(animal.deathDate).getTime() - new Date(animal.purchaseDate).getTime()) / (1000 * 60 * 60 * 24))
-          : 0)
-      const purchasePrice = animal.purchasePrice || ((animal.purchaseWeight || 600) * 1.50)
-      const feedCosts = daysOnFeed * 3.50
-      const healthcareCosts = daysOnFeed * 0.25
-      const totalLoss = purchasePrice + feedCosts + healthcareCosts + 50 + 30 + 45 + 20 // Add fixed costs
-      deceasedTotalLoss += totalLoss
-    })
+    // Calculate deceased cattle losses using actual data
+    for (const animal of deceasedCattle) {
+      // Use actual purchase price or estimate if not available
+      const purchasePrice = animal.purchasePrice || 0
 
-    activeCattle.forEach(animal => {
-      // Estimate costs based on animal data
-      const daysOnFeed = animal.daysOnFeed || 120
-      const purchaseWeight = animal.purchaseWeight || animal.weight || 600
-      const currentWeight = animal.weight || 850
-      const projectedWeight = animal.projectedWeight || 1200
-
-      const costs: CattleCostBreakdown = {
-        purchasePrice: animal.purchasePrice || (purchaseWeight * 1.50), // Use actual purchase price if available
-        transportationCost: 50,
-        commissionFees: 30,
-        feedCostPerDay: 3.50,
-        healthcareCostPerDay: 0.25,
-        laborCostPerDay: 0.50,
-        facilityCostPerDay: 0.35,
-        vaccinations: 45,
-        treatments: 20,
-        equipmentAllocation: 25,
-        daysOnFeed,
-        interestRate: 5.5
+      // Get actual health costs from records
+      let healthCosts = 0
+      try {
+        const healthRecords = await firebaseDataStore.getHealthRecords(animal.id)
+        healthCosts = healthRecords.reduce((sum, record) => sum + (record.cost || 0), 0)
+      } catch (error) {
+        healthCosts = 0
       }
 
-      const analysis = financialCalculator.calculateBreakEven(
-        costs,
-        currentWeight,
-        projectedWeight,
-        currentMarketPrice
-      )
+      const totalLoss = purchasePrice + healthCosts
+      deceasedTotalLoss += totalLoss
+    }
 
-      totalInvestment += analysis.totalCosts.total
-      totalFeedCost += analysis.totalCosts.feed
-      totalProjectedRevenue += projectedWeight * currentMarketPrice
+    // Calculate actual costs for active cattle
+    for (const animal of activeCattle) {
+      const currentWeight = animal.weight || 0
+      const purchasePrice = animal.purchasePrice || 0
+
+      // Get actual health costs from records
+      let healthCosts = 0
+      try {
+        const healthRecords = await firebaseDataStore.getHealthRecords(animal.id)
+        healthCosts = healthRecords.reduce((sum, record) => sum + (record.cost || 0), 0)
+      } catch (error) {
+        healthCosts = 0
+      }
+
+      // Calculate total cost (purchase + health)
+      const totalCost = purchasePrice + healthCosts
+
+      // Calculate actual revenue based on current weight and market price
+      const actualRevenue = currentWeight * currentMarketPrice
+
+      // Calculate profit for this animal
+      const profit = actualRevenue - totalCost
+
+      totalInvestment += totalCost
+      totalHealthCosts += healthCosts
+      totalActualRevenue += actualRevenue
 
       cattleAnalyses.push({
         id: animal.id,
         tagNumber: animal.tagNumber,
         currentWeight,
-        projectedWeight,
-        breakEvenPrice: analysis.breakEven.pricePerPound,
-        projectedProfit: analysis.projectedProfit.atCurrentMarketPrice,
-        recommendations: analysis.recommendations
+        projectedWeight: currentWeight, // Use current weight
+        breakEvenPrice: currentWeight > 0 ? totalCost / currentWeight : 0,
+        projectedProfit: profit,
+        recommendations: []
       })
 
       // Group by pen
@@ -155,26 +154,31 @@ export default function CostsPage() {
             penName: pen?.name || `Pen ${animal.penId}`
           }
         }
-        penFinancials[animal.penId].investment += analysis.totalCosts.total
-        penFinancials[animal.penId].revenue += projectedWeight * currentMarketPrice
-        penFinancials[animal.penId].weight += projectedWeight
+        penFinancials[animal.penId].investment += totalCost
+        penFinancials[animal.penId].revenue += actualRevenue
+        penFinancials[animal.penId].weight += currentWeight
         penFinancials[animal.penId].count += 1
       }
-    })
+    }
 
-    const totalProfit = totalProjectedRevenue - totalInvestment - deceasedTotalLoss
-    const roiPercentage = ((totalProfit / (totalInvestment + deceasedTotalLoss)) * 100) || 0
-    const avgCostPerHead = totalInvestment / (activeCattle.length || 1)
-    const totalProjectedWeight = cattleAnalyses.reduce((sum, c) => sum + c.projectedWeight, 0)
-    const avgBreakEven = totalInvestment / (totalProjectedWeight || 1)
-    const totalGain = cattleAnalyses.reduce((sum, c) => sum + (c.projectedWeight - c.currentWeight), 0)
-    const avgCostOfGain = totalFeedCost / (totalGain || 1)
+    const totalProfit = totalActualRevenue - totalInvestment - deceasedTotalLoss
+    const roiPercentage = (totalInvestment + deceasedTotalLoss) > 0
+      ? ((totalProfit / (totalInvestment + deceasedTotalLoss)) * 100)
+      : 0
+    const avgCostPerHead = activeCattle.length > 0 ? totalInvestment / activeCattle.length : 0
+    const totalCurrentWeight = cattleAnalyses.reduce((sum, c) => sum + c.currentWeight, 0)
+    const avgBreakEven = totalCurrentWeight > 0 ? totalInvestment / totalCurrentWeight : 0
+
+    // Calculate actual weight gain
+    const totalStartWeight = activeCattle.reduce((sum, c) => sum + (c.purchaseWeight || c.arrivalWeight || 0), 0)
+    const totalGain = totalCurrentWeight - totalStartWeight
+    const avgCostOfGain = totalGain > 0 ? (totalHealthCosts / totalGain) : 0
 
     // Round all summary numbers
     setCostSummary({
       totalCostPerHead: Math.round(avgCostPerHead),
       avgCostOfGain: Math.round(avgCostOfGain * 100) / 100,
-      totalFeedCost: Math.round(totalFeedCost),
+      totalFeedCost: Math.round(totalHealthCosts), // Use actual health costs instead of estimated feed
       projectedBreakeven: Math.round(avgBreakEven * 100) / 100,
       totalInvestment: Math.round(totalInvestment),
       projectedProfit: Math.round(totalProfit),
@@ -216,30 +220,30 @@ export default function CostsPage() {
 
   const costMetrics = [
     {
-      title: "Avg Cost Per Head",
-      value: `$${Math.round(costSummary.totalCostPerHead).toLocaleString()}`,
-      change: `Total Investment: $${Math.round(costSummary.totalInvestment / 1000)}k`,
+      title: "Total Investment",
+      value: `$${Math.round(costSummary.totalInvestment).toLocaleString()}`,
+      change: `$${Math.round(costSummary.totalCostPerHead).toLocaleString()} per head`,
       trend: "neutral" as const,
       icon: DollarSign,
     },
     {
-      title: "Cost of Gain",
-      value: `$${costSummary.avgCostOfGain.toFixed(2)}/lb`,
-      change: costSummary.avgCostOfGain > 1.0 ? "Above target ($1.00)" : "On target",
-      trend: costSummary.avgCostOfGain > 1.0 ? "up" as const : "down" as const,
+      title: "Healthcare Costs",
+      value: `$${Math.round(costSummary.totalFeedCost).toLocaleString()}`,
+      change: `From health records`,
+      trend: "neutral" as const,
       icon: TrendingUp,
     },
     {
       title: "Breakeven Price",
       value: `$${costSummary.projectedBreakeven.toFixed(2)}/lb`,
-      change: `Current market: $${cattlePricePerLb.toFixed(2)}/lb`,
+      change: `Market: $${cattlePricePerLb.toFixed(2)}/lb`,
       trend: costSummary.projectedBreakeven < cattlePricePerLb ? "down" as const : "up" as const,
       icon: Calculator,
     },
     {
-      title: "Projected ROI",
-      value: `${costSummary.roiPercentage.toFixed(1)}%`,
-      change: `Profit: $${Math.round(costSummary.projectedProfit / 1000)}k`,
+      title: "Current Profit/Loss",
+      value: `${costSummary.roiPercentage > 0 ? '+' : ''}$${Math.round(costSummary.projectedProfit).toLocaleString()}`,
+      change: `ROI: ${costSummary.roiPercentage.toFixed(1)}%`,
       trend: costSummary.roiPercentage > 0 ? "up" as const : "down" as const,
       icon: costSummary.roiPercentage > 0 ? TrendingUp : TrendingDown,
     },
@@ -263,8 +267,8 @@ export default function CostsPage() {
               <Link href="/" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground mb-1 block touch-manipulation">
                 ← Back
               </Link>
-              <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">Costs & Expenses</h1>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-1">Track all your farm costs and see your profit projections</p>
+              <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">Financial Overview</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">Track actual costs, revenue, and current profitability</p>
             </div>
           </div>
         </div>
