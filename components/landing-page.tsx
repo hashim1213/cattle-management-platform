@@ -45,6 +45,38 @@ export function LandingPage() {
     acknowledgment: false,
   })
 
+  // Structured data for SEO
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "CattleOS",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web, iOS, Android",
+    "offers": [
+      {
+        "@type": "Offer",
+        "name": "Rancher Plan",
+        "price": "99",
+        "priceCurrency": "USD",
+        "billingDuration": "P1M"
+      },
+      {
+        "@type": "Offer",
+        "name": "Feedlot Plan",
+        "price": "250",
+        "priceCurrency": "USD",
+        "billingDuration": "P1M"
+      }
+    ],
+    "description": "AI-native cattle management platform for ranchers, feedlots, and cattle operations. Real-time cost tracking, inventory management, and break-even analysis.",
+    "screenshot": "/cattleos_logo_full.png",
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "5",
+      "ratingCount": "1"
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -147,9 +179,16 @@ export function LandingPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted">
-      {/* Header */}
-      <header className="border-b bg-card/95 backdrop-blur-md sticky top-0 z-50">
+    <>
+      {/* Structured Data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted">
+        {/* Header */}
+        <header className="border-b bg-card/95 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -196,9 +235,9 @@ export function LandingPage() {
         {/* Content */}
         <div className="relative z-20 container mx-auto px-4 py-24 md:py-32 lg:py-40">
           <div className="max-w-5xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 mb-6 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full shadow-lg">
-              <Sparkles className="h-4 w-4 text-white" />
-              <p className="text-sm font-semibold text-white">AI-Powered & Launching Q2 2026</p>
+            <div className="inline-flex items-center gap-2 mb-6 px-5 py-2.5 bg-primary rounded-full shadow-lg">
+              <Sparkles className="h-4 w-4 text-primary-foreground" />
+              <p className="text-sm font-semibold text-primary-foreground">AI-Powered & Launching Q2 2026</p>
             </div>
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-8 leading-tight drop-shadow-2xl">
               Stop Guessing Your Cost of Gain.
@@ -315,13 +354,13 @@ export function LandingPage() {
       </section>
 
       {/* AI-First Section */}
-      <section className="py-20 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20">
+      <section className="py-16 md:py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full">
-                <Brain className="h-5 w-5 text-white" />
-                <span className="text-sm font-semibold text-white">AI-Native Platform</span>
+            <div className="text-center mb-12 md:mb-16">
+              <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-primary/10 rounded-full">
+                <Brain className="h-5 w-5 text-primary" />
+                <span className="text-sm font-semibold text-primary">AI-Native Platform</span>
               </div>
               <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
                 Built AI-First, AI-Native
@@ -331,82 +370,82 @@ export function LandingPage() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8">
-              <Card className="border-2 hover:border-blue-500 transition-colors">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+              <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader>
-                  <Brain className="h-12 w-12 text-blue-600 mb-4" />
-                  <CardTitle className="text-xl">AI-Powered Insights</CardTitle>
+                  <Brain className="h-10 w-10 md:h-12 md:w-12 text-primary mb-3 md:mb-4" />
+                  <CardTitle className="text-lg md:text-xl">AI-Powered Insights</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-muted-foreground">
+                  <p className="text-sm md:text-base text-muted-foreground">
                     Machine learning models analyze your operation in real-time, predicting optimal marketing windows,
                     detecting health issues early, and recommending ration adjustments.
                   </p>
                   <ul className="space-y-2 text-sm">
                     <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                       <span>Predictive health monitoring</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                       <span>Smart cost forecasting</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                       <span>Automated anomaly detection</span>
                     </li>
                   </ul>
                 </CardContent>
               </Card>
 
-              <Card className="border-2 hover:border-purple-500 transition-colors">
+              <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader>
-                  <Sparkles className="h-12 w-12 text-purple-600 mb-4" />
-                  <CardTitle className="text-xl">Natural Language Interface</CardTitle>
+                  <Sparkles className="h-10 w-10 md:h-12 md:w-12 text-primary mb-3 md:mb-4" />
+                  <CardTitle className="text-lg md:text-xl">Natural Language Interface</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-muted-foreground">
+                  <p className="text-sm md:text-base text-muted-foreground">
                     Talk to your farm data naturally. Ask questions in plain English and get instant answers.
                     Our AI assistant understands cattle terminology and your operation.
                   </p>
                   <ul className="space-y-2 text-sm">
                     <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                      <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                       <span>Voice-first data entry</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                      <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                       <span>Conversational analytics</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                      <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                       <span>Smart recommendations</span>
                     </li>
                   </ul>
                 </CardContent>
               </Card>
 
-              <Card className="border-2 hover:border-green-500 transition-colors">
+              <Card className="hover:shadow-lg transition-shadow sm:col-span-2 lg:col-span-1">
                 <CardHeader>
-                  <Zap className="h-12 w-12 text-green-600 mb-4" />
-                  <CardTitle className="text-xl">Continuous Learning</CardTitle>
+                  <Zap className="h-10 w-10 md:h-12 md:w-12 text-primary mb-3 md:mb-4" />
+                  <CardTitle className="text-lg md:text-xl">Continuous Learning</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-muted-foreground">
+                  <p className="text-sm md:text-base text-muted-foreground">
                     The more you use CattleOS, the smarter it gets. Our AI learns from your operation's patterns
                     and adapts to your specific management style.
                   </p>
                   <ul className="space-y-2 text-sm">
                     <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                      <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                       <span>Personalized benchmarks</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                      <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                       <span>Custom alerts & workflows</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                      <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                       <span>Industry best practices</span>
                     </li>
                   </ul>
@@ -418,10 +457,10 @@ export function LandingPage() {
       </section>
 
       {/* Integrations Section */}
-      <section className="py-20 bg-muted/30">
+      <section className="py-16 md:py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-16">
+            <div className="text-center mb-12 md:mb-16">
               <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-primary/10 rounded-full">
                 <LinkIcon className="h-5 w-5 text-primary" />
                 <span className="text-sm font-semibold text-primary">Seamless Integration</span>
@@ -495,13 +534,13 @@ export function LandingPage() {
       </section>
 
       {/* Product Roadmap */}
-      <section className="py-20 bg-gradient-to-b from-background to-muted/30">
+      <section className="py-16 md:py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-full">
-                <Rocket className="h-5 w-5 text-white" />
-                <span className="text-sm font-semibold text-white">Product Roadmap</span>
+            <div className="text-center mb-12 md:mb-16">
+              <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-primary/10 rounded-full">
+                <Rocket className="h-5 w-5 text-primary" />
+                <span className="text-sm font-semibold text-primary">Product Roadmap</span>
               </div>
               <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
                 Building The Future of Cattle Management
@@ -667,10 +706,10 @@ export function LandingPage() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-20 bg-gradient-to-b from-muted/30 to-background">
+      <section id="pricing" className="py-16 md:py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-16">
+            <div className="text-center mb-12 md:mb-16">
               <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
                 Simple, Transparent Pricing
               </h2>
@@ -679,9 +718,9 @@ export function LandingPage() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
               {/* Rancher/Farmer Plan */}
-              <Card className="relative hover:shadow-2xl transition-all duration-300 border-2">
+              <Card className="relative hover:shadow-2xl transition-all duration-300 border-2 flex flex-col">
                 <CardHeader className="text-center pb-8">
                   <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
                     <Users className="h-6 w-6 text-green-600" />
@@ -727,7 +766,7 @@ export function LandingPage() {
               </Card>
 
               {/* Feedlot Plan - Featured */}
-              <Card className="relative hover:shadow-2xl transition-all duration-300 border-2 border-primary shadow-xl scale-105">
+              <Card className="relative hover:shadow-2xl transition-all duration-300 border-2 border-primary shadow-xl sm:col-span-2 lg:col-span-1 lg:scale-105 flex flex-col">
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                   <div className="bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-semibold">
                     Most Popular
@@ -782,7 +821,7 @@ export function LandingPage() {
               </Card>
 
               {/* Enterprise Plan */}
-              <Card className="relative hover:shadow-2xl transition-all duration-300 border-2">
+              <Card className="relative hover:shadow-2xl transition-all duration-300 border-2 sm:col-span-2 lg:col-span-1 flex flex-col">
                 <CardHeader className="text-center pb-8">
                   <div className="mx-auto w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-4">
                     <Building2 className="h-6 w-6 text-purple-600" />
@@ -836,9 +875,9 @@ export function LandingPage() {
       </section>
 
       {/* LOI Form Section */}
-      <section id="loi-form" className="container mx-auto px-4 py-16">
+      <section id="loi-form" className="container mx-auto px-4 py-12 md:py-16">
         <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-8">
+          <div className="text-center mb-6 md:mb-8">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               Reserve Your Spot
             </h2>
@@ -1031,6 +1070,7 @@ export function LandingPage() {
           </div>
         </div>
       </footer>
-    </div>
+      </div>
+    </>
   )
 }
