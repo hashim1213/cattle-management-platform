@@ -30,7 +30,12 @@ import {
   Lock,
   Eye,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Plus,
+  FolderKanban,
+  Receipt,
+  LineChart,
+  Target
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -190,7 +195,7 @@ export function LandingPage() {
       title: "Add Your Cattle",
       description: "Import or manually add cattle to your inventory. Record weight, purchase price, tag numbers, and arrival dates.",
       details: ["Quick bulk import from spreadsheets", "Scan EID tags for instant entry", "Voice entry while working in the field"],
-      icon: "🐮",
+      icon: Plus,
       color: "from-blue-500 to-blue-600"
     },
     {
@@ -198,7 +203,7 @@ export function LandingPage() {
       title: "Organize Into Pens",
       description: "Group cattle into pens based on weight, age, or any criteria that fits your operation.",
       details: ["Drag-and-drop pen management", "Track pen capacity and utilization", "Create custom pen categories"],
-      icon: "📋",
+      icon: FolderKanban,
       color: "from-green-500 to-green-600"
     },
     {
@@ -206,7 +211,7 @@ export function LandingPage() {
       title: "Track Costs",
       description: "Record feed deliveries, medication purchases, and all other expenses. CattleOS automatically allocates costs to pens.",
       details: ["Scan receipts to auto-capture costs", "Link expenses to specific pens", "Track vendor and supplier information"],
-      icon: "💰",
+      icon: Receipt,
       color: "from-orange-500 to-orange-600"
     },
     {
@@ -214,7 +219,7 @@ export function LandingPage() {
       title: "Monitor Performance",
       description: "View real-time dashboards showing cost per head, average daily gain, and break-even analysis for each pen.",
       details: ["Live cost of gain calculations", "Performance trends and forecasts", "Identify underperforming pens instantly"],
-      icon: "📊",
+      icon: LineChart,
       color: "from-purple-500 to-purple-600"
     },
     {
@@ -222,7 +227,7 @@ export function LandingPage() {
       title: "Make Smart Decisions",
       description: "Use AI-powered insights to optimize marketing timing, adjust rations, and maximize profitability.",
       details: ["AI recommendations for marketing windows", "Predictive health alerts", "Automated anomaly detection"],
-      icon: "🎯",
+      icon: Target,
       color: "from-red-500 to-red-600"
     },
   ]
@@ -436,7 +441,7 @@ export function LandingPage() {
                     <div className="p-6 sm:p-8 md:p-12 flex flex-col justify-center bg-card order-2 md:order-1">
                       <div className="mb-6">
                         <div className={`inline-flex w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br ${walkthroughSteps[currentStep].color} items-center justify-center mb-4 shadow-lg transition-all duration-300`}>
-                          <span className="text-4xl md:text-5xl">{walkthroughSteps[currentStep].icon}</span>
+                          <walkthroughSteps[currentStep].icon className="h-8 w-8 md:h-10 md:w-10 text-white" />
                         </div>
                         <div className="flex items-center gap-3 mb-4">
                           <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold shadow-sm">
@@ -504,7 +509,7 @@ export function LandingPage() {
                                 ? `bg-gradient-to-br ${step.color} text-white shadow-md`
                                 : 'bg-muted text-muted-foreground'
                             }`}>
-                              <span className="text-lg sm:text-xl">{step.icon}</span>
+                              <step.icon className={`h-4 w-4 sm:h-5 sm:w-5 ${idx === currentStep ? 'text-white' : ''}`} />
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-0.5 sm:mb-1">
@@ -581,7 +586,7 @@ export function LandingPage() {
               <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-3 md:mb-4 shadow-lg">
-                    <span className="text-2xl md:text-3xl">🧠</span>
+                    <Brain className="h-7 w-7 md:h-8 md:w-8 text-white" />
                   </div>
                   <CardTitle className="text-lg md:text-xl">AI-Powered Insights</CardTitle>
                 </CardHeader>
@@ -610,7 +615,7 @@ export function LandingPage() {
               <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mb-3 md:mb-4 shadow-lg">
-                    <span className="text-2xl md:text-3xl">💬</span>
+                    <Smartphone className="h-7 w-7 md:h-8 md:w-8 text-white" />
                   </div>
                   <CardTitle className="text-lg md:text-xl">Natural Language Interface</CardTitle>
                 </CardHeader>
@@ -639,7 +644,7 @@ export function LandingPage() {
               <Card className="hover:shadow-lg transition-shadow sm:col-span-2 lg:col-span-1">
                 <CardHeader>
                   <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center mb-3 md:mb-4 shadow-lg">
-                    <span className="text-2xl md:text-3xl">📈</span>
+                    <TrendingUp className="h-7 w-7 md:h-8 md:w-8 text-white" />
                   </div>
                   <CardTitle className="text-lg md:text-xl">Continuous Learning</CardTitle>
                 </CardHeader>
@@ -1405,7 +1410,7 @@ export function LandingPage() {
                   Professional inventory management for modern cattle operations.
                 </p>
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-full">
-                  <span className="text-lg">🍁</span>
+                  <span className="text-xs font-bold text-red-600 dark:text-red-400">CA</span>
                   <span className="text-xs font-semibold text-red-600 dark:text-red-400">Built in Canada</span>
                 </div>
               </div>
