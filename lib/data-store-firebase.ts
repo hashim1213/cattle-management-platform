@@ -61,6 +61,8 @@ export interface Cattle {
   brandNumber?: string
   arrivalDate?: string
   arrivalWeight?: number
+  deathDate?: string
+  deathReason?: string
   createdAt: string
   updatedAt: string
 }
@@ -358,11 +360,17 @@ class FirebaseDataStore {
   async getAnalytics(marketPricePerLb: number = 6.97) {
     const cattle = await this.getCattle()
     const activeCattle = cattle.filter((c) => c.status === "Active")
+    const deceasedCattle = cattle.filter((c) => c.status === "Deceased")
 
     const totalCattle = cattle.length
     const activeCattleCount = activeCattle.length
+    const deceasedCount = deceasedCattle.length
     const healthyCount = cattle.filter((c) => c.healthStatus === "Healthy").length
     const sickCount = cattle.filter((c) => c.healthStatus === "Sick" || c.healthStatus === "Treatment").length
+
+    // Calculate mortality rate (deceased / (active + deceased))
+    const totalForMortality = activeCattleCount + deceasedCount
+    const mortalityRate = totalForMortality > 0 ? (deceasedCount / totalForMortality) * 100 : 0
 
     // Calculate average weight
     const avgWeight = activeCattleCount > 0
@@ -444,6 +452,8 @@ class FirebaseDataStore {
     return {
       totalCattle,
       activeCattle: activeCattleCount,
+      deceasedCount,
+      mortalityRate: Number(mortalityRate.toFixed(2)),
       healthyCount,
       sickCount,
       avgWeight,

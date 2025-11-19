@@ -109,14 +109,14 @@ export default function HealthOverviewPage() {
     }
   }, [cattle, healthRecords])
 
-  // Group deceased cattle by notes
+  // Group deceased cattle by death reason
   const mortalityCauses = useMemo(() => {
     // Ensure cattle is an array
     const cattleArray = Array.isArray(cattle) ? cattle : []
     const causes: Record<string, number> = {}
 
     cattleArray.filter(c => c.status === "Deceased").forEach(c => {
-      const cause = c.notes || "Unknown"
+      const cause = c.deathReason || c.notes || "Unknown"
       causes[cause] = (causes[cause] || 0) + 1
     })
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { DollarSign, TrendingUp, TrendingDown, Calculator, AlertCircle, Loader2 } from "lucide-react"
+import { DollarSign, TrendingUp, TrendingDown, Calculator, AlertCircle, Loader2, Skull } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CostBreakdownChart } from "@/components/cost-breakdown-chart"
 import { CostOfGainChart } from "@/components/cost-of-gain-chart"
@@ -22,6 +22,8 @@ interface CostSummary {
   totalInvestment: number
   projectedProfit: number
   roiPercentage: number
+  deceasedCount: number
+  deceasedLoss: number
 }
 
 interface CattleWithAnalysis {
@@ -54,7 +56,9 @@ export default function CostsPage() {
     projectedBreakeven: 0,
     totalInvestment: 0,
     projectedProfit: 0,
-    roiPercentage: 0
+    roiPercentage: 0,
+    deceasedCount: 0,
+    deceasedLoss: 0
   })
 
   const [topAnimals, setTopAnimals] = useState<CattleWithAnalysis[]>([])
@@ -72,13 +76,31 @@ export default function CostsPage() {
       const pens = firebasePenStore.getPens()
       const currentMarketPrice = cattlePricePerLb // Use configurable market price from settings
 
+    // Separate active and deceased cattle
+    const activeCattle = cattle.filter(c => c.status === "Active")
+    const deceasedCattle = cattle.filter(c => c.status === "Deceased")
+
     let totalInvestment = 0
     let totalFeedCost = 0
     let totalProjectedRevenue = 0
+    let deceasedTotalLoss = 0
     const cattleAnalyses: CattleWithAnalysis[] = []
     const penFinancials: Record<string, { investment: number; revenue: number; weight: number; count: number; penName: string }> = {}
 
-    cattle.forEach(animal => {
+    // Calculate deceased cattle losses
+    deceasedCattle.forEach(animal => {
+      const daysOnFeed = animal.daysOnFeed ||
+        (animal.deathDate && animal.purchaseDate
+          ? Math.ceil((new Date(animal.deathDate).getTime() - new Date(animal.purchaseDate).getTime()) / (1000 * 60 * 60 * 24))
+          : 0)
+      const purchasePrice = animal.purchasePrice || ((animal.purchaseWeight || 600) * 1.50)
+      const feedCosts = daysOnFeed * 3.50
+      const healthcareCosts = daysOnFeed * 0.25
+      const totalLoss = purchasePrice + feedCosts + healthcareCosts + 50 + 30 + 45 + 20 // Add fixed costs
+      deceasedTotalLoss += totalLoss
+    })
+
+    activeCattle.forEach(animal => {
       // Estimate costs based on animal data
       const daysOnFeed = animal.daysOnFeed || 120
       const purchaseWeight = animal.purchaseWeight || animal.weight || 600
@@ -140,9 +162,9 @@ export default function CostsPage() {
       }
     })
 
-    const totalProfit = totalProjectedRevenue - totalInvestment
-    const roiPercentage = (totalProfit / totalInvestment) * 100
-    const avgCostPerHead = totalInvestment / (cattle.length || 1)
+    const totalProfit = totalProjectedRevenue - totalInvestment - deceasedTotalLoss
+    const roiPercentage = ((totalProfit / (totalInvestment + deceasedTotalLoss)) * 100) || 0
+    const avgCostPerHead = totalInvestment / (activeCattle.length || 1)
     const totalProjectedWeight = cattleAnalyses.reduce((sum, c) => sum + c.projectedWeight, 0)
     const avgBreakEven = totalInvestment / (totalProjectedWeight || 1)
     const totalGain = cattleAnalyses.reduce((sum, c) => sum + (c.projectedWeight - c.currentWeight), 0)
@@ -156,7 +178,9 @@ export default function CostsPage() {
       projectedBreakeven: Math.round(avgBreakEven * 100) / 100,
       totalInvestment: Math.round(totalInvestment),
       projectedProfit: Math.round(totalProfit),
-      roiPercentage: Math.round(roiPercentage * 10) / 10
+      roiPercentage: Math.round(roiPercentage * 10) / 10,
+      deceasedCount: deceasedCattle.length,
+      deceasedLoss: Math.round(deceasedTotalLoss)
     })
 
     // Calculate pen profitability
@@ -301,6 +325,52 @@ export default function CostsPage() {
 
         {/* Treatment Costs */}
         <TreatmentCostsCard />
+
+        {/* Deceased Cattle Losses */}
+        {costSummary.deceasedCount > 0 && (
+          <Card className="border-red-200 bg-red-50/50 dark:bg-red-950/20 dark:border-red-900">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Skull className="h-5 w-5 text-red-600" />
+                <CardTitle className="text-red-900 dark:text-red-100">Deceased Cattle Losses</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="p-4 bg-white dark:bg-gray-900 rounded-lg border border-red-200 dark:border-red-900">
+                    <p className="text-sm text-muted-foreground mb-1">Deceased Cattle</p>
+                    <p className="text-2xl font-bold text-red-600">{costSummary.deceasedCount}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Total head lost</p>
+                  </div>
+                  <div className="p-4 bg-white dark:bg-gray-900 rounded-lg border border-red-200 dark:border-red-900">
+                    <p className="text-sm text-muted-foreground mb-1">Total Loss</p>
+                    <p className="text-2xl font-bold text-red-600">${costSummary.deceasedLoss.toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Investment lost</p>
+                  </div>
+                  <div className="p-4 bg-white dark:bg-gray-900 rounded-lg border border-red-200 dark:border-red-900">
+                    <p className="text-sm text-muted-foreground mb-1">Avg Loss Per Head</p>
+                    <p className="text-2xl font-bold text-red-600">
+                      ${Math.round(costSummary.deceasedLoss / (costSummary.deceasedCount || 1)).toLocaleString()}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">Per deceased animal</p>
+                  </div>
+                </div>
+                <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-900 dark:text-amber-100">Impact on ROI</p>
+                      <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                        Deceased cattle losses have been factored into your profitability calculations. Consider reviewing health protocols and mortality prevention strategies.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Operating Costs (Labour, Utilities, etc.) */}
         <OtherCostsCard />
