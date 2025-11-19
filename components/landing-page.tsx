@@ -15,9 +15,14 @@ import {
   Clock,
   FileText,
   BarChart3,
-  Zap
+  Zap,
+  Check,
+  ArrowRight,
+  Users,
+  Building2
 } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 
 export function LandingPage() {
   const { toast } = useToast()
@@ -141,11 +146,15 @@ export function LandingPage() {
       <header className="border-b bg-card/95 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <h1 className="text-xl font-bold text-foreground">CattleOS</h1>
+            <div className="flex items-center gap-3">
+              <Image
+                src="/cattleos_logo_full.png"
+                alt="CattleOS"
+                width={140}
+                height={40}
+                className="h-10 w-auto"
+                priority
+              />
             </div>
             <div className="flex gap-2">
               <Link href="/login">
@@ -159,29 +168,58 @@ export function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-16 md:py-24">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-block mb-4 px-4 py-2 bg-primary/10 rounded-full">
-            <p className="text-sm font-semibold text-primary">Launching Q2 2026</p>
-          </div>
-          <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
-            Stop Guessing Your Cost of Gain.
-            <br />
-            <span className="text-primary">Start Knowing.</span>
-          </h1>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            CattleOS is the inventory management system built for cattle operations.
-            Get real-time cost tracking, eliminate manual paperwork, and finally know
-            your break-even point with confidence.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" onClick={() => document.getElementById('loi-form')?.scrollIntoView({ behavior: 'smooth' })}>
-              Express Your Interest
-            </Button>
-            <Button size="lg" variant="outline" onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}>
-              Learn More
-            </Button>
+      {/* Hero Section with Background */}
+      <section className="relative overflow-hidden">
+        {/* Background Image with Overlay */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/70 z-10" />
+          <Image
+            src="/cow_moo.webp"
+            alt="Cattle farm"
+            fill
+            className="object-cover"
+            priority
+            onError={(e) => {
+              // Fallback to gradient if image not found
+              const target = e.target as HTMLImageElement
+              target.style.display = 'none'
+            }}
+          />
+        </div>
+
+        {/* Content */}
+        <div className="relative z-20 container mx-auto px-4 py-24 md:py-32 lg:py-40">
+          <div className="max-w-5xl mx-auto text-center">
+            <div className="inline-block mb-6 px-5 py-2.5 bg-primary/90 backdrop-blur-sm rounded-full shadow-lg">
+              <p className="text-sm font-semibold text-primary-foreground">Launching Q2 2026</p>
+            </div>
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-8 leading-tight drop-shadow-2xl">
+              Stop Guessing Your Cost of Gain.
+              <br />
+              <span className="text-primary drop-shadow-2xl">Start Knowing.</span>
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-100 mb-10 max-w-3xl mx-auto drop-shadow-lg">
+              CattleOS is the inventory management system built for cattle operations.
+              Get real-time cost tracking, eliminate manual paperwork, and finally know
+              your break-even point with confidence.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button
+                size="lg"
+                className="text-lg px-8 py-6 shadow-xl hover:shadow-2xl transition-all"
+                onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                View Pricing <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="text-lg px-8 py-6 bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20 hover:text-white shadow-xl"
+                onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                Learn More
+              </Button>
+            </div>
           </div>
         </div>
       </section>
@@ -270,41 +308,169 @@ export function LandingPage() {
       </section>
 
       {/* Pricing Section */}
-      <section className="bg-primary text-primary-foreground py-16">
+      <section id="pricing" className="py-20 bg-gradient-to-b from-muted/30 to-background">
         <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Simple, Transparent Pricing
-            </h2>
-            <div className="bg-background/10 backdrop-blur-sm rounded-lg p-8 mt-8">
-              <div className="text-5xl font-bold mb-2">$99<span className="text-2xl">/month</span></div>
-              <p className="text-xl mb-6 opacity-90">Everything you need to run your operation</p>
-              <ul className="text-left space-y-3 mb-8 inline-block">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-5 w-5" />
-                  Unlimited cattle records
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-5 w-5" />
-                  Real-time cost tracking
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-5 w-5" />
-                  Pen-based resource allocation
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-5 w-5" />
-                  Voice and NFC data capture
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-5 w-5" />
-                  Mobile app access
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-5 w-5" />
-                  Priority support
-                </li>
-              </ul>
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
+                Simple, Transparent Pricing
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Choose the plan that fits your operation size
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8">
+              {/* Rancher/Farmer Plan */}
+              <Card className="relative hover:shadow-2xl transition-all duration-300 border-2">
+                <CardHeader className="text-center pb-8">
+                  <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                    <Users className="h-6 w-6 text-green-600" />
+                  </div>
+                  <CardTitle className="text-2xl mb-2">Rancher</CardTitle>
+                  <CardDescription>Perfect for individual cattle operations</CardDescription>
+                  <div className="mt-4">
+                    <div className="text-4xl font-bold text-foreground">$99</div>
+                    <div className="text-muted-foreground">/month</div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Up to 1,000 head capacity</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Real-time cost tracking</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Pen-based resource allocation</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Voice and NFC data capture</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Mobile app access</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Email support</span>
+                    </li>
+                  </ul>
+                  <Button className="w-full mt-6" onClick={() => document.getElementById('loi-form')?.scrollIntoView({ behavior: 'smooth' })}>
+                    Get Started
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Feedlot Plan - Featured */}
+              <Card className="relative hover:shadow-2xl transition-all duration-300 border-2 border-primary shadow-xl scale-105">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                  <div className="bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-semibold">
+                    Most Popular
+                  </div>
+                </div>
+                <CardHeader className="text-center pb-8 pt-8">
+                  <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                    <Building2 className="h-6 w-6 text-primary" />
+                  </div>
+                  <CardTitle className="text-2xl mb-2">Feedlot</CardTitle>
+                  <CardDescription>Built for commercial feedlot operations</CardDescription>
+                  <div className="mt-4">
+                    <div className="text-4xl font-bold text-foreground">$250+</div>
+                    <div className="text-muted-foreground">/month</div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <span className="text-sm"><strong>Everything in Rancher, plus:</strong></span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">1,000 - 10,000+ head capacity</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Multi-location support</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Advanced analytics & reporting</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">API access for integrations</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Team collaboration tools</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Priority phone & email support</span>
+                    </li>
+                  </ul>
+                  <Button className="w-full mt-6" onClick={() => document.getElementById('loi-form')?.scrollIntoView({ behavior: 'smooth' })}>
+                    Get Started
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Enterprise Plan */}
+              <Card className="relative hover:shadow-2xl transition-all duration-300 border-2">
+                <CardHeader className="text-center pb-8">
+                  <div className="mx-auto w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-4">
+                    <Building2 className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <CardTitle className="text-2xl mb-2">Enterprise</CardTitle>
+                  <CardDescription>Custom solutions for large operations</CardDescription>
+                  <div className="mt-4">
+                    <div className="text-4xl font-bold text-foreground">Custom</div>
+                    <div className="text-muted-foreground">Contact us</div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm"><strong>Everything in Feedlot, plus:</strong></span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Unlimited head capacity</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Custom integrations & workflows</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Dedicated account manager</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">On-premise deployment options</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Custom training & onboarding</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">24/7 priority support with SLA</span>
+                    </li>
+                  </ul>
+                  <Button variant="outline" className="w-full mt-6" onClick={() => document.getElementById('loi-form')?.scrollIntoView({ behavior: 'smooth' })}>
+                    Contact Sales
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
@@ -475,11 +641,14 @@ export function LandingPage() {
           <div className="max-w-6xl mx-auto">
             <div className="grid md:grid-cols-3 gap-8">
               <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                    <TrendingUp className="h-5 w-5 text-primary-foreground" />
-                  </div>
-                  <h3 className="text-lg font-bold">CattleOS</h3>
+                <div className="mb-4">
+                  <Image
+                    src="/cattleos_logo_full.png"
+                    alt="CattleOS"
+                    width={140}
+                    height={40}
+                    className="h-10 w-auto"
+                  />
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Professional inventory management for modern cattle operations.
@@ -488,8 +657,9 @@ export function LandingPage() {
               <div>
                 <h4 className="font-semibold mb-4">Product</h4>
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li><a href="#features" className="hover:text-foreground">Features</a></li>
-                  <li><a href="#loi-form" className="hover:text-foreground">Get Started</a></li>
+                  <li><a href="#features" className="hover:text-foreground transition-colors">Features</a></li>
+                  <li><a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a></li>
+                  <li><a href="#loi-form" className="hover:text-foreground transition-colors">Get Started</a></li>
                 </ul>
               </div>
               <div>
