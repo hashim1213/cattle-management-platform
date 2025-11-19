@@ -84,19 +84,23 @@ AVAILABLE ACTIONS:
 📊 REPORTS:
 - getFarmSummary: (no params)
 
-RESPONSE FORMAT (JSON):
+RESPONSE FORMAT - IMPORTANT:
+When performing an ACTION (add/update/delete), respond with ONLY a JSON object:
 {
   "action": "actionName",
   "params": { ... with smart defaults ... },
   "message": "Friendly confirmation + what defaults you used + optional follow-up question"
 }
 
+For QUERIES or QUESTIONS (what's happening, show me, tell me), respond conversationally without JSON.
+
 CRITICAL RULES:
-1. ALWAYS take action - don't just ask for more info
+1. ALWAYS take action when user requests to add/update/delete - don't just ask for more info
 2. Use defaults liberally - farmers can update later
 3. Mention what defaults you used in your message
 4. Ask optional follow-up questions to refine
 5. Be encouraging and helpful
+6. When outputting JSON for actions, output ONLY the JSON object, no extra text
 
 You're here to make farm management EFFORTLESS!`
 
@@ -263,8 +267,13 @@ export async function POST(request: NextRequest) {
     console.log('[Chat API] User authenticated, userId:', userId)
 
     if (!process.env.OPENAI_API_KEY) {
+      console.error('[Chat API] OpenAI API key not configured')
       return NextResponse.json(
-        { error: "OpenAI API key not configured. Please add OPENAI_API_KEY to your .env.local file" },
+        {
+          error: "Farm Assistant is not configured. Please add your OpenAI API key to continue.",
+          details: "Create a .env.local file in the project root and add: OPENAI_API_KEY=your_key_here",
+          helpUrl: "https://platform.openai.com/api-keys"
+        },
         { status: 500 }
       )
     }
@@ -331,12 +340,31 @@ Use this context to provide intelligent, informed responses. You know EVERYTHING
 
       // First try to parse the entire message as JSON
       try {
-        actionData = JSON.parse(assistantMessage)
+        const trimmedMessage = assistantMessage.trim()
+        actionData = JSON.parse(trimmedMessage)
+        console.log('[Chat API] Successfully parsed full message as JSON')
       } catch {
         // If that fails, try to extract JSON from the message
-        const jsonMatch = assistantMessage.match(/\{(?:[^{}]|(?:\{(?:[^{}]|(?:\{[^{}]*\}))*\}))*\}/)
-        if (jsonMatch) {
-          actionData = JSON.parse(jsonMatch[0])
+        // Look for JSON block between code fences or inline
+        const jsonBlockMatch = assistantMessage.match(/```json\s*(\{[\s\S]*?\})\s*```/)
+        if (jsonBlockMatch) {
+          try {
+            actionData = JSON.parse(jsonBlockMatch[1])
+            console.log('[Chat API] Extracted JSON from code block')
+          } catch (e) {
+            console.error('[Chat API] Failed to parse JSON from code block:', e)
+          }
+        } else {
+          // Try to find any JSON object in the message
+          const jsonMatch = assistantMessage.match(/\{(?:[^{}]|(?:\{(?:[^{}]|(?:\{[^{}]*\}))*\}))*\}/)
+          if (jsonMatch) {
+            try {
+              actionData = JSON.parse(jsonMatch[0])
+              console.log('[Chat API] Extracted inline JSON object')
+            } catch (e) {
+              console.error('[Chat API] Failed to parse inline JSON:', e)
+            }
+          }
         }
       }
 
