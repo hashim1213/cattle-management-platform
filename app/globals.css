@@ -213,6 +213,78 @@
       z-index: 30;
     }
   }
+
+  /* Mobile-optimized form inputs - prevent zoom on iOS */
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="number"],
+  input[type="date"],
+  input[type="time"],
+  textarea,
+  select {
+    font-size: 16px; /* Minimum 16px prevents iOS zoom on focus */
+  }
+
+  /* Better spacing for mobile forms */
+  @media (max-width: 640px) {
+    .mobile-form-spacing > * + * {
+      margin-top: 1rem;
+    }
+  }
+
+  /* Mobile-friendly touch areas for buttons */
+  @media (max-width: 768px) {
+    button,
+    a[role="button"],
+    [role="button"] {
+      min-height: 44px; /* iOS minimum touch target */
+      min-width: 44px;
+    }
+  }
+
+  /* Improve mobile scrolling performance */
+  .mobile-scroll-container {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
+
+  /* Mobile-optimized dialogs */
+  @media (max-width: 640px) {
+    [role="dialog"] {
+      max-height: 95vh !important;
+      margin: 0 !important;
+    }
+  }
+
+  /* Better mobile table responsiveness */
+  @media (max-width: 768px) {
+    .mobile-card-view {
+      display: block;
+    }
+    .mobile-table-hide {
+      display: none;
+    }
+  }
+
+  /* Improved touch feedback */
+  .touch-feedback:active {
+    opacity: 0.7;
+    transform: scale(0.98);
+  }
+
+  /* Mobile-friendly tab navigation */
+  @media (max-width: 640px) {
+    [role="tablist"] {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    [role="tablist"]::-webkit-scrollbar {
+      display: none;
+    }
+  }
 }
 
 /* Pen visualization animations */
