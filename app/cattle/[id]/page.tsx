@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { ArrowLeft, Edit, Trash2, Activity, TrendingUp, Calendar, DollarSign, Plus, Building2, MapPin, Pill, Wheat } from "lucide-react"
+import { ArrowLeft, Edit, Trash2, Activity, TrendingUp, Calendar, DollarSign, Plus, Building2, MapPin, Pill, Wheat, AlertTriangle, Skull } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { EditCattleDialog } from "@/components/edit-cattle-dialog"
 import { CattleGrowthTimeline } from "@/components/cattle-growth-timeline"
+import { MortalityTrackingDialog } from "@/components/mortality-tracking-dialog"
 import { firebaseDataStore, type Cattle, type WeightRecord, type HealthRecord } from "@/lib/data-store-firebase"
 import { feedService, type FeedAllocationRecord } from "@/lib/feed/feed-service"
 import { cattleCostService, type CattleCostSummary } from "@/lib/cattle-cost-service"
@@ -31,12 +32,13 @@ export default function CattleDetailPage() {
   const { cattlePricePerLb } = useFarmSettings()
   const [isAddWeightOpen, setIsAddWeightOpen] = useState(false)
   const [isAddHealthOpen, setIsAddHealthOpen] = useState(false)
-  const [isUpdatePriceOpen, setIsUpdatePriceOpen] = useState(false)
   const [isUpdateValueOpen, setIsUpdateValueOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isAssignLocationOpen, setIsAssignLocationOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isMortalityDialogOpen, setIsMortalityDialogOpen] = useState(false)
+  const [isDiseaseDialogOpen, setIsDiseaseDialogOpen] = useState(false)
   const [cattle, setCattle] = useState<Cattle | null>(null)
   const [weightRecords, setWeightRecords] = useState<WeightRecord[]>([])
   const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([])
@@ -82,6 +84,10 @@ export default function CattleDetailPage() {
   const [medicationCost, setMedicationCost] = useState<string>("")
   const [medicationWithdrawal, setMedicationWithdrawal] = useState<string>("")
   const [medicationNotes, setMedicationNotes] = useState<string>("")
+
+  // Disease tracking form state
+  const [diseaseStatus, setDiseaseStatus] = useState<string>("Sick")
+  const [diseaseNotes, setDiseaseNotes] = useState<string>("")
 
   useEffect(() => {
     const loadCattle = async () => {
@@ -385,6 +391,40 @@ export default function CattleDetailPage() {
     }
   }
 
+  const handleMarkAsDiseased = async () => {
+    if (!cattle) return
+
+    try {
+      await firebaseDataStore.updateCattle(cattle.id, {
+        healthStatus: diseaseStatus as "Healthy" | "Sick" | "Treatment" | "Quarantine",
+      })
+
+      // Add health record to track when the disease status was changed
+      await firebaseDataStore.addHealthRecord(cattle.id, {
+        date: new Date().toISOString().split('T')[0],
+        type: "Treatment",
+        description: `Health status changed to: ${diseaseStatus}`,
+        notes: diseaseNotes || undefined,
+      })
+
+      setDiseaseNotes("")
+      setIsDiseaseDialogOpen(false)
+      setRefreshKey(prev => prev + 1)
+
+      toast({
+        title: "Health status updated",
+        description: `Cattle marked as ${diseaseStatus.toLowerCase()}.`,
+      })
+    } catch (error) {
+      console.error("Failed to update health status:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update health status.",
+        variant: "destructive",
+      })
+    }
+  }
+
   const handleDeleteCattle = async () => {
     if (!cattle) return
 
@@ -532,7 +572,7 @@ export default function CattleDetailPage() {
 
       <main className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
@@ -557,19 +597,6 @@ export default function CattleDetailPage() {
                   <p className="text-xs text-muted-foreground mt-1">Per day average</p>
                 </div>
                 <TrendingUp className="h-5 w-5 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Days on Feed</p>
-                  <p className="text-2xl font-bold text-foreground">{cattle.daysOnFeed}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Since purchase</p>
-                </div>
-                <Calendar className="h-5 w-5 text-blue-600" />
               </div>
             </CardContent>
           </Card>
@@ -603,6 +630,62 @@ export default function CattleDetailPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Health Status & Disease Tracking */}
+        <Card className="mb-6">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="min-w-0">
+                <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
+                  <Activity className="h-5 w-5 flex-shrink-0" />
+                  Health & Status Management
+                </h3>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">Health Status:</span>
+                    <Badge
+                      className={
+                        cattle.healthStatus === "Healthy"
+                          ? "bg-green-100 text-green-800 hover:bg-green-100"
+                          : cattle.healthStatus === "Sick"
+                          ? "bg-red-100 text-red-800 hover:bg-red-100"
+                          : cattle.healthStatus === "Treatment"
+                          ? "bg-amber-100 text-amber-800 hover:bg-amber-100"
+                          : "bg-orange-100 text-orange-800 hover:bg-orange-100"
+                      }
+                    >
+                      {cattle.healthStatus}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">Status:</span>
+                    <Badge variant="outline">{cattle.status}</Badge>
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-2 flex-shrink-0">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsDiseaseDialogOpen(true)}
+                  className="touch-manipulation min-h-[44px] flex-1 sm:flex-none"
+                  disabled={cattle.status === "Deceased"}
+                >
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  Update Health
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsMortalityDialogOpen(true)}
+                  className="text-destructive bg-transparent touch-manipulation min-h-[44px] flex-1 sm:flex-none"
+                  disabled={cattle.status === "Deceased"}
+                >
+                  <Skull className="h-4 w-4 mr-2" />
+                  Record Death
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Location Assignment */}
         <Card className="mb-6">
@@ -1528,32 +1611,8 @@ export default function CattleDetailPage() {
           <TabsContent value="financial" className="mt-6">
             <div className="grid gap-6">
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+                <CardHeader>
                   <CardTitle>Price & Value Tracking</CardTitle>
-                  <Dialog open={isUpdatePriceOpen} onOpenChange={setIsUpdatePriceOpen}>
-                    <DialogTrigger asChild>
-                      <Button size="sm">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Update Price
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Update Current Value</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="current-value">Current Market Value ($)</Label>
-                          <Input id="current-value" type="number" placeholder="2490" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="price-notes">Notes (optional)</Label>
-                          <Textarea id="price-notes" placeholder="Market conditions, buyer interest..." />
-                        </div>
-                        <Button className="w-full">Update Value</Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-6">
@@ -1795,6 +1854,66 @@ export default function CattleDetailPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Disease Tracking Dialog */}
+      <Dialog open={isDiseaseDialogOpen} onOpenChange={setIsDiseaseDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-600" />
+              Update Health Status
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="disease-status">Health Status</Label>
+              <Select value={diseaseStatus} onValueChange={setDiseaseStatus}>
+                <SelectTrigger id="disease-status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Healthy">Healthy</SelectItem>
+                  <SelectItem value="Sick">Sick / Diseased</SelectItem>
+                  <SelectItem value="Treatment">Under Treatment</SelectItem>
+                  <SelectItem value="Quarantine">Quarantine</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="disease-notes">Notes</Label>
+              <Textarea
+                id="disease-notes"
+                placeholder="Describe symptoms, diagnosis, treatment plan..."
+                value={diseaseNotes}
+                onChange={(e) => setDiseaseNotes(e.target.value)}
+                rows={4}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setIsDiseaseDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleMarkAsDiseased}>
+                Update Status
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mortality Tracking Dialog */}
+      <MortalityTrackingDialog
+        cattleId={cattle.id}
+        penId={cattle.penId}
+        open={isMortalityDialogOpen}
+        onOpenChange={(open) => {
+          setIsMortalityDialogOpen(open)
+          if (!open) {
+            // Refresh data after mortality is recorded
+            setRefreshKey(prev => prev + 1)
+          }
+        }}
+      />
     </div>
   )
 }
