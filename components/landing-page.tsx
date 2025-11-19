@@ -175,7 +175,7 @@ export function LandingPage() {
       description: "Stop juggling spreadsheets, notebooks, and receipts. Everything in one place.",
     },
     {
-      icon: Zap,
+      icon: TrendingUp,
       title: "Instant Insights",
       description: "Make data-driven decisions with real-time analytics and reporting.",
     },
@@ -192,24 +192,24 @@ export function LandingPage() {
       <div className="min-h-screen bg-gradient-to-b from-background to-muted">
         {/* Header */}
         <header className="border-b bg-card/95 backdrop-blur-md sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+        <div className="container mx-auto px-4 py-3 md:py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0 flex-shrink">
               <Image
                 src="/cattleos_logo_full.png"
                 alt="CattleOS"
                 width={140}
                 height={40}
-                className="h-10 w-auto"
+                className="h-8 md:h-10 w-auto object-contain max-w-[120px] md:max-w-[140px]"
                 priority
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-shrink-0">
               <Link href="/login">
-                <Button variant="ghost" size="sm">Sign In</Button>
+                <Button variant="ghost" size="sm" className="text-xs md:text-sm px-2 md:px-4">Sign In</Button>
               </Link>
               <Link href="/signup">
-                <Button size="sm">Get Started</Button>
+                <Button size="sm" className="text-xs md:text-sm px-3 md:px-4">Get Started</Button>
               </Link>
             </div>
           </div>
@@ -274,13 +274,13 @@ export function LandingPage() {
       </section>
 
       {/* Problem Statement */}
-      <section className="bg-muted/50 py-16">
+      <section className="bg-muted/50 py-12 md:py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-8">
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-center mb-6 md:mb-8">
               Tired of These Problems?
             </h2>
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid sm:grid-cols-2 gap-4 md:gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-destructive">Fragmented Data</CardTitle>
@@ -331,16 +331,16 @@ export function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="container mx-auto px-4 py-16">
+      <section id="features" className="container mx-auto px-4 py-12 md:py-16">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-center mb-3 md:mb-4">
             One Platform. Complete Control.
           </h2>
-          <p className="text-xl text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
+          <p className="text-base md:text-xl text-muted-foreground text-center mb-8 md:mb-12 max-w-2xl mx-auto">
             CattleOS brings all your cattle operation data together in one powerful,
             easy-to-use platform designed specifically for feedlot and cattle operations.
           </p>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {features.map((feature, index) => (
               <Card key={index} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
@@ -376,7 +376,9 @@ export function LandingPage() {
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
               <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader>
-                  <Brain className="h-10 w-10 md:h-12 md:w-12 text-primary mb-3 md:mb-4" />
+                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-3 md:mb-4 shadow-lg">
+                    <span className="text-2xl md:text-3xl">🧠</span>
+                  </div>
                   <CardTitle className="text-lg md:text-xl">AI-Powered Insights</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -403,7 +405,9 @@ export function LandingPage() {
 
               <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader>
-                  <Sparkles className="h-10 w-10 md:h-12 md:w-12 text-primary mb-3 md:mb-4" />
+                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mb-3 md:mb-4 shadow-lg">
+                    <span className="text-2xl md:text-3xl">💬</span>
+                  </div>
                   <CardTitle className="text-lg md:text-xl">Natural Language Interface</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -430,7 +434,9 @@ export function LandingPage() {
 
               <Card className="hover:shadow-lg transition-shadow sm:col-span-2 lg:col-span-1">
                 <CardHeader>
-                  <Zap className="h-10 w-10 md:h-12 md:w-12 text-primary mb-3 md:mb-4" />
+                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center mb-3 md:mb-4 shadow-lg">
+                    <span className="text-2xl md:text-3xl">📈</span>
+                  </div>
                   <CardTitle className="text-lg md:text-xl">Continuous Learning</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -685,11 +691,19 @@ export function LandingPage() {
                         </li>
                         <li className="flex items-start gap-2">
                           <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                          <span>Medication tracking and treatment protocols</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                          <span>Feeding management and ration optimization</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                           <span>Real-time cost tracking and break-even analysis</span>
                         </li>
                         <li className="flex items-start gap-2">
                           <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                          <span>Mobile apps (iOS & Android) with voice capture</span>
+                          <span>Mobile-optimized apps (iOS & Android) with voice capture</span>
                         </li>
                         <li className="flex items-start gap-2">
                           <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
@@ -1180,12 +1194,16 @@ export function LandingPage() {
                     alt="CattleOS"
                     width={140}
                     height={40}
-                    className="h-10 w-auto"
+                    className="h-10 w-auto object-contain"
                   />
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground mb-3">
                   Professional inventory management for modern cattle operations.
                 </p>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-full">
+                  <span className="text-lg">🍁</span>
+                  <span className="text-xs font-semibold text-red-600 dark:text-red-400">Built in Canada</span>
+                </div>
               </div>
               <div>
                 <h4 className="font-semibold mb-4">Product</h4>
