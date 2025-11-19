@@ -58,7 +58,7 @@ export default function CattleDetailPage() {
 
   // Health record form state
   const [healthDate, setHealthDate] = useState<string>(new Date().toISOString().split('T')[0])
-  const [healthType, setHealthType] = useState<string>("")
+  const [healthType, setHealthType] = useState<string>("Vaccination")
   const [healthDescription, setHealthDescription] = useState<string>("")
   const [healthVet, setHealthVet] = useState<string>("")
   const [healthCost, setHealthCost] = useState<string>("")
@@ -271,7 +271,7 @@ export default function CattleDetailPage() {
 
       // Reset form
       setHealthDate(new Date().toISOString().split('T')[0])
-      setHealthType("")
+      setHealthType("Vaccination")
       setHealthDescription("")
       setHealthVet("")
       setHealthCost("")
@@ -494,7 +494,7 @@ export default function CattleDetailPage() {
   const currentBarn = cattle.barnId ? barns.find(b => b.id === cattle.barnId) : null
 
   // Convert weight records to weight history with daily gain calculations
-  const sortedWeightRecords = [...weightRecords].sort((a, b) =>
+  const sortedWeightRecords = (weightRecords || []).slice().sort((a, b) =>
     new Date(a.date).getTime() - new Date(b.date).getTime()
   )
 
@@ -511,7 +511,7 @@ export default function CattleDetailPage() {
   })
 
   // Sort health records by date (most recent first)
-  const sortedHealthRecords = [...healthRecords].sort((a, b) =>
+  const sortedHealthRecords = (healthRecords || []).slice().sort((a, b) =>
     new Date(b.date).getTime() - new Date(a.date).getTime()
   )
 
