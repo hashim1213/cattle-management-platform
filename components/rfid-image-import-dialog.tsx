@@ -24,11 +24,12 @@ import { Camera, Upload, Loader2, CheckCircle2, XCircle, FileText } from "lucide
 import Tesseract from "tesseract.js"
 import { firebaseDataStore } from "@/lib/data-store-firebase"
 import { firebasePenStore, type Pen } from "@/lib/pen-store-firebase"
-import { firebaseBatchStore, type Batch } from "@/lib/batch-store-firebase"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useEffect } from "react"
 import { CattleDetailsEntry, type CattleDetails } from "@/components/cattle-details-entry"
+import { AddPenDialog } from "@/components/add-pen-dialog"
+import { Plus } from "lucide-react"
 
 interface RFIDImageImportDialogProps {
   open: boolean
@@ -47,7 +48,6 @@ export function RFIDImageImportDialog({
 }: RFIDImageImportDialogProps) {
   const { toast } = useToast()
   const [pens, setPens] = useState<Pen[]>([])
-  const [batches, setBatches] = useState<Batch[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -57,18 +57,17 @@ export function RFIDImageImportDialog({
   const [extractedText, setExtractedText] = useState("")
   const [parsedRFIDs, setParsedRFIDs] = useState<string[]>([])
   const [selectedPenId, setSelectedPenId] = useState(defaultPenId || "")
-  const [selectedBatchId, setSelectedBatchId] = useState(defaultBatchId || "none")
   const [isCameraActive, setIsCameraActive] = useState(false)
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [isImporting, setIsImporting] = useState(false)
   const [cattleDetails, setCattleDetails] = useState<CattleDetails[]>([])
   const [extractedCattleData, setExtractedCattleData] = useState<Partial<Record<string, any>>>({})
+  const [showAddPenDialog, setShowAddPenDialog] = useState(false)
 
-  // Load pens and batches when dialog opens
+  // Load pens when dialog opens
   useEffect(() => {
     if (open) {
       setPens(firebasePenStore.getPens())
-      setBatches(firebaseBatchStore.getBatches())
     }
   }, [open])
 
@@ -383,65 +382,81 @@ export function RFIDImageImportDialog({
   const parseRFIDsFromText = (text: string): string[] => {
     const foundRFIDs: string[] = []
 
+    // Clean up common OCR errors: replace O with 0, remove extra spaces
+    const cleanedText = text.replace(/[Oo]/g, '0').replace(/\s+/g, ' ')
+
     // Pattern 1: McCall Livestock format
-    // Example: "0124 000174878652 0000/00/00 NONE 25/10/20"
-    const mccallPattern = /(\d{4})\s+(\d{12})(?:\s+\d{4}\/\d{2}\/\d{2}\s+\w+\s+\d{2}\/\d{2}\/\d{2})?/g
-    let mccallMatches = text.matchAll(mccallPattern)
+    // Example: "0124 000174878652" or with extra data "0124 000174878652 0000/00/00"
+    const mccallPattern = /(\d{4})\s+(\d{12})/g
+    let mccallMatches = cleanedText.matchAll(mccallPattern)
     for (const match of mccallMatches) {
       foundRFIDs.push(`${match[1]}${match[2]}`)
     }
 
-    // Pattern 2: Standard 15-16 digit RFID tags
-    // Example: "840003123456789" or "8400031234567890"
+    // Pattern 2: Standard 15-16 digit RFID tags (continuous or with spaces/dashes)
+    // Example: "840003123456789" or "840 003 123456789"
     const standardPattern = /\b\d{15,16}\b/g
-    const standardMatches = text.match(standardPattern)
+    const standardMatches = cleanedText.match(standardPattern)
     if (standardMatches) {
       foundRFIDs.push(...standardMatches)
     }
 
-    // Pattern 3: RFID with dashes or spaces
+    // Pattern 3: RFID with dashes or spaces (3-3-9 or 3-3-10 format)
     // Example: "840-003-123456789" or "840 003 123456789"
-    const formattedPattern = /\b\d{3}[-\s]\d{3}[-\s]\d{9,10}\b/g
-    const formattedMatches = text.match(formattedPattern)
-    if (formattedMatches) {
-      foundRFIDs.push(...formattedMatches.map(m => m.replace(/[-\s]/g, "")))
+    const formattedPattern = /\b(\d{3})[-\s](\d{3})[-\s](\d{9,10})\b/g
+    const formattedMatches = cleanedText.matchAll(formattedPattern)
+    for (const match of formattedMatches) {
+      foundRFIDs.push(`${match[1]}${match[2]}${match[3]}`)
     }
 
-    // Pattern 4: Visual tags in tables (often 4-6 digits)
-    // Example: "1234" or "123456" in structured data
-    const visualTagPattern = /\b\d{4,6}\b/g
-    const visualMatches = text.match(visualTagPattern)
-    if (visualMatches && foundRFIDs.length === 0) {
-      // Only use visual tags if no RFID tags found
-      foundRFIDs.push(...visualMatches)
-    }
-
-    // Pattern 5: Canadian CCIA format
-    // Example: "CA 124 000174878652"
+    // Pattern 4: Canadian CCIA format
+    // Example: "CA 124 000174878652" or "CAN 0124 000174878652"
     const cciaPattern = /(?:CA|CAN)?\s*(\d{3,4})\s+(\d{12})/gi
-    const cciaMatches = text.matchAll(cciaPattern)
+    const cciaMatches = cleanedText.matchAll(cciaPattern)
     for (const match of cciaMatches) {
       foundRFIDs.push(`${match[1]}${match[2]}`)
     }
 
-    // Pattern 6: Line-by-line numbers (when in structured list)
-    const lines = text.split('\n')
+    // Pattern 5: Line-by-line numbers (when in structured list)
+    // Handles 10-16 digit numbers on their own line
+    const lines = cleanedText.split('\n')
     for (const line of lines) {
       const trimmed = line.trim()
-      // If line starts with digits and has 10+ consecutive digits
-      const lineMatch = trimmed.match(/^\d{10,16}$/)
+      // Match numbers with optional spaces/dashes
+      const lineMatch = trimmed.match(/^[\d\s-]{12,20}$/)
       if (lineMatch) {
-        foundRFIDs.push(lineMatch[0])
+        const cleaned = lineMatch[0].replace(/[-\s]/g, '')
+        if (cleaned.length >= 10 && cleaned.length <= 16 && /^\d+$/.test(cleaned)) {
+          foundRFIDs.push(cleaned)
+        }
       }
+    }
+
+    // Pattern 6: Numbers in table columns (look for consistent patterns)
+    // Example: "Tag    Weight" then "840003123456789    450"
+    const tablePattern = /\b(\d{12,16})\s+\d{2,4}\b/g
+    const tableMatches = cleanedText.matchAll(tablePattern)
+    for (const match of tableMatches) {
+      foundRFIDs.push(match[1])
+    }
+
+    // Pattern 7: Visual tags (4-6 digits) - only if no electronic tags found
+    const visualTagPattern = /\b\d{4,6}\b/g
+    const visualMatches = cleanedText.match(visualTagPattern)
+    if (visualMatches && foundRFIDs.length === 0) {
+      foundRFIDs.push(...visualMatches)
     }
 
     // Remove duplicates and filter valid RFIDs
     return Array.from(new Set(foundRFIDs)).filter((rfid) => {
       // Must be at least 4 digits (for visual tags) or 10+ for electronic tags
       const isValid = rfid.length >= 4 && /^\d+$/.test(rfid)
-      // Exclude common false positives like dates, page numbers
-      const notFalsePositive = !rfid.match(/^(19|20)\d{2}$/) && // Not a year
-                               !rfid.match(/^(0?[1-9]|1[0-2])(0?[1-9]|[12]\d|3[01])$/) // Not a date
+      // Exclude common false positives
+      const notFalsePositive =
+        !rfid.match(/^(19|20)\d{2}$/) && // Not a year
+        !rfid.match(/^(0?[1-9]|1[0-2])(0?[1-9]|[12]\d|3[01])$/) && // Not a date
+        !rfid.match(/^[0-9]{1,3}$/) && // Not a small number (unless visual tag range)
+        !(rfid.length < 10 && parseInt(rfid) < 1000) // Not page numbers
       return isValid && notFalsePositive
     })
   }
@@ -628,7 +643,6 @@ export function RFIDImageImportDialog({
           rfidTag: detail.rfid,
           penId: selectedPenId,
           barnId: pen.barnId,
-          batchId: selectedBatchId && selectedBatchId !== "none" ? selectedBatchId : undefined,
           stage: "receiving" as const,
           arrivalDate: today,
           breed: "Unknown",
@@ -850,38 +864,45 @@ export function RFIDImageImportDialog({
 
               <div className="space-y-2">
                 <Label>Assign to Pen *</Label>
-                <Select value={selectedPenId} onValueChange={setSelectedPenId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select pen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {pens.map((pen) => (
-                      <SelectItem key={pen.id} value={pen.id}>
-                        {pen.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Assign to Pen Group (Optional)</Label>
-                <Select
-                  value={selectedBatchId}
-                  onValueChange={setSelectedBatchId}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="No pen group" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No Pen Group</SelectItem>
-                    {batches.map((batch) => (
-                      <SelectItem key={batch.id} value={batch.id}>
-                        {batch.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {pens.length === 0 ? (
+                  <div className="p-4 border border-dashed rounded-lg bg-muted/50">
+                    <p className="text-sm text-muted-foreground mb-3">
+                      No pens available. Please create a pen first to import cattle.
+                    </p>
+                    <Button
+                      type="button"
+                      onClick={() => setShowAddPenDialog(true)}
+                      className="w-full"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Your First Pen
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Select value={selectedPenId} onValueChange={setSelectedPenId} className="flex-1">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select pen" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {pens.map((pen) => (
+                          <SelectItem key={pen.id} value={pen.id}>
+                            {pen.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setShowAddPenDialog(true)}
+                      title="Create new pen"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -929,6 +950,17 @@ export function RFIDImageImportDialog({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AddPenDialog
+        open={showAddPenDialog}
+        onOpenChange={(open) => {
+          setShowAddPenDialog(open)
+          // Refresh pens list when dialog closes (pen might have been created)
+          if (!open) {
+            setPens(firebasePenStore.getPens())
+          }
+        }}
+      />
     </>
   )
 }
