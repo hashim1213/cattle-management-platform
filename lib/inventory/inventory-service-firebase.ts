@@ -369,6 +369,14 @@ class FirebaseInventoryService {
   // ==================== INVENTORY MANAGEMENT ====================
 
   /**
+   * Get all inventory items synchronously from cache (updated by real-time listener)
+   * Use this when you need synchronous access to inventory data
+   */
+  getAllItems(): InventoryItem[] {
+    return this.inventory
+  }
+
+  /**
    * Get all inventory items (always fetch fresh from Firestore for realtime data)
    */
   async getInventory(): Promise<InventoryItem[]> {

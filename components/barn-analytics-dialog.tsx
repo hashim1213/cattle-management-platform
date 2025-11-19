@@ -30,7 +30,7 @@ export function BarnAnalyticsDialog({ barnId, open, onOpenChange }: BarnAnalytic
   if (!barn) return null
 
   const barnPens = pens.filter((p) => p.barnId === barnId)
-  const allCattle = dataStore.getCattle().filter((c) => c.status === "Active")
+  const allCattle = dataStore.getCattleSync().filter((c) => c.status === "Active")
   const barnCattle = allCattle.filter((c) => c.barnId === barnId)
 
   // Calculate comprehensive analytics

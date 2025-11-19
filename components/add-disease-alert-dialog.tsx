@@ -43,7 +43,7 @@ export function AddDiseaseAlertDialog({ open, onOpenChange }: AddDiseaseAlertDia
   const [actions, setActions] = useState<string[]>([])
   const [currentAction, setCurrentAction] = useState("")
 
-  const cattle = dataStore.getCattle().filter((c) => c.status === "Active")
+  const cattle = dataStore.getCattleSync().filter((c) => c.status === "Active")
 
   const handleAddAction = () => {
     if (currentAction.trim()) {

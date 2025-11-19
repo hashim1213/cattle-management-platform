@@ -193,7 +193,7 @@ class RationCalculator {
     let cattleCount = 0
 
     activeAssignments.forEach((assignment) => {
-      const cattle = dataStore.getCattle().filter((c) => c.penId === assignment.penId)
+      const cattle = dataStore.getCattleSync().filter((c) => c.penId === assignment.penId)
 
       cattle.forEach((animal) => {
         if (animal.purchaseDate && animal.purchaseWeight && animal.weight) {

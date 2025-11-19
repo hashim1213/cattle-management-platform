@@ -42,7 +42,7 @@ export function AddVaccinationDialog({ open, onOpenChange }: AddVaccinationDialo
   const [administeredBy, setAdministeredBy] = useState("")
   const [notes, setNotes] = useState("")
 
-  const cattle = dataStore.getCattle().filter((c) => c.status === "Active")
+  const cattle = dataStore.getCattleSync().filter((c) => c.status === "Active")
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()

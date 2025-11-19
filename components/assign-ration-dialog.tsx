@@ -48,7 +48,7 @@ export function AssignRationDialog({ open, onOpenChange }: AssignRationDialogPro
     if (!pen || !ration) return
 
     // Get cattle count in pen
-    const cattle = dataStore.getCattle().filter((c) => c.penId === selectedPenId)
+    const cattle = dataStore.getCattleSync().filter((c) => c.penId === selectedPenId)
     const headCount = cattle.length
 
     if (headCount === 0) {
@@ -94,7 +94,7 @@ export function AssignRationDialog({ open, onOpenChange }: AssignRationDialogPro
   const currentAssignment = selectedPenId ? getPenAssignment(selectedPenId) : null
 
   const cattle = selectedPenId
-    ? dataStore.getCattle().filter((c) => c.penId === selectedPenId)
+    ? dataStore.getCattleSync().filter((c) => c.penId === selectedPenId)
     : []
 
   return (
@@ -117,7 +117,7 @@ export function AssignRationDialog({ open, onOpenChange }: AssignRationDialogPro
                 </SelectTrigger>
                 <SelectContent>
                   {pens.map((pen) => {
-                    const penCattle = dataStore.getCattle().filter((c) => c.penId === pen.id)
+                    const penCattle = dataStore.getCattleSync().filter((c) => c.penId === pen.id)
                     return (
                       <SelectItem key={pen.id} value={pen.id}>
                         {pen.name} - {penCattle.length} head

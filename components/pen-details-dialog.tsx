@@ -41,7 +41,7 @@ export function PenDetailsDialog({ penId, open, onOpenChange, onAssignCattle }: 
   if (!pen) return null
 
   const barn = barns.find((b) => b.id === pen.barnId)
-  const cattle = dataStore.getCattle().filter((c) => c.penId === penId && c.status === "Active")
+  const cattle = dataStore.getCattleSync().filter((c) => c.penId === penId && c.status === "Active")
 
   // Get current ration assignment
   const rationAssignment = getPenAssignment(penId)

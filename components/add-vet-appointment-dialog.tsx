@@ -43,7 +43,7 @@ export function AddVetAppointmentDialog({ open, onOpenChange }: AddVetAppointmen
   const [purpose, setPurpose] = useState<"routine_check" | "vaccination" | "treatment" | "surgery" | "emergency" | "other">("routine_check")
   const [notes, setNotes] = useState("")
 
-  const cattle = dataStore.getCattle().filter((c) => c.status === "Active")
+  const cattle = dataStore.getCattleSync().filter((c) => c.status === "Active")
 
   const handleToggleCattle = (cattleId: string) => {
     setCattleIds((prev) =>
