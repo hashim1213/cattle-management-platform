@@ -62,15 +62,15 @@ function SortableStage({
   }
 
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center gap-2 sm:gap-4">
+    <div ref={setNodeRef} style={style} className="flex items-center gap-2 sm:gap-3">
       <button
         onClick={onClick}
-        className="flex flex-col items-center text-center p-4 sm:p-5 rounded-xl hover:bg-accent/50 active:bg-accent/70 transition-all active:scale-95 cursor-pointer group min-w-[130px] sm:min-w-[170px] touch-manipulation"
+        className="flex flex-col items-center text-center p-3 sm:p-4 rounded-lg hover:bg-accent/50 active:bg-accent/70 transition-all active:scale-95 cursor-pointer group min-w-[110px] sm:min-w-[140px] touch-manipulation"
       >
         <div
           {...attributes}
           {...listeners}
-          className="relative w-24 h-24 sm:w-32 sm:h-32 mb-3 cursor-move touch-none"
+          className="relative w-20 h-20 sm:w-24 sm:h-24 mb-2 cursor-move touch-none"
         >
           {stage.image ? (
             <Image
@@ -82,19 +82,19 @@ function SortableStage({
           ) : (
             <div
               className="w-full h-full rounded-full flex items-center justify-center shadow-sm"
-              style={{ backgroundColor: `${stage.color}20`, border: `3px solid ${stage.color}` }}
+              style={{ backgroundColor: `${stage.color}20`, border: `2px solid ${stage.color}` }}
             >
               <div
-                className="w-14 h-14 sm:w-20 sm:h-20 rounded-full"
+                className="w-10 h-10 sm:w-14 sm:h-14 rounded-full"
                 style={{ backgroundColor: stage.color }}
               />
             </div>
           )}
         </div>
-        <h3 className="font-semibold text-foreground text-base sm:text-lg">{stage.name}</h3>
-        <p className="text-sm sm:text-base text-muted-foreground font-medium">{count} head</p>
+        <h3 className="font-semibold text-foreground text-sm sm:text-base">{stage.name}</h3>
+        <p className="text-xs sm:text-sm text-muted-foreground font-medium">{count} head</p>
         {stage.description && (
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 hidden sm:block line-clamp-1">
+          <p className="text-xs text-muted-foreground mt-1 hidden sm:block line-clamp-1">
             {stage.description}
           </p>
         )}
@@ -295,31 +295,31 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-background">
       {/* Header - Mobile optimized */}
       <header className="border-b border-border bg-card/95 backdrop-blur-md sticky top-0 z-40 lg:static lg:top-0">
-        <div className="w-full px-4 sm:px-6 py-4 sm:py-5">
-          <div className="flex items-center justify-between gap-3">
+        <div className="w-full px-3 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
-              <h1 className="text-xl sm:text-3xl font-bold text-foreground tracking-tight">Dashboard</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Dashboard</h1>
             </div>
             <div className="flex gap-2 flex-shrink-0">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleExportCattle}
-                className="hidden md:flex touch-manipulation min-h-[44px]"
+                className="hidden md:flex touch-manipulation min-h-[36px] text-sm"
               >
-                <Download className="h-4 w-4 mr-2" />
+                <Download className="h-3.5 w-3.5 mr-1.5" />
                 Export Data
               </Button>
               <Link href="/agent">
-                <Button variant="outline" size="sm" className="touch-manipulation min-h-[48px] px-3 sm:px-4 active:scale-95 transition-transform">
-                  <MessageSquare className="h-5 w-5 sm:mr-2" />
+                <Button variant="outline" size="sm" className="touch-manipulation min-h-[40px] px-3 sm:px-4 active:scale-95 transition-transform text-sm">
+                  <MessageSquare className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline">Farm Assistant</span>
                   <span className="sm:hidden sr-only">AI</span>
                 </Button>
               </Link>
               <Link href="/cattle">
-                <Button size="sm" className="touch-manipulation min-h-[48px] px-4 sm:px-5 active:scale-95 transition-transform">
-                  <Plus className="h-5 w-5 sm:mr-2" />
+                <Button size="sm" className="touch-manipulation min-h-[40px] px-3 sm:px-4 active:scale-95 transition-transform text-sm">
+                  <Plus className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline">Add Cattle</span>
                   <span className="sm:hidden sr-only">Add</span>
                 </Button>
@@ -329,15 +329,15 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="w-full px-4 sm:px-6 py-5 sm:py-8 space-y-6 sm:space-y-8 pb-24 md:pb-8">
+      <main className="w-full px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-5 pb-20 md:pb-6">
         {/* Production Lifecycle */}
         <section>
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg sm:text-xl font-semibold text-foreground">Production Lifecycle</h2>
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h2 className="text-base sm:text-lg font-semibold text-foreground">Production Lifecycle</h2>
             <LifecycleSettingsDialog />
           </div>
           <Card>
-            <CardContent className="p-4 sm:p-6 overflow-x-auto mobile-scroll-container">
+            <CardContent className="p-3 sm:p-4 overflow-x-auto mobile-scroll-container">
               {stages.length > 0 ? (
                 <DndContext
                   sensors={sensors}
@@ -345,9 +345,9 @@ export default function DashboardPage() {
                   onDragEnd={handleDragEnd}
                 >
                   <SortableContext items={stages.map((s) => s.id)} strategy={horizontalListSortingStrategy}>
-                    <div className="flex gap-3 sm:gap-6 justify-start sm:justify-center items-center min-w-min pb-2">
+                    <div className="flex gap-2 sm:gap-4 justify-start sm:justify-center items-center min-w-min pb-1.5">
                       {stages.map((stage, index) => (
-                        <div key={stage.id} className="flex items-center gap-3 sm:gap-6 flex-shrink-0">
+                        <div key={stage.id} className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
                           <SortableStage
                             stage={stage}
                             count={stageCounts[stage.name] || 0}
@@ -356,7 +356,7 @@ export default function DashboardPage() {
 
                           {index < stages.length - 1 && (
                             <svg
-                              className="w-4 h-4 sm:w-6 sm:h-6 text-muted-foreground flex-shrink-0"
+                              className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-muted-foreground flex-shrink-0"
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
@@ -386,26 +386,26 @@ export default function DashboardPage() {
 
         {/* Quick Add Feed & Meds */}
         <section>
-          <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-5 text-foreground">Quick Actions</h2>
-          <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2">
+          <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-foreground">Quick Actions</h2>
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
             <Card
               className="hover:bg-muted/50 active:bg-muted active:scale-[0.99] transition-all cursor-pointer h-full touch-manipulation"
               onClick={() => setIsQuickFeedOpen(true)}
             >
-              <CardContent className="p-6 sm:p-7 text-center min-h-[150px] flex flex-col items-center justify-center">
-                <Utensils className="h-12 w-12 sm:h-14 sm:w-14 mx-auto mb-3 text-primary flex-shrink-0" />
-                <h3 className="font-semibold text-lg sm:text-xl mb-2">Quick Add Feed</h3>
-                <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">Quickly allocate feed to a pen</p>
+              <CardContent className="p-4 sm:p-5 text-center min-h-[120px] flex flex-col items-center justify-center">
+                <Utensils className="h-9 w-9 sm:h-10 sm:w-10 mx-auto mb-2 text-primary flex-shrink-0" />
+                <h3 className="font-semibold text-base sm:text-lg mb-1.5">Quick Add Feed</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">Quickly allocate feed to a pen</p>
               </CardContent>
             </Card>
             <Card
               className="hover:bg-muted/50 active:bg-muted active:scale-[0.99] transition-all cursor-pointer h-full touch-manipulation"
               onClick={() => setIsQuickMedsOpen(true)}
             >
-              <CardContent className="p-6 sm:p-7 text-center min-h-[150px] flex flex-col items-center justify-center">
-                <Pill className="h-12 w-12 sm:h-14 sm:w-14 mx-auto mb-3 text-primary flex-shrink-0" />
-                <h3 className="font-semibold text-lg sm:text-xl mb-2">Quick Add Meds</h3>
-                <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">Quickly administer medication to a pen</p>
+              <CardContent className="p-4 sm:p-5 text-center min-h-[120px] flex flex-col items-center justify-center">
+                <Pill className="h-9 w-9 sm:h-10 sm:w-10 mx-auto mb-2 text-primary flex-shrink-0" />
+                <h3 className="font-semibold text-base sm:text-lg mb-1.5">Quick Add Meds</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">Quickly administer medication to a pen</p>
               </CardContent>
             </Card>
           </div>
@@ -413,12 +413,12 @@ export default function DashboardPage() {
 
         {/* Key Metrics */}
         <section>
-          <div className="flex items-center justify-between mb-4 sm:mb-5">
-            <h2 className="text-lg sm:text-xl font-semibold text-foreground">Key Metrics</h2>
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h2 className="text-base sm:text-lg font-semibold text-foreground">Key Metrics</h2>
             <Dialog open={isSettingsDialogOpen} onOpenChange={setIsSettingsDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 min-h-[44px] touch-manipulation">
-                  <Settings className="h-4 w-4" />
+                <Button variant="outline" size="sm" className="gap-1.5 min-h-[36px] touch-manipulation text-sm">
+                  <Settings className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">Growth Settings</span>
                 </Button>
               </DialogTrigger>
@@ -456,7 +456,7 @@ export default function DashboardPage() {
               </DialogContent>
             </Dialog>
           </div>
-          <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             {metrics.map((metric, index) => (
               <MetricCard key={index} {...metric} />
             ))}
@@ -465,8 +465,8 @@ export default function DashboardPage() {
 
         {/* Feed & Pen Management */}
         <section>
-          <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-5 text-foreground">Operations Overview</h2>
-          <div className="grid gap-4 sm:gap-5 grid-cols-1 lg:grid-cols-2">
+          <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-foreground">Operations Overview</h2>
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-2">
             <FeedMetricsCard />
             <PenUtilizationCard />
           </div>
@@ -474,41 +474,41 @@ export default function DashboardPage() {
 
         {/* Management Links */}
         <section>
-          <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-5 text-foreground">Management</h2>
-          <div className="grid gap-4 sm:gap-5 grid-cols-2 lg:grid-cols-4">
+          <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-foreground">Management</h2>
+          <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
             <Link href="/cattle" className="touch-manipulation">
               <Card className="hover:bg-muted/50 active:bg-muted active:scale-[0.98] transition-all cursor-pointer h-full">
-                <CardContent className="p-5 sm:p-7 text-center min-h-[120px] flex flex-col items-center justify-center">
-                  <Package className="h-9 w-9 sm:h-10 sm:w-10 mx-auto mb-2.5 text-primary flex-shrink-0" />
-                  <h3 className="font-semibold text-base sm:text-lg">Manage Cattle</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground hidden md:block mt-1.5">View & edit herd</p>
+                <CardContent className="p-4 sm:p-5 text-center min-h-[100px] flex flex-col items-center justify-center">
+                  <Package className="h-8 w-8 sm:h-9 sm:w-9 mx-auto mb-2 text-primary flex-shrink-0" />
+                  <h3 className="font-semibold text-sm sm:text-base">Manage Cattle</h3>
+                  <p className="text-xs text-muted-foreground hidden md:block mt-1">View & edit herd</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/rations" className="touch-manipulation">
               <Card className="hover:bg-muted/50 active:bg-muted active:scale-[0.98] transition-all cursor-pointer h-full">
-                <CardContent className="p-5 sm:p-7 text-center min-h-[120px] flex flex-col items-center justify-center">
-                  <Utensils className="h-9 w-9 sm:h-10 sm:w-10 mx-auto mb-2.5 text-primary flex-shrink-0" />
-                  <h3 className="font-semibold text-base sm:text-lg">Rations</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground hidden md:block mt-1.5">Manage feed rations</p>
+                <CardContent className="p-4 sm:p-5 text-center min-h-[100px] flex flex-col items-center justify-center">
+                  <Utensils className="h-8 w-8 sm:h-9 sm:w-9 mx-auto mb-2 text-primary flex-shrink-0" />
+                  <h3 className="font-semibold text-sm sm:text-base">Rations</h3>
+                  <p className="text-xs text-muted-foreground hidden md:block mt-1">Manage feed rations</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/inventory" className="touch-manipulation">
               <Card className="hover:bg-muted/50 active:bg-muted active:scale-[0.98] transition-all cursor-pointer h-full">
-                <CardContent className="p-5 sm:p-7 text-center min-h-[120px] flex flex-col items-center justify-center">
-                  <Sprout className="h-9 w-9 sm:h-10 sm:w-10 mx-auto mb-2.5 text-primary flex-shrink-0" />
-                  <h3 className="font-semibold text-base sm:text-lg">Inventory</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground hidden md:block mt-1.5">Manage supplies</p>
+                <CardContent className="p-4 sm:p-5 text-center min-h-[100px] flex flex-col items-center justify-center">
+                  <Sprout className="h-8 w-8 sm:h-9 sm:w-9 mx-auto mb-2 text-primary flex-shrink-0" />
+                  <h3 className="font-semibold text-sm sm:text-base">Inventory</h3>
+                  <p className="text-xs text-muted-foreground hidden md:block mt-1">Manage supplies</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/costs" className="touch-manipulation">
               <Card className="hover:bg-muted/50 active:bg-muted active:scale-[0.98] transition-all cursor-pointer h-full">
-                <CardContent className="p-5 sm:p-7 text-center min-h-[120px] flex flex-col items-center justify-center">
-                  <DollarSign className="h-9 w-9 sm:h-10 sm:w-10 mx-auto mb-2.5 text-primary flex-shrink-0" />
-                  <h3 className="font-semibold text-base sm:text-lg">Financial</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground hidden md:block mt-1.5">View costs</p>
+                <CardContent className="p-4 sm:p-5 text-center min-h-[100px] flex flex-col items-center justify-center">
+                  <DollarSign className="h-8 w-8 sm:h-9 sm:w-9 mx-auto mb-2 text-primary flex-shrink-0" />
+                  <h3 className="font-semibold text-sm sm:text-base">Financial</h3>
+                  <p className="text-xs text-muted-foreground hidden md:block mt-1">View costs</p>
                 </CardContent>
               </Card>
             </Link>
