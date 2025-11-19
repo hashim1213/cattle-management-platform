@@ -28,7 +28,9 @@ import {
   Rocket,
   Shield,
   Lock,
-  Eye
+  Eye,
+  MessageCircle,
+  MapPin
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -377,7 +379,7 @@ export function LandingPage() {
               <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-3 md:mb-4 shadow-lg">
-                    <span className="text-2xl md:text-3xl">🧠</span>
+                    <Brain className="h-8 w-8 md:h-10 md:w-10 text-white" />
                   </div>
                   <CardTitle className="text-lg md:text-xl">AI-Powered Insights</CardTitle>
                 </CardHeader>
@@ -406,7 +408,7 @@ export function LandingPage() {
               <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mb-3 md:mb-4 shadow-lg">
-                    <span className="text-2xl md:text-3xl">💬</span>
+                    <MessageCircle className="h-8 w-8 md:h-10 md:w-10 text-white" />
                   </div>
                   <CardTitle className="text-lg md:text-xl">Natural Language Interface</CardTitle>
                 </CardHeader>
@@ -435,7 +437,7 @@ export function LandingPage() {
               <Card className="hover:shadow-lg transition-shadow sm:col-span-2 lg:col-span-1">
                 <CardHeader>
                   <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center mb-3 md:mb-4 shadow-lg">
-                    <span className="text-2xl md:text-3xl">📈</span>
+                    <BarChart3 className="h-8 w-8 md:h-10 md:w-10 text-white" />
                   </div>
                   <CardTitle className="text-lg md:text-xl">Continuous Learning</CardTitle>
                 </CardHeader>
@@ -1201,7 +1203,7 @@ export function LandingPage() {
                   Professional inventory management for modern cattle operations.
                 </p>
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-full">
-                  <span className="text-lg">🍁</span>
+                  <MapPin className="h-4 w-4 text-red-600 dark:text-red-400" />
                   <span className="text-xs font-semibold text-red-600 dark:text-red-400">Built in Canada</span>
                 </div>
               </div>
