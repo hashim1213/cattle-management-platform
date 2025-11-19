@@ -58,7 +58,7 @@ export function LandingPage() {
     "offers": [
       {
         "@type": "Offer",
-        "name": "Rancher Plan",
+        "name": "Cow/Calf Plan",
         "price": "99",
         "priceCurrency": "USD",
         "billingDuration": "P1M"
@@ -66,12 +66,12 @@ export function LandingPage() {
       {
         "@type": "Offer",
         "name": "Feedlot Plan",
-        "price": "250",
+        "price": "275",
         "priceCurrency": "USD",
         "billingDuration": "P1M"
       }
     ],
-    "description": "AI-native cattle management platform for ranchers, feedlots, and cattle operations. Real-time cost tracking, inventory management, and break-even analysis.",
+    "description": "AI-native cattle management platform for cow-calf operations, feedlots, and cattle operations. Real-time cost tracking, inventory management, and break-even analysis.",
     "screenshot": "/cattleos_logo_full.png",
     "aggregateRating": {
       "@type": "AggregateRating",
@@ -830,47 +830,56 @@ export function LandingPage() {
             </div>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-              {/* Rancher/Farmer Plan */}
+              {/* Cow/Calf Plan */}
               <Card className="relative hover:shadow-2xl transition-all duration-300 border-2 flex flex-col">
                 <CardHeader className="text-center pb-8">
-                  <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                    <Users className="h-6 w-6 text-green-600" />
+                  <div className="mx-auto w-16 h-16 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center mb-4 shadow-lg">
+                    <span className="text-3xl font-bold text-white">C/C</span>
                   </div>
-                  <CardTitle className="text-2xl mb-2">Rancher</CardTitle>
-                  <CardDescription>Perfect for individual cattle operations</CardDescription>
+                  <CardTitle className="text-2xl mb-2">Cow/Calf</CardTitle>
+                  <CardDescription>Perfect for cow-calf operations</CardDescription>
                   <div className="mt-4">
                     <div className="text-4xl font-bold text-foreground">$99</div>
                     <div className="text-muted-foreground">/month</div>
+                    <p className="text-xs text-muted-foreground mt-2">billed annually: $1,188/year</p>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <ul className="space-y-3">
-                    <li className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Up to 1,000 head capacity</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Real-time cost tracking</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Pen-based resource allocation</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Voice and NFC data capture</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Mobile app access</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Email support</span>
-                    </li>
-                  </ul>
-                  <Button className="w-full mt-6" onClick={() => document.getElementById('loi-form')?.scrollIntoView({ behavior: 'smooth' })}>
+                <CardContent className="space-y-4 flex-1 flex flex-col">
+                  <div className="space-y-3 flex-1">
+                    <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                      <p className="text-sm font-semibold">Capacity</p>
+                      <p className="text-xs text-muted-foreground">Up to 200 head</p>
+                      <p className="text-xs text-muted-foreground">15 pens • 1 user</p>
+                    </div>
+                    <ul className="space-y-2.5">
+                      <li className="flex items-start gap-2 text-sm">
+                        <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                        <span>Real-time cost tracking</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                        <span>Cattle & pen management</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                        <span>Basic health tracking</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                        <span>Mobile app access</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                        <span>Email support</span>
+                      </li>
+                    </ul>
+                    <div className="pt-3 border-t">
+                      <p className="text-xs text-muted-foreground mb-2 font-medium">Add-ons:</p>
+                      <p className="text-xs text-muted-foreground">+$10/month per 100 head over 200</p>
+                      <p className="text-xs text-muted-foreground">+$15/month per additional user</p>
+                    </div>
+                  </div>
+                  <Button className="w-full mt-4" onClick={() => document.getElementById('loi-form')?.scrollIntoView({ behavior: 'smooth' })}>
                     Get Started
                   </Button>
                 </CardContent>
@@ -884,48 +893,59 @@ export function LandingPage() {
                   </div>
                 </div>
                 <CardHeader className="text-center pb-8 pt-8">
-                  <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                    <Building2 className="h-6 w-6 text-primary" />
+                  <div className="mx-auto w-16 h-16 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center mb-4 shadow-lg">
+                    <span className="text-3xl font-bold text-primary-foreground">FL</span>
                   </div>
                   <CardTitle className="text-2xl mb-2">Feedlot</CardTitle>
                   <CardDescription>Built for commercial feedlot operations</CardDescription>
                   <div className="mt-4">
-                    <div className="text-4xl font-bold text-foreground">$250+</div>
+                    <div className="text-4xl font-bold text-foreground">$275</div>
                     <div className="text-muted-foreground">/month</div>
+                    <p className="text-xs text-muted-foreground mt-2">billed annually: $3,300/year</p>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <ul className="space-y-3">
-                    <li className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                      <span className="text-sm"><strong>Everything in Rancher, plus:</strong></span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">1,000 - 10,000+ head capacity</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Multi-location support</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Advanced analytics & reporting</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">API access for integrations</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Team collaboration tools</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Priority phone & email support</span>
-                    </li>
-                  </ul>
-                  <Button className="w-full mt-6" onClick={() => document.getElementById('loi-form')?.scrollIntoView({ behavior: 'smooth' })}>
+                <CardContent className="space-y-4 flex-1 flex flex-col">
+                  <div className="space-y-3 flex-1">
+                    <div className="bg-primary/5 rounded-lg p-3 space-y-1">
+                      <p className="text-sm font-semibold">Capacity</p>
+                      <p className="text-xs text-muted-foreground">Up to 2,000 head</p>
+                      <p className="text-xs text-muted-foreground">40 pens • 3 users</p>
+                    </div>
+                    <p className="text-xs font-semibold text-primary">Everything in Cow/Calf, plus:</p>
+                    <ul className="space-y-2.5">
+                      <li className="flex items-start gap-2 text-sm">
+                        <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                        <span>Advanced health & treatment tracking</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                        <span>EID tag integration</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                        <span>Advanced ration management</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                        <span>Voice & NFC data capture</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                        <span>Team collaboration tools</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                        <span>Priority phone & email support</span>
+                      </li>
+                    </ul>
+                    <div className="pt-3 border-t">
+                      <p className="text-xs text-muted-foreground mb-2 font-medium">Add-ons:</p>
+                      <p className="text-xs text-muted-foreground">+$8/month per 100 head over 2,000</p>
+                      <p className="text-xs text-muted-foreground">+$12/month per additional user</p>
+                      <p className="text-xs text-muted-foreground">+$5/month per 10 additional pens</p>
+                    </div>
+                  </div>
+                  <Button className="w-full mt-4" onClick={() => document.getElementById('loi-form')?.scrollIntoView({ behavior: 'smooth' })}>
                     Get Started
                   </Button>
                 </CardContent>
@@ -934,8 +954,8 @@ export function LandingPage() {
               {/* Enterprise Plan */}
               <Card className="relative hover:shadow-2xl transition-all duration-300 border-2 sm:col-span-2 lg:col-span-1 flex flex-col">
                 <CardHeader className="text-center pb-8">
-                  <div className="mx-auto w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-                    <Building2 className="h-6 w-6 text-purple-600" />
+                  <div className="mx-auto w-16 h-16 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mb-4 shadow-lg">
+                    <span className="text-3xl font-bold text-white">ENT</span>
                   </div>
                   <CardTitle className="text-2xl mb-2">Enterprise</CardTitle>
                   <CardDescription>Custom solutions for large operations</CardDescription>
@@ -944,38 +964,42 @@ export function LandingPage() {
                     <div className="text-muted-foreground">Contact us</div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <ul className="space-y-3">
-                    <li className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm"><strong>Everything in Feedlot, plus:</strong></span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Unlimited head capacity</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Custom integrations & workflows</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Dedicated account manager</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">On-premise deployment options</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Custom training & onboarding</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">24/7 priority support with SLA</span>
-                    </li>
-                  </ul>
-                  <Button variant="outline" className="w-full mt-6" onClick={() => document.getElementById('loi-form')?.scrollIntoView({ behavior: 'smooth' })}>
+                <CardContent className="space-y-4 flex-1 flex flex-col">
+                  <div className="space-y-3 flex-1">
+                    <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-3 space-y-1">
+                      <p className="text-sm font-semibold">Capacity</p>
+                      <p className="text-xs text-muted-foreground">Unlimited head</p>
+                      <p className="text-xs text-muted-foreground">Unlimited pens • Unlimited users</p>
+                    </div>
+                    <p className="text-xs font-semibold text-purple-600">Everything in Feedlot, plus:</p>
+                    <ul className="space-y-2.5">
+                      <li className="flex items-start gap-2 text-sm">
+                        <Check className="h-4 w-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                        <span>Multi-location management</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <Check className="h-4 w-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                        <span>Custom integrations & API access</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <Check className="h-4 w-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                        <span>Dedicated account manager</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <Check className="h-4 w-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                        <span>On-premise deployment options</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <Check className="h-4 w-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                        <span>Custom training & onboarding</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <Check className="h-4 w-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                        <span>24/7 priority support with SLA</span>
+                      </li>
+                    </ul>
+                  </div>
+                  <Button variant="outline" className="w-full mt-4" onClick={() => document.getElementById('loi-form')?.scrollIntoView({ behavior: 'smooth' })}>
                     Contact Sales
                   </Button>
                 </CardContent>
