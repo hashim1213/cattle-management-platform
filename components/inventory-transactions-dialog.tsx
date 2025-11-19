@@ -34,20 +34,20 @@ export function InventoryTransactionsDialog({ open, onClose, item }: InventoryTr
     applyFilters()
   }, [transactions, typeFilter, dateFilter])
 
-  const loadTransactions = () => {
+  const loadTransactions = async () => {
     if (item) {
       // Get transactions for specific item
-      const itemTransactions = inventoryService.getItemTransactions(item.id)
+      const itemTransactions = await inventoryService.getItemTransactions(item.id)
       setTransactions(itemTransactions)
     } else {
       // Get all transactions
-      const allTransactions = inventoryService.getTransactions()
+      const allTransactions = await inventoryService.getTransactions()
       setTransactions(allTransactions)
     }
   }
 
   const applyFilters = () => {
-    let filtered = [...transactions]
+    let filtered = (transactions || []).slice()
 
     // Type filter
     if (typeFilter !== "all") {

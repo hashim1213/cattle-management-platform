@@ -108,7 +108,7 @@ export default function InventoryPage() {
   }
 
   const applyFilters = () => {
-    let filtered = [...inventory]
+    let filtered = (inventory || []).slice()
 
     // Search filter
     if (searchQuery) {
