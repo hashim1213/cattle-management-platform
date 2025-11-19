@@ -327,10 +327,10 @@ export default function AgentPage() {
                           </button>
 
                           <button
-                            onClick={() => sendMessage("Add a cow")}
+                            onClick={() => sendMessage("Add an animal")}
                             className="w-full p-4 bg-card hover:bg-accent border rounded-xl text-left transition-all hover:shadow-md"
                           >
-                            <p className="font-medium">Add a cow</p>
+                            <p className="font-medium">Add an animal</p>
                             <p className="text-xs text-muted-foreground mt-1">I'll guide you through it</p>
                           </button>
 
