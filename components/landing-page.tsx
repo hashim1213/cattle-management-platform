@@ -19,7 +19,13 @@ import {
   Check,
   ArrowRight,
   Users,
-  Building2
+  Building2,
+  Sparkles,
+  Brain,
+  Scale,
+  Link as LinkIcon,
+  Calendar,
+  Rocket
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -190,16 +196,17 @@ export function LandingPage() {
         {/* Content */}
         <div className="relative z-20 container mx-auto px-4 py-24 md:py-32 lg:py-40">
           <div className="max-w-5xl mx-auto text-center">
-            <div className="inline-block mb-6 px-5 py-2.5 bg-primary/90 backdrop-blur-sm rounded-full shadow-lg">
-              <p className="text-sm font-semibold text-primary-foreground">Launching Q2 2026</p>
+            <div className="inline-flex items-center gap-2 mb-6 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full shadow-lg">
+              <Sparkles className="h-4 w-4 text-white" />
+              <p className="text-sm font-semibold text-white">AI-Powered & Launching Q2 2026</p>
             </div>
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-8 leading-tight drop-shadow-2xl">
               Stop Guessing Your Cost of Gain.
               <br />
-              <span className="text-primary drop-shadow-2xl">Start Knowing.</span>
+              <span className="text-green-400 drop-shadow-2xl">Start Knowing.</span>
             </h1>
-            <p className="text-xl md:text-2xl text-gray-100 mb-10 max-w-3xl mx-auto drop-shadow-lg">
-              CattleOS is the inventory management system built for cattle operations.
+            <p className="text-xl md:text-2xl text-white mb-10 max-w-3xl mx-auto drop-shadow-lg font-medium">
+              The <strong className="text-green-300">AI-native</strong> inventory management system built for cattle operations.
               Get real-time cost tracking, eliminate manual paperwork, and finally know
               your break-even point with confidence.
             </p>
@@ -303,6 +310,358 @@ export function LandingPage() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* AI-First Section */}
+      <section className="py-20 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full">
+                <Brain className="h-5 w-5 text-white" />
+                <span className="text-sm font-semibold text-white">AI-Native Platform</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
+                Built AI-First, AI-Native
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Intelligence at every layer, designed for the future of cattle management
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8">
+              <Card className="border-2 hover:border-blue-500 transition-colors">
+                <CardHeader>
+                  <Brain className="h-12 w-12 text-blue-600 mb-4" />
+                  <CardTitle className="text-xl">AI-Powered Insights</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-muted-foreground">
+                    Machine learning models analyze your operation in real-time, predicting optimal marketing windows,
+                    detecting health issues early, and recommending ration adjustments.
+                  </p>
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <span>Predictive health monitoring</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <span>Smart cost forecasting</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <span>Automated anomaly detection</span>
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 hover:border-purple-500 transition-colors">
+                <CardHeader>
+                  <Sparkles className="h-12 w-12 text-purple-600 mb-4" />
+                  <CardTitle className="text-xl">Natural Language Interface</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-muted-foreground">
+                    Talk to your farm data naturally. Ask questions in plain English and get instant answers.
+                    Our AI assistant understands cattle terminology and your operation.
+                  </p>
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                      <span>Voice-first data entry</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                      <span>Conversational analytics</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                      <span>Smart recommendations</span>
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 hover:border-green-500 transition-colors">
+                <CardHeader>
+                  <Zap className="h-12 w-12 text-green-600 mb-4" />
+                  <CardTitle className="text-xl">Continuous Learning</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-muted-foreground">
+                    The more you use CattleOS, the smarter it gets. Our AI learns from your operation's patterns
+                    and adapts to your specific management style.
+                  </p>
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span>Personalized benchmarks</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span>Custom alerts & workflows</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span>Industry best practices</span>
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Integrations Section */}
+      <section className="py-20 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-primary/10 rounded-full">
+                <LinkIcon className="h-5 w-5 text-primary" />
+                <span className="text-sm font-semibold text-primary">Seamless Integration</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
+                Works With Your Existing Tools
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                CattleOS integrates seamlessly with the hardware and software you already use
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="text-center hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <Scale className="h-10 w-10 mx-auto mb-2 text-primary" />
+                  <CardTitle className="text-lg">Scale Integration</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Direct integration with Tru-Test, Datamars, and other major scale manufacturers
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="text-center hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <DollarSign className="h-10 w-10 mx-auto mb-2 text-primary" />
+                  <CardTitle className="text-lg">QuickBooks</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Automatic expense tracking and financial synchronization with QuickBooks
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="text-center hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <FileText className="h-10 w-10 mx-auto mb-2 text-primary" />
+                  <CardTitle className="text-lg">Market Data</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Live cattle market prices from CME, DTN, and regional auction markets
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="text-center hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <Smartphone className="h-10 w-10 mx-auto mb-2 text-primary" />
+                  <CardTitle className="text-lg">IoT Devices</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Connect with smart ear tags, water sensors, and automated feed systems
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="mt-12 text-center">
+              <p className="text-muted-foreground mb-4">Need a custom integration?</p>
+              <Button variant="outline" size="lg" onClick={() => document.getElementById('loi-form')?.scrollIntoView({ behavior: 'smooth' })}>
+                Contact Us About Custom Integrations
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Product Roadmap */}
+      <section className="py-20 bg-gradient-to-b from-background to-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-full">
+                <Rocket className="h-5 w-5 text-white" />
+                <span className="text-sm font-semibold text-white">Product Roadmap</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
+                Building The Future of Cattle Management
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Our vision extends far beyond launch. Here's what's coming.
+              </p>
+            </div>
+
+            <div className="relative">
+              {/* Timeline line */}
+              <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-primary/20 hidden md:block" />
+
+              <div className="space-y-12">
+                {/* Q2 2026 - Launch */}
+                <div className="relative pl-0 md:pl-20">
+                  <div className="absolute left-5 top-0 w-6 h-6 rounded-full bg-primary border-4 border-background hidden md:block" />
+                  <Card className="border-2 border-primary">
+                    <CardHeader>
+                      <div className="flex items-center gap-3 mb-2">
+                        <Calendar className="h-5 w-5 text-primary" />
+                        <span className="text-sm font-semibold text-primary">Q2 2026</span>
+                      </div>
+                      <CardTitle className="text-2xl">Official Launch</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ul className="space-y-2">
+                        <li className="flex items-start gap-2">
+                          <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                          <span>Core inventory management for cattle, pens, and resources</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                          <span>Real-time cost tracking and break-even analysis</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                          <span>Mobile apps (iOS & Android) with voice capture</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                          <span>AI-powered insights and recommendations</span>
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Q3-Q4 2026 */}
+                <div className="relative pl-0 md:pl-20">
+                  <div className="absolute left-5 top-0 w-6 h-6 rounded-full bg-blue-500 border-4 border-background hidden md:block" />
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center gap-3 mb-2">
+                        <Calendar className="h-5 w-5 text-blue-500" />
+                        <span className="text-sm font-semibold text-blue-500">Q3-Q4 2026</span>
+                      </div>
+                      <CardTitle className="text-2xl">Enhanced Automation & Integrations</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ul className="space-y-2">
+                        <li className="flex items-start gap-2">
+                          <Check className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                          <span>Scale and IoT device integrations (Tru-Test, Datamars, smart tags)</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                          <span>QuickBooks and accounting software sync</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                          <span>Automated feed ordering and supplier management</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                          <span>Advanced AI health monitoring with veterinary alerts</span>
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Q1-Q2 2027 */}
+                <div className="relative pl-0 md:pl-20">
+                  <div className="absolute left-5 top-0 w-6 h-6 rounded-full bg-purple-500 border-4 border-background hidden md:block" />
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center gap-3 mb-2">
+                        <Calendar className="h-5 w-5 text-purple-500" />
+                        <span className="text-sm font-semibold text-purple-500">Q1-Q2 2027</span>
+                      </div>
+                      <CardTitle className="text-2xl">Market Intelligence & Breeding</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ul className="space-y-2">
+                        <li className="flex items-start gap-2">
+                          <Check className="h-5 w-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                          <span>AI-powered optimal marketing window recommendations</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check className="h-5 w-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                          <span>Live market data integration and futures hedging tools</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check className="h-5 w-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                          <span>Breeding and genetics management module</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check className="h-5 w-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                          <span>Pasture and grazing rotation optimization</span>
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* 2027+ */}
+                <div className="relative pl-0 md:pl-20">
+                  <div className="absolute left-5 top-0 w-6 h-6 rounded-full bg-green-500 border-4 border-background hidden md:block" />
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center gap-3 mb-2">
+                        <Calendar className="h-5 w-5 text-green-500" />
+                        <span className="text-sm font-semibold text-green-500">2027 & Beyond</span>
+                      </div>
+                      <CardTitle className="text-2xl">Industry Ecosystem</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ul className="space-y-2">
+                        <li className="flex items-start gap-2">
+                          <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                          <span>Multi-farm enterprise management for large operations</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                          <span>Blockchain-based cattle traceability and verification</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                          <span>Carbon credit tracking and sustainability reporting</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                          <span>Industry marketplace connecting producers and buyers</span>
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-12 text-center">
+              <p className="text-lg text-muted-foreground mb-6">
+                Want to influence our roadmap? Join our early adopter program.
+              </p>
+              <Button size="lg" onClick={() => document.getElementById('loi-form')?.scrollIntoView({ behavior: 'smooth' })}>
+                Reserve Your Spot
+              </Button>
+            </div>
           </div>
         </div>
       </section>
