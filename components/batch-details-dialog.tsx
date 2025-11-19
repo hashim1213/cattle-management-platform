@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useBatchStore } from "@/hooks/use-batch-store"
 import { useCostCalculator } from "@/hooks/use-cost-calculator"
-import { dataStore } from "@/lib/data-store-firebase"
+import { firebaseDataStore as dataStore } from "@/lib/data-store-firebase"
 import { DollarSign, TrendingUp, Package, Users, Calendar, ScanLine } from "lucide-react"
 import { RFIDImageImportDialog } from "@/components/rfid-image-import-dialog"
 
