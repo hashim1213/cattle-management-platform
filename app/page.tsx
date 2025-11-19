@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { TrendingUp, Package, DollarSign, Plus, Download, Sprout, MapPin, FileText, Utensils, MessageSquare, Loader2, Pill } from "lucide-react"
+import { TrendingUp, Package, DollarSign, Plus, Download, Sprout, MapPin, FileText, Utensils, MessageSquare, Loader2, Pill, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { AlertCard } from "@/components/alert-card"
@@ -15,11 +15,15 @@ import { useLifecycleConfig } from "@/hooks/use-lifecycle-config"
 import { useFarmSettings } from "@/hooks/use-farm-settings"
 import { useAuth } from "@/contexts/auth-context"
 import { useAnalyticsCache } from "@/hooks/use-analytics-cache"
+import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 import Image from "next/image"
 import { firebaseDataStore } from "@/lib/data-store-firebase"
 import { exportToCSV, generateCattleReport } from "@/lib/export-utils"
 import { useRouter } from "next/navigation"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   DndContext,
   closestCenter,
@@ -104,11 +108,14 @@ export default function DashboardPage() {
   const [alerts, setAlerts] = useState<any[]>([])
   const [stageCounts, setStageCounts] = useState<Record<string, number>>({})
   const { stages, reorderStages, loading: stagesLoading } = useLifecycleConfig()
-  const { isSetupCompleted, cattlePricePerLb } = useFarmSettings()
+  const { isSetupCompleted, cattlePricePerLb, targetDailyGain, updateGrowth } = useFarmSettings()
   const { analytics, loading: analyticsLoading, refreshData } = useAnalyticsCache(cattlePricePerLb)
   const router = useRouter()
+  const { toast } = useToast()
   const [isQuickFeedOpen, setIsQuickFeedOpen] = useState(false)
   const [isQuickMedsOpen, setIsQuickMedsOpen] = useState(false)
+  const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false)
+  const [newTargetDailyGain, setNewTargetDailyGain] = useState<string>(targetDailyGain.toString())
 
   // Onboarding disabled for now - users go straight to dashboard
   // useEffect(() => {
@@ -206,6 +213,38 @@ export default function DashboardPage() {
     exportToCSV(report, "cattle-inventory")
   }
 
+  const handleUpdateTargetDailyGain = async () => {
+    const value = parseFloat(newTargetDailyGain)
+    if (isNaN(value) || value <= 0) {
+      toast({
+        title: "Invalid value",
+        description: "Please enter a valid positive number for target daily gain.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      await updateGrowth({ targetDailyGain: value })
+      setIsSettingsDialogOpen(false)
+      toast({
+        title: "Settings updated",
+        description: `Target daily gain set to ${value} lbs/day.`,
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update target daily gain.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Update local state when targetDailyGain changes
+  useEffect(() => {
+    setNewTargetDailyGain(targetDailyGain.toString())
+  }, [targetDailyGain])
+
   // Show loading state while waiting for auth or data
   if (authLoading || analyticsLoading || !analytics) {
     return (
@@ -247,7 +286,7 @@ export default function DashboardPage() {
       title: "Avg Daily Gain",
       value: `${analytics.avgDailyGain.toFixed(1)} lbs`,
       change: "30-day average",
-      trend: analytics.avgDailyGain > 2.5 ? "up" : "neutral",
+      trend: analytics.avgDailyGain > targetDailyGain ? "up" : "neutral",
       icon: TrendingUp,
     },
   ]
@@ -374,7 +413,49 @@ export default function DashboardPage() {
 
         {/* Key Metrics */}
         <section>
-          <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-foreground">Key Metrics</h2>
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h2 className="text-base sm:text-lg font-semibold text-foreground">Key Metrics</h2>
+            <Dialog open={isSettingsDialogOpen} onOpenChange={setIsSettingsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Settings className="h-4 w-4" />
+                  <span className="hidden sm:inline">Growth Settings</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Growth Target Settings</DialogTitle>
+                  <DialogDescription>
+                    Configure your target average daily gain. This value is used as a benchmark for growth performance and projections when actual ADG data is not available.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="target-daily-gain">Target Daily Gain (lbs/day)</Label>
+                    <Input
+                      id="target-daily-gain"
+                      type="number"
+                      step="0.1"
+                      placeholder="2.5"
+                      value={newTargetDailyGain}
+                      onChange={(e) => setNewTargetDailyGain(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Current: {targetDailyGain} lbs/day. Typical range: 1.5 - 4.0 lbs/day depending on cattle type and feed program.
+                    </p>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button variant="outline" onClick={() => setIsSettingsDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleUpdateTargetDailyGain}>
+                      Save Settings
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
           <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             {metrics.map((metric, index) => (
               <MetricCard key={index} {...metric} />

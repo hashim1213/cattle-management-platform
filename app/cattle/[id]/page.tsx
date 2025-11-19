@@ -29,7 +29,7 @@ export default function CattleDetailPage() {
   const router = useRouter()
   const { toast } = useToast()
   const { barns, pens, getPen, updatePenCount } = usePenStore()
-  const { cattlePricePerLb } = useFarmSettings()
+  const { cattlePricePerLb, targetDailyGain } = useFarmSettings()
   const [isAddWeightOpen, setIsAddWeightOpen] = useState(false)
   const [isAddHealthOpen, setIsAddHealthOpen] = useState(false)
   const [isUpdateValueOpen, setIsUpdateValueOpen] = useState(false)
@@ -816,6 +816,7 @@ export default function CattleDetailPage() {
               weightRecords={weightRecords}
               feedAllocations={feedAllocations}
               targetWeight={1350}
+              targetDailyGain={targetDailyGain}
             />
           </TabsContent>
 
