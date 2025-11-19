@@ -16,6 +16,7 @@ import {
   orderBy,
   onSnapshot,
   Timestamp,
+  collectionGroup,
 } from "firebase/firestore"
 import { db, auth } from "@/lib/firebase"
 
@@ -93,6 +94,8 @@ class FirebaseDataStore {
   private cattle: Cattle[] = []
   private listeners = new Set<() => void>()
   private unsubscribeCattle?: () => void
+  private healthRecordsByAnimal = new Map<string, HealthRecord[]>()
+  private unsubscribeHealthRecords = new Map<string, () => void>()
 
   private getUserId(): string | null {
     return auth.currentUser?.uid || null
@@ -144,6 +147,10 @@ class FirebaseDataStore {
       this.unsubscribeCattle()
       this.unsubscribeCattle = undefined
     }
+    // Clean up all health record listeners
+    this.unsubscribeHealthRecords.forEach(unsub => unsub())
+    this.unsubscribeHealthRecords.clear()
+    this.healthRecordsByAnimal.clear()
     this.cattle = []
     this.userId = null
   }
@@ -162,13 +169,20 @@ class FirebaseDataStore {
 
   // CATTLE OPERATIONS
   /**
-   * Get all cattle (always fetch fresh from Firestore for realtime data)
+   * Get all cattle from in-memory cache (updated by real-time listener)
+   * This is much faster than fetching from Firestore and provides real-time data
+   * If cache is empty (e.g., before initialization), fetch fresh from Firestore
    */
   async getCattle(): Promise<Cattle[]> {
+    // Return cached data if available (updated by real-time listener)
+    if (this.cattle.length > 0 || this.userId) {
+      return this.cattle
+    }
+
+    // Fallback: Fetch from Firestore if not initialized
     const userId = this.getUserId()
     if (!userId) return []
 
-    // Always fetch fresh data from Firestore
     try {
       const snapshot = await getDocs(this.getCattleCollection(userId))
       return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Cattle))
@@ -176,6 +190,14 @@ class FirebaseDataStore {
       console.error("Error fetching cattle:", error)
       return []
     }
+  }
+
+  /**
+   * Get cattle synchronously from cache (for real-time updates)
+   * Returns empty array if not initialized
+   */
+  getCattleSync(): Cattle[] {
+    return this.cattle
   }
 
   async getCattleById(id: string): Promise<Cattle | null> {
@@ -301,13 +323,20 @@ class FirebaseDataStore {
     if (!userId) return []
 
     try {
-      const allCattle = await this.getCattle()
-      const allRecords: HealthRecord[] = []
+      // Use collectionGroup to query all healthRecords across all cattle in one query
+      // This replaces the N+1 query pattern (1 query per cattle) with a single query
+      const q = query(
+        collectionGroup(db, 'healthRecords'),
+        where('__name__', '>=', `users/${userId}/cattle/`),
+        where('__name__', '<', `users/${userId}/cattle/\uf8ff`)
+      )
 
-      for (const cattle of allCattle) {
-        const records = await this.getHealthRecords(cattle.id)
-        allRecords.push(...records)
-      }
+      const snapshot = await getDocs(q)
+
+      const allRecords = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data()
+      } as HealthRecord))
 
       return allRecords.sort((a, b) =>
         new Date(b.date).getTime() - new Date(a.date).getTime()
@@ -318,16 +347,101 @@ class FirebaseDataStore {
     }
   }
 
+  /**
+   * Subscribe to real-time health records for a specific cattle
+   * Returns an unsubscribe function
+   */
+  subscribeToHealthRecords(cattleId: string): () => void {
+    const userId = this.getUserId()
+    if (!userId) return () => {}
+
+    // Clean up existing subscription for this animal if it exists
+    if (this.unsubscribeHealthRecords.has(cattleId)) {
+      this.unsubscribeHealthRecords.get(cattleId)?.()
+    }
+
+    // Set up new real-time listener
+    const healthRef = this.getHealthRecordsCollection(userId, cattleId)
+    const unsubscribe = onSnapshot(healthRef, (snapshot) => {
+      const records = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data()
+      } as HealthRecord))
+
+      this.healthRecordsByAnimal.set(cattleId, records)
+      this.notify() // Notify all subscribers that data changed
+    }, (error) => {
+      console.error(`Error in health records listener for cattle ${cattleId}:`, error)
+    })
+
+    this.unsubscribeHealthRecords.set(cattleId, unsubscribe)
+    return unsubscribe
+  }
+
+  /**
+   * Get health records for a cattle
+   * Uses cached data if available via real-time listener, otherwise fetches and sets up listener
+   */
   async getHealthRecords(cattleId: string): Promise<HealthRecord[]> {
     const userId = this.getUserId()
     if (!userId) return []
 
+    // Return cached data if we have a real-time listener active
+    const cached = this.healthRecordsByAnimal.get(cattleId)
+    if (cached !== undefined) {
+      return cached
+    }
+
+    // If not cached, fetch once and set up real-time listener for future updates
     try {
       const snapshot = await getDocs(this.getHealthRecordsCollection(userId, cattleId))
-      return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as HealthRecord))
+      const records = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as HealthRecord))
+
+      this.healthRecordsByAnimal.set(cattleId, records)
+
+      // Set up listener for real-time updates
+      this.subscribeToHealthRecords(cattleId)
+
+      return records
     } catch (error) {
+      console.error(`Error fetching health records for cattle ${cattleId}:`, error)
       return []
     }
+  }
+
+  // Batch fetch health records for multiple cattle - prevents N+1 query issues
+  async getHealthRecordsByCattleIds(cattleIds: string[]): Promise<Map<string, HealthRecord[]>> {
+    const userId = this.getUserId()
+    if (!userId) return new Map()
+
+    const recordsByAnimal = new Map<string, HealthRecord[]>()
+
+    // Initialize map for all animals
+    cattleIds.forEach(id => recordsByAnimal.set(id, []))
+
+    try {
+      // Fetch all health records in parallel
+      const promises = cattleIds.map(cattleId =>
+        getDocs(this.getHealthRecordsCollection(userId, cattleId))
+          .then(snapshot => {
+            const records = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            } as HealthRecord))
+            recordsByAnimal.set(cattleId, records)
+          })
+          .catch(error => {
+            console.error(`Error fetching health records for cattle ${cattleId}:`, error)
+            recordsByAnimal.set(cattleId, [])
+          })
+      )
+
+      await Promise.all(promises)
+    } catch (error) {
+      console.error("Error in batch health records fetch:", error)
+    }
+
+    return recordsByAnimal
   }
 
   async addHealthRecord(
@@ -409,15 +523,19 @@ class FirebaseDataStore {
       return sum + ((c.weight || 0) * marketPricePerLb)
     }, 0)
 
-    // Get health record costs for all cattle
+    // Get health record costs for all cattle using batch query (prevents N+1 query problem)
     let totalHealthCosts = 0
-    for (const c of activeCattle) {
-      try {
-        const healthRecords = await this.getHealthRecords(c.id)
-        totalHealthCosts += healthRecords.reduce((sum, record) => sum + (record.cost || 0), 0)
-      } catch (error) {
-        // Continue if health records can't be loaded
-      }
+    try {
+      const activeCattleIds = activeCattle.map(c => c.id)
+      const healthRecordsByAnimal = await this.getHealthRecordsByCattleIds(activeCattleIds)
+
+      // Calculate total health costs from batch-fetched records
+      healthRecordsByAnimal.forEach((records) => {
+        totalHealthCosts += records.reduce((sum, record) => sum + (record.cost || 0), 0)
+      })
+    } catch (error) {
+      console.error("Error fetching health costs for analytics:", error)
+      // Continue with totalHealthCosts = 0 if there's an error
     }
 
     // Calculate total inventory value (purchase price + health costs)

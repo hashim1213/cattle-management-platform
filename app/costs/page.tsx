@@ -87,19 +87,18 @@ export default function CostsPage() {
     const cattleAnalyses: CattleWithAnalysis[] = []
     const penFinancials: Record<string, { investment: number; revenue: number; weight: number; count: number; penName: string }> = {}
 
+    // Batch fetch all health records at once to avoid N+1 query problem
+    const allCattleIds = cattle.map(c => c.id)
+    const healthRecordsByAnimal = await firebaseDataStore.getHealthRecordsByCattleIds(allCattleIds)
+
     // Calculate deceased cattle losses using actual data
     for (const animal of deceasedCattle) {
       // Use actual purchase price or estimate if not available
       const purchasePrice = animal.purchasePrice || 0
 
-      // Get actual health costs from records
-      let healthCosts = 0
-      try {
-        const healthRecords = await firebaseDataStore.getHealthRecords(animal.id)
-        healthCosts = healthRecords.reduce((sum, record) => sum + (record.cost || 0), 0)
-      } catch (error) {
-        healthCosts = 0
-      }
+      // Get pre-fetched health costs from the batch query
+      const healthRecords = healthRecordsByAnimal.get(animal.id) || []
+      const healthCosts = healthRecords.reduce((sum, record) => sum + (record.cost || 0), 0)
 
       const totalLoss = purchasePrice + healthCosts
       deceasedTotalLoss += totalLoss
@@ -110,14 +109,9 @@ export default function CostsPage() {
       const currentWeight = animal.weight || 0
       const purchasePrice = animal.purchasePrice || 0
 
-      // Get actual health costs from records
-      let healthCosts = 0
-      try {
-        const healthRecords = await firebaseDataStore.getHealthRecords(animal.id)
-        healthCosts = healthRecords.reduce((sum, record) => sum + (record.cost || 0), 0)
-      } catch (error) {
-        healthCosts = 0
-      }
+      // Get pre-fetched health costs from the batch query
+      const healthRecords = healthRecordsByAnimal.get(animal.id) || []
+      const healthCosts = healthRecords.reduce((sum, record) => sum + (record.cost || 0), 0)
 
       // Calculate total cost (purchase + health)
       const totalCost = purchasePrice + healthCosts

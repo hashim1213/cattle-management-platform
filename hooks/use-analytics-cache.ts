@@ -7,11 +7,12 @@ interface CachedData<T> {
 }
 
 const CACHE_KEY = "dashboard_analytics_cache"
-const CACHE_TTL = 5 * 60 * 1000 // 5 minutes in milliseconds
+const CACHE_TTL = 30 * 1000 // 30 seconds in milliseconds (reduced from 5 minutes for real-time updates)
 
 /**
  * Hook to cache analytics data and reduce loading times
- * Data is cached for 5 minutes before being refreshed
+ * Data is cached for 30 seconds before being refreshed
+ * Cache is automatically invalidated when cattle data changes
  */
 export function useAnalyticsCache(cattlePricePerLb: number) {
   const [analytics, setAnalytics] = useState<any>(null)
@@ -116,6 +117,18 @@ export function useAnalyticsCache(cattlePricePerLb: number) {
   useEffect(() => {
     loadAnalytics()
   }, [cattlePricePerLb, loadAnalytics])
+
+  // Auto-invalidate cache when cattle data changes (for real-time updates)
+  useEffect(() => {
+    const unsubscribe = firebaseDataStore.subscribe(() => {
+      // Invalidate cache when any cattle data changes
+      invalidateCache()
+      // Optionally reload data immediately for faster updates
+      loadAnalytics(false)
+    })
+
+    return () => unsubscribe()
+  }, [invalidateCache, loadAnalytics])
 
   return {
     analytics,
