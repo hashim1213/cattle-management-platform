@@ -7,7 +7,7 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { Loader2 } from "lucide-react"
 
 // Public routes that don't require authentication
-const PUBLIC_ROUTES = ["/login", "/signup"]
+const PUBLIC_ROUTES = ["/", "/login", "/signup"]
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -21,12 +21,12 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
       if (!user && !isPublicRoute) {
         router.push("/login")
       }
-      // Redirect to dashboard if authenticated and trying to access auth pages
-      if (user && isPublicRoute) {
+      // Redirect to dashboard if authenticated and trying to access login/signup pages
+      if (user && (pathname === "/login" || pathname === "/signup")) {
         router.push("/")
       }
     }
-  }, [user, loading, isPublicRoute, router])
+  }, [user, loading, isPublicRoute, pathname, router])
 
   // Show loading spinner while checking auth
   if (loading) {
