@@ -41,6 +41,7 @@ import {
   horizontalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import { LandingPage } from "@/components/landing-page"
 
 function SortableStage({
   stage,
@@ -245,8 +246,25 @@ export default function DashboardPage() {
     setNewTargetDailyGain(targetDailyGain.toString())
   }, [targetDailyGain])
 
-  // Show loading state while waiting for auth or data
-  if (authLoading || analyticsLoading || !analytics) {
+  // Show loading state while waiting for auth
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-lg font-semibold text-foreground">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show landing page for non-authenticated users
+  if (!user) {
+    return <LandingPage />
+  }
+
+  // Show loading state while waiting for data
+  if (analyticsLoading || !analytics) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
         <div className="text-center">
