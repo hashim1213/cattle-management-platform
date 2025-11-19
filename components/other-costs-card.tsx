@@ -59,6 +59,8 @@ export function OtherCostsCard() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [quickCategory, setQuickCategory] = useState<OtherCost["category"] | undefined>()
+  const [quickDescription, setQuickDescription] = useState<string | undefined>()
 
   const loadCosts = async () => {
     if (!user) return
@@ -107,6 +109,14 @@ export function OtherCostsCard() {
   const handleAddCost = async () => {
     await loadCosts()
     setIsAddDialogOpen(false)
+    setQuickCategory(undefined)
+    setQuickDescription(undefined)
+  }
+
+  const handleQuickAdd = (category: OtherCost["category"], description: string) => {
+    setQuickCategory(category)
+    setQuickDescription(description)
+    setIsAddDialogOpen(true)
   }
 
   const totalCosts = otherCostsService.calculateTotal(costs)
@@ -115,17 +125,46 @@ export function OtherCostsCard() {
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Operating Costs</CardTitle>
-            <p className="text-sm text-muted-foreground mt-2">
-              Track labour, utilities, equipment, and other farm expenses
-            </p>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <CardTitle>Operating Costs</CardTitle>
+              <p className="text-sm text-muted-foreground mt-2">
+                Track labour, utilities, equipment, and other farm expenses
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {/* Quick Add Buttons */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleQuickAdd("labour", "Weekly wages")}
+                className="gap-1"
+              >
+                👷 Wages
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleQuickAdd("transportation", "Fuel")}
+                className="gap-1"
+              >
+                ⛽ Fuel
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleQuickAdd("utilities", "Electric bill")}
+                className="gap-1"
+              >
+                ⚡ Utilities
+              </Button>
+              <Button onClick={() => setIsAddDialogOpen(true)} size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Cost
+              </Button>
+            </div>
           </div>
-          <Button onClick={() => setIsAddDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Cost
-          </Button>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -230,6 +269,8 @@ export function OtherCostsCard() {
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         onSuccess={handleAddCost}
+        quickCategory={quickCategory}
+        quickDescription={quickDescription}
       />
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
