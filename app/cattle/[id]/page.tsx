@@ -518,85 +518,87 @@ export default function CattleDetailPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-card sticky top-0 z-40 lg:static backdrop-blur-sm bg-card/95">
-        <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-5">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <header className="border-b border-border bg-card sticky top-0 z-40 lg:static backdrop-blur-md bg-card/95">
+        <div className="w-full px-4 sm:px-6 py-4 sm:py-6">
+          <div className="flex flex-col gap-4">
             <div className="min-w-0">
               <Link
                 href="/cattle"
-                className="text-sm text-muted-foreground hover:text-foreground mb-2 flex items-center gap-1 touch-manipulation min-h-[44px] inline-flex items-center"
+                className="text-sm sm:text-base text-muted-foreground hover:text-foreground mb-3 flex items-center gap-2 touch-manipulation min-h-[48px] inline-flex active:scale-95 transition-transform"
               >
-                <ArrowLeft className="h-4 w-4" />
+                <ArrowLeft className="h-5 w-5" />
                 Back to Cattle Inventory
               </Link>
-              <div className="flex items-center gap-2 sm:gap-3 mt-2 flex-wrap">
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">Tag #{cattle.tagNumber}</h1>
-                <Badge
-                  className={
-                    cattle.healthStatus === "Healthy"
-                      ? "bg-green-100 text-green-800 hover:bg-green-100"
-                      : "bg-amber-100 text-amber-800 hover:bg-amber-100"
-                  }
-                >
-                  {cattle.healthStatus}
-                </Badge>
-                {readyForSale && (
-                  <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Ready for Sale</Badge>
-                )}
+              <div className="flex items-start gap-3 mt-2 flex-wrap">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground tracking-tight">Tag #{cattle.tagNumber}</h1>
+                <div className="flex gap-2 flex-wrap">
+                  <Badge
+                    className={
+                      cattle.healthStatus === "Healthy"
+                        ? "bg-green-100 text-green-800 hover:bg-green-100 text-sm px-3 py-1"
+                        : "bg-amber-100 text-amber-800 hover:bg-amber-100 text-sm px-3 py-1"
+                    }
+                  >
+                    {cattle.healthStatus}
+                  </Badge>
+                  {readyForSale && (
+                    <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 text-sm px-3 py-1">Ready for Sale</Badge>
+                  )}
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground mt-1 sm:mt-2">
+              <p className="text-base sm:text-lg text-muted-foreground mt-3">
                 {cattle.breed} • {cattle.sex} • {cattle.stage}
               </p>
             </div>
-            <div className="flex gap-2 flex-shrink-0">
+            <div className="flex gap-3 w-full sm:w-auto">
               <Button
                 variant="outline"
                 onClick={() => setIsEditOpen(true)}
-                className="touch-manipulation min-h-[44px] flex-1 sm:flex-none"
+                className="touch-manipulation min-h-[52px] flex-1 sm:flex-none active:scale-95 transition-transform"
               >
-                <Edit className="h-5 w-5 sm:h-4 sm:w-4 sm:mr-2" />
-                <span className="sm:inline">Edit</span>
+                <Edit className="h-5 w-5 sm:mr-2" />
+                <span>Edit</span>
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setIsDeleteDialogOpen(true)}
-                className="text-destructive bg-transparent touch-manipulation min-h-[44px] flex-1 sm:flex-none"
+                className="text-destructive hover:bg-destructive/10 touch-manipulation min-h-[52px] flex-1 sm:flex-none active:scale-95 transition-transform"
               >
-                <Trash2 className="h-5 w-5 sm:h-4 sm:w-4 sm:mr-2" />
-                <span className="sm:inline">Delete</span>
+                <Trash2 className="h-5 w-5 sm:mr-2" />
+                <span>Delete</span>
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
+      <main className="w-full px-4 sm:px-6 py-5 sm:py-8 pb-24 md:pb-8">
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-6 sm:mb-8">
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-6 sm:p-7">
               <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Current Weight</p>
-                  <p className="text-2xl font-bold text-foreground">{currentWeight} lbs</p>
-                  <p className="text-xs text-green-600 mt-1">
+                <div className="flex-1">
+                  <p className="text-sm sm:text-base text-muted-foreground mb-2">Current Weight</p>
+                  <p className="text-3xl sm:text-4xl font-bold text-foreground">{currentWeight} lbs</p>
+                  <p className="text-sm text-green-600 mt-2 font-medium">
                     +{(currentWeight - startWeight).toFixed(0)} lbs total
                   </p>
                 </div>
-                <Activity className="h-5 w-5 text-primary" />
+                <Activity className="h-6 w-6 sm:h-7 sm:w-7 text-primary flex-shrink-0" />
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-6 sm:p-7">
               <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Daily Gain</p>
-                  <p className="text-2xl font-bold text-foreground">{dailyGain.toFixed(2)} lbs</p>
-                  <p className="text-xs text-muted-foreground mt-1">Per day average</p>
+                <div className="flex-1">
+                  <p className="text-sm sm:text-base text-muted-foreground mb-2">Daily Gain</p>
+                  <p className="text-3xl sm:text-4xl font-bold text-foreground">{dailyGain.toFixed(2)} lbs</p>
+                  <p className="text-sm text-muted-foreground mt-2">Per day average</p>
                 </div>
-                <TrendingUp className="h-5 w-5 text-green-600" />
+                <TrendingUp className="h-6 w-6 sm:h-7 sm:w-7 text-green-600 flex-shrink-0" />
               </div>
             </CardContent>
           </Card>

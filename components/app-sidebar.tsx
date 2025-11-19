@@ -101,19 +101,19 @@ export function AppSidebar() {
   return (
     <>
       {/* Mobile Top Bar - with iOS safe area support */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-sidebar border-b border-sidebar-border z-50 flex items-center px-4 backdrop-blur-md bg-sidebar/95 pt-safe">
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-sidebar border-b border-sidebar-border z-50 flex items-center px-4 backdrop-blur-md bg-sidebar/95 pt-safe">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
             <Button
               size="icon"
               variant="ghost"
-              className="text-sidebar-foreground h-11 w-11 touch-manipulation active:bg-sidebar-accent"
+              className="text-sidebar-foreground h-12 w-12 touch-manipulation active:bg-sidebar-accent active:scale-95 transition-all"
               aria-label="Open navigation menu"
             >
-              <Menu className="h-6 w-6" />
+              <Menu className="h-7 w-7" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-[85vw] max-w-[320px] bg-sidebar safe-left border-r-0">
+          <SheetContent side="left" className="p-0 w-[85vw] max-w-[340px] bg-sidebar safe-left border-r-0">
             <VisuallyHidden>
               <SheetTitle>Navigation Menu</SheetTitle>
             </VisuallyHidden>
@@ -123,8 +123,8 @@ export function AppSidebar() {
           </SheetContent>
         </Sheet>
         <div className="ml-3 flex items-center gap-2 flex-1">
-          <div className="relative h-8 w-32 flex-shrink-0">
-            <Image src="/cattleos_logo_white.png" alt="CattleOS Logo" fill className="object-contain" />
+          <div className="relative h-9 w-36 flex-shrink-0">
+            <Image src="/cattleos_logo_white.png" alt="CattleOS Logo" fill className="object-contain" priority />
           </div>
         </div>
       </div>

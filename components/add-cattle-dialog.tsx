@@ -145,37 +145,38 @@ export function AddCattleDialog({ open, onOpenChange, onSuccess }: AddCattleDial
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Add New Cattle</DialogTitle>
-          <DialogDescription>Enter comprehensive details for the new cattle record.</DialogDescription>
+      <DialogContent className="sm:max-w-[700px] max-h-[95vh] overflow-y-auto mobile-scroll-container p-0">
+        <DialogHeader className="px-4 sm:px-6 pt-6 pb-4">
+          <DialogTitle className="text-xl sm:text-2xl">Add New Cattle</DialogTitle>
+          <DialogDescription className="text-base">Enter comprehensive details for the new cattle record.</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="px-4 sm:px-6 pb-6">
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="basic">Basic</TabsTrigger>
-              <TabsTrigger value="identification">ID</TabsTrigger>
-              <TabsTrigger value="purchase">Purchase</TabsTrigger>
-              <TabsTrigger value="breeding">Breeding</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-4 h-12 sm:h-11 mb-6">
+              <TabsTrigger value="basic" className="text-sm sm:text-base">Basic</TabsTrigger>
+              <TabsTrigger value="identification" className="text-sm sm:text-base">ID</TabsTrigger>
+              <TabsTrigger value="purchase" className="text-sm sm:text-base">Purchase</TabsTrigger>
+              <TabsTrigger value="breeding" className="text-sm sm:text-base">Breeding</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="basic" className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="tagNumber">Tag Number *</Label>
+            <TabsContent value="basic" className="space-y-5 mt-0">
+              <div className="space-y-2.5">
+                <Label htmlFor="tagNumber" className="text-base">Tag Number *</Label>
                 <Input
                   id="tagNumber"
                   placeholder="e.g., 1251"
                   value={formData.tagNumber}
                   onChange={(e) => setFormData({ ...formData, tagNumber: e.target.value })}
                   required
+                  className="h-12 text-base"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="breed">Breed *</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-2.5">
+                  <Label htmlFor="breed" className="text-base">Breed *</Label>
                   <Select value={formData.breed} onValueChange={(value) => setFormData({ ...formData, breed: value })}>
-                    <SelectTrigger id="breed">
+                    <SelectTrigger id="breed" className="h-12 text-base">
                       <SelectValue placeholder="Select breed" />
                     </SelectTrigger>
                     <SelectContent>
@@ -190,10 +191,10 @@ export function AddCattleDialog({ open, onOpenChange, onSuccess }: AddCattleDial
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sex">Sex *</Label>
+                <div className="space-y-2.5">
+                  <Label htmlFor="sex" className="text-base">Sex *</Label>
                   <Select value={formData.sex} onValueChange={(value) => setFormData({ ...formData, sex: value })}>
-                    <SelectTrigger id="sex">
+                    <SelectTrigger id="sex" className="h-12 text-base">
                       <SelectValue placeholder="Select sex" />
                     </SelectTrigger>
                     <SelectContent>
@@ -206,20 +207,21 @@ export function AddCattleDialog({ open, onOpenChange, onSuccess }: AddCattleDial
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="birthDate">Birth Date</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-2.5">
+                  <Label htmlFor="birthDate" className="text-base">Birth Date</Label>
                   <Input
                     id="birthDate"
                     type="date"
                     value={formData.birthDate}
                     onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+                    className="h-12 text-base"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="stage">Lifecycle Stage</Label>
+                <div className="space-y-2.5">
+                  <Label htmlFor="stage" className="text-base">Lifecycle Stage</Label>
                   <Select value={formData.stage} onValueChange={(value) => setFormData({ ...formData, stage: value })}>
-                    <SelectTrigger id="stage">
+                    <SelectTrigger id="stage" className="h-12 text-base">
                       <SelectValue placeholder="Select stage" />
                     </SelectTrigger>
                     <SelectContent>
@@ -233,16 +235,16 @@ export function AddCattleDialog({ open, onOpenChange, onSuccess }: AddCattleDial
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="barnId">Barn (Optional)</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-2.5">
+                  <Label htmlFor="barnId" className="text-base">Barn (Optional)</Label>
                   <Select
                     value={formData.barnId}
                     onValueChange={(value) => {
                       setFormData({ ...formData, barnId: value, penId: "" })
                     }}
                   >
-                    <SelectTrigger id="barnId">
+                    <SelectTrigger id="barnId" className="h-12 text-base">
                       <SelectValue placeholder="Select barn" />
                     </SelectTrigger>
                     <SelectContent>
@@ -254,14 +256,14 @@ export function AddCattleDialog({ open, onOpenChange, onSuccess }: AddCattleDial
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="penId">Pen (Optional)</Label>
+                <div className="space-y-2.5">
+                  <Label htmlFor="penId" className="text-base">Pen (Optional)</Label>
                   <Select
                     value={formData.penId}
                     onValueChange={(value) => setFormData({ ...formData, penId: value })}
                     disabled={!formData.barnId}
                   >
-                    <SelectTrigger id="penId">
+                    <SelectTrigger id="penId" className="h-12 text-base">
                       <SelectValue placeholder="Select pen" />
                     </SelectTrigger>
                     <SelectContent>
@@ -280,23 +282,24 @@ export function AddCattleDialog({ open, onOpenChange, onSuccess }: AddCattleDial
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="colorMarkings">Color/Markings</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-2.5">
+                  <Label htmlFor="colorMarkings" className="text-base">Color/Markings</Label>
                   <Input
                     id="colorMarkings"
                     placeholder="e.g., Black with white face"
                     value={formData.colorMarkings}
                     onChange={(e) => setFormData({ ...formData, colorMarkings: e.target.value })}
+                    className="h-12 text-base"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="hornStatus">Horn Status</Label>
+                <div className="space-y-2.5">
+                  <Label htmlFor="hornStatus" className="text-base">Horn Status</Label>
                   <Select
                     value={formData.hornStatus}
                     onValueChange={(value) => setFormData({ ...formData, hornStatus: value })}
                   >
-                    <SelectTrigger id="hornStatus">
+                    <SelectTrigger id="hornStatus" className="h-12 text-base">
                       <SelectValue placeholder="Select horn status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -310,77 +313,83 @@ export function AddCattleDialog({ open, onOpenChange, onSuccess }: AddCattleDial
               </div>
             </TabsContent>
 
-            <TabsContent value="identification" className="space-y-4 mt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="earTag">Ear Tag</Label>
+            <TabsContent value="identification" className="space-y-5 mt-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-2.5">
+                  <Label htmlFor="earTag" className="text-base">Ear Tag</Label>
                   <Input
                     id="earTag"
                     placeholder="e.g., 1251"
                     value={formData.earTag}
                     onChange={(e) => setFormData({ ...formData, earTag: e.target.value })}
+                    className="h-12 text-base"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="brand">Brand</Label>
+                <div className="space-y-2.5">
+                  <Label htmlFor="brand" className="text-base">Brand</Label>
                   <Input
                     id="brand"
                     placeholder="e.g., BR"
                     value={formData.brand}
                     onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                    className="h-12 text-base"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="electronicId">Electronic ID (RFID)</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-2.5">
+                  <Label htmlFor="electronicId" className="text-base">Electronic ID (RFID)</Label>
                   <Input
                     id="electronicId"
                     placeholder="e.g., 840003123456789"
                     value={formData.electronicId}
                     onChange={(e) => setFormData({ ...formData, electronicId: e.target.value })}
+                    className="h-12 text-base"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="tattoo">Tattoo</Label>
+                <div className="space-y-2.5">
+                  <Label htmlFor="tattoo" className="text-base">Tattoo</Label>
                   <Input
                     id="tattoo"
                     placeholder="e.g., A123"
                     value={formData.tattoo}
                     onChange={(e) => setFormData({ ...formData, tattoo: e.target.value })}
+                    className="h-12 text-base"
                   />
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="purchase" className="space-y-4 mt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="purchaseDate">Purchase Date *</Label>
+            <TabsContent value="purchase" className="space-y-5 mt-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-2.5">
+                  <Label htmlFor="purchaseDate" className="text-base">Purchase Date *</Label>
                   <Input
                     id="purchaseDate"
                     type="date"
                     value={formData.purchaseDate}
                     onChange={(e) => setFormData({ ...formData, purchaseDate: e.target.value })}
                     required
+                    className="h-12 text-base"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lotNumber">Lot Number *</Label>
+                <div className="space-y-2.5">
+                  <Label htmlFor="lotNumber" className="text-base">Lot Number *</Label>
                   <Input
                     id="lotNumber"
                     placeholder="e.g., LOT-A"
                     value={formData.lotNumber}
                     onChange={(e) => setFormData({ ...formData, lotNumber: e.target.value })}
                     required
+                    className="h-12 text-base"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="purchaseWeight">Purchase Weight (lbs) *</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-2.5">
+                  <Label htmlFor="purchaseWeight" className="text-base">Purchase Weight (lbs) *</Label>
                   <Input
                     id="purchaseWeight"
                     type="number"
@@ -388,10 +397,11 @@ export function AddCattleDialog({ open, onOpenChange, onSuccess }: AddCattleDial
                     value={formData.purchaseWeight}
                     onChange={(e) => setFormData({ ...formData, purchaseWeight: e.target.value })}
                     required
+                    className="h-12 text-base"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="purchasePrice">Purchase Price ($) *</Label>
+                <div className="space-y-2.5">
+                  <Label htmlFor="purchasePrice" className="text-base">Purchase Price ($) *</Label>
                   <Input
                     id="purchasePrice"
                     type="number"
@@ -399,54 +409,58 @@ export function AddCattleDialog({ open, onOpenChange, onSuccess }: AddCattleDial
                     value={formData.purchasePrice}
                     onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
                     required
+                    className="h-12 text-base"
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="currentValue">Current Value ($)</Label>
+              <div className="space-y-2.5">
+                <Label htmlFor="currentValue" className="text-base">Current Value ($)</Label>
                 <Input
                   id="currentValue"
                   type="number"
                   placeholder="Optional - Leave empty for auto-calculation"
                   value={formData.currentValue}
                   onChange={(e) => setFormData({ ...formData, currentValue: e.target.value })}
+                  className="h-12 text-base"
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Enter current market value or leave empty for automatic calculation
                 </p>
               </div>
             </TabsContent>
 
-            <TabsContent value="breeding" className="space-y-4 mt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="dam">Dam (Mother)</Label>
+            <TabsContent value="breeding" className="space-y-5 mt-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-2.5">
+                  <Label htmlFor="dam" className="text-base">Dam (Mother)</Label>
                   <Input
                     id="dam"
                     placeholder="e.g., Tag #1100"
                     value={formData.dam}
                     onChange={(e) => setFormData({ ...formData, dam: e.target.value })}
+                    className="h-12 text-base"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sire">Sire (Father)</Label>
+                <div className="space-y-2.5">
+                  <Label htmlFor="sire" className="text-base">Sire (Father)</Label>
                   <Input
                     id="sire"
                     placeholder="e.g., Tag #2050"
                     value={formData.sire}
                     onChange={(e) => setFormData({ ...formData, sire: e.target.value })}
+                    className="h-12 text-base"
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="conceptionMethod">Conception Method</Label>
+              <div className="space-y-2.5">
+                <Label htmlFor="conceptionMethod" className="text-base">Conception Method</Label>
                 <Select
                   value={formData.conceptionMethod}
                   onValueChange={(value) => setFormData({ ...formData, conceptionMethod: value })}
                 >
-                  <SelectTrigger id="conceptionMethod">
+                  <SelectTrigger id="conceptionMethod" className="h-12 text-base">
                     <SelectValue placeholder="Select method" />
                   </SelectTrigger>
                   <SelectContent>
@@ -457,23 +471,24 @@ export function AddCattleDialog({ open, onOpenChange, onSuccess }: AddCattleDial
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
+              <div className="space-y-2.5">
+                <Label htmlFor="notes" className="text-base">Notes</Label>
                 <Input
                   id="notes"
                   placeholder="Additional notes..."
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  className="h-12 text-base"
                 />
               </div>
             </TabsContent>
           </Tabs>
 
-          <DialogFooter className="mt-6">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+          <DialogFooter className="mt-8 gap-3 sm:gap-2 flex-col sm:flex-row">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading} className="w-full sm:w-auto min-h-[52px] text-base touch-manipulation order-2 sm:order-1">
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className="w-full sm:w-auto min-h-[52px] text-base touch-manipulation order-1 sm:order-2">
               {loading ? "Adding..." : "Add Cattle"}
             </Button>
           </DialogFooter>

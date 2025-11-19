@@ -47,12 +47,12 @@ export function MobileNav() {
       {/* Mobile Bottom Navigation */}
       <nav
         className={cn(
-          "md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 transition-transform duration-300 safe-area-inset-bottom",
+          "md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border transition-transform duration-300 safe-area-inset-bottom backdrop-blur-md bg-card/95",
           isVisible ? "translate-y-0" : "translate-y-full"
         )}
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="grid grid-cols-4 gap-1 px-2 py-2">
+        <div className="grid grid-cols-4 gap-1 px-2 py-2.5">
           {navItems.map((item) => {
             const isActive = pathname === item.href
             const Icon = item.icon
@@ -62,14 +62,14 @@ export function MobileNav() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-colors min-h-[60px]",
+                  "flex flex-col items-center justify-center py-2.5 px-2 rounded-xl transition-all min-h-[64px] touch-manipulation active:scale-95",
                   isActive
-                    ? "text-primary bg-primary/10"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    ? "text-primary bg-primary/15 shadow-sm"
+                    : "text-muted-foreground active:bg-muted/80"
                 )}
               >
-                <Icon className="h-6 w-6 mb-1" />
-                <span className="text-xs font-medium">{item.label}</span>
+                <Icon className="h-6 w-6 mb-1.5 flex-shrink-0" />
+                <span className="text-xs font-medium leading-tight">{item.label}</span>
               </Link>
             )
           })}
@@ -78,14 +78,15 @@ export function MobileNav() {
 
       {/* Floating Action Button (FAB) */}
       <button
-        className="md:hidden fixed bottom-20 right-4 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center transition-transform active:scale-95"
+        className="md:hidden fixed bottom-24 right-4 z-50 w-16 h-16 rounded-full bg-primary text-primary-foreground shadow-2xl flex items-center justify-center transition-all active:scale-90 touch-manipulation hover:shadow-xl"
         style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
         onClick={() => {
           // Quick action menu
           document.dispatchEvent(new CustomEvent('show-quick-actions'))
         }}
+        aria-label="Quick actions"
       >
-        <Plus className="h-6 w-6" />
+        <Plus className="h-7 w-7" />
       </button>
 
       {/* Spacer to prevent content from being hidden behind nav */}
@@ -120,47 +121,48 @@ export function QuickActions() {
       onClick={() => setIsOpen(false)}
     >
       <div
-        className="absolute bottom-0 left-0 right-0 bg-white rounded-t-xl p-4"
+        className="absolute bottom-0 left-0 right-0 bg-card rounded-t-3xl p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
+        style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
       >
-        <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4" />
-        <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
+        <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full mx-auto mb-6" />
+        <h3 className="text-xl font-semibold mb-5 text-foreground">Quick Actions</h3>
 
-        <div className="grid grid-cols-3 gap-3 mb-4">
+        <div className="grid grid-cols-3 gap-3 mb-6">
           <Link
             href="/cattle?action=add"
-            className="flex flex-col items-center p-4 bg-primary/10 rounded-lg"
+            className="flex flex-col items-center p-5 bg-primary/10 rounded-2xl touch-manipulation active:scale-95 transition-transform min-h-[100px] justify-center"
             onClick={() => setIsOpen(false)}
           >
-            <Beef className="h-6 w-6 text-primary mb-2" />
-            <span className="text-sm font-medium">Add Cattle</span>
+            <Beef className="h-7 w-7 text-primary mb-2 flex-shrink-0" />
+            <span className="text-sm font-medium text-center leading-tight">Add Cattle</span>
           </Link>
 
           <button
-            className="flex flex-col items-center p-4 bg-red-50 rounded-lg"
+            className="flex flex-col items-center p-5 bg-red-50 dark:bg-red-950/20 rounded-2xl touch-manipulation active:scale-95 transition-transform min-h-[100px] justify-center"
             onClick={() => {
               setIsOpen(false)
               document.dispatchEvent(new CustomEvent('record-health-event'))
             }}
           >
-            <Activity className="h-6 w-6 text-red-600 mb-2" />
-            <span className="text-sm font-medium">Health Event</span>
+            <Activity className="h-7 w-7 text-red-600 mb-2 flex-shrink-0" />
+            <span className="text-sm font-medium text-center leading-tight">Health Event</span>
           </button>
 
           <button
-            className="flex flex-col items-center p-4 bg-blue-50 rounded-lg"
+            className="flex flex-col items-center p-5 bg-blue-50 dark:bg-blue-950/20 rounded-2xl touch-manipulation active:scale-95 transition-transform min-h-[100px] justify-center"
             onClick={() => {
               setIsOpen(false)
               document.dispatchEvent(new CustomEvent('record-movement'))
             }}
           >
-            <Menu className="h-6 w-6 text-blue-600 mb-2" />
-            <span className="text-sm font-medium">Movement</span>
+            <Menu className="h-7 w-7 text-blue-600 mb-2 flex-shrink-0" />
+            <span className="text-sm font-medium text-center leading-tight">Movement</span>
           </button>
         </div>
 
         <button
-          className="w-full py-3 text-center text-muted-foreground"
+          className="w-full py-4 text-center text-muted-foreground font-medium rounded-xl hover:bg-muted/50 active:bg-muted touch-manipulation transition-colors"
           onClick={() => setIsOpen(false)}
         >
           Cancel
