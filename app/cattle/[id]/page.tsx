@@ -519,52 +519,52 @@ export default function CattleDetailPage() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card sticky top-0 z-40 lg:static backdrop-blur-md bg-card/95">
-        <div className="w-full px-4 sm:px-6 py-4 sm:py-6">
-          <div className="flex flex-col gap-4">
+        <div className="w-full px-3 sm:px-6 py-3 sm:py-5">
+          <div className="flex flex-col gap-3">
             <div className="min-w-0">
               <Link
                 href="/cattle"
-                className="text-sm sm:text-base text-muted-foreground hover:text-foreground mb-3 flex items-center gap-2 touch-manipulation min-h-[48px] inline-flex active:scale-95 transition-transform"
+                className="text-xs sm:text-sm text-muted-foreground hover:text-foreground mb-2 flex items-center gap-1.5 touch-manipulation min-h-[40px] inline-flex active:scale-95 transition-transform"
               >
-                <ArrowLeft className="h-5 w-5" />
+                <ArrowLeft className="h-4 w-4" />
                 Back to Cattle Inventory
               </Link>
-              <div className="flex items-start gap-3 mt-2 flex-wrap">
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground tracking-tight">Tag #{cattle.tagNumber}</h1>
-                <div className="flex gap-2 flex-wrap">
+              <div className="flex items-start gap-2 mt-1 flex-wrap">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground tracking-tight">Tag #{cattle.tagNumber}</h1>
+                <div className="flex gap-1.5 flex-wrap">
                   <Badge
                     className={
                       cattle.healthStatus === "Healthy"
-                        ? "bg-green-100 text-green-800 hover:bg-green-100 text-sm px-3 py-1"
-                        : "bg-amber-100 text-amber-800 hover:bg-amber-100 text-sm px-3 py-1"
+                        ? "bg-green-100 text-green-800 hover:bg-green-100 text-xs px-2 py-0.5"
+                        : "bg-amber-100 text-amber-800 hover:bg-amber-100 text-xs px-2 py-0.5"
                     }
                   >
                     {cattle.healthStatus}
                   </Badge>
                   {readyForSale && (
-                    <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 text-sm px-3 py-1">Ready for Sale</Badge>
+                    <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 text-xs px-2 py-0.5">Ready for Sale</Badge>
                   )}
                 </div>
               </div>
-              <p className="text-base sm:text-lg text-muted-foreground mt-3">
+              <p className="text-sm sm:text-base text-muted-foreground mt-2">
                 {cattle.breed} • {cattle.sex} • {cattle.stage}
               </p>
             </div>
-            <div className="flex gap-3 w-full sm:w-auto">
+            <div className="flex gap-2 w-full sm:w-auto">
               <Button
                 variant="outline"
                 onClick={() => setIsEditOpen(true)}
-                className="touch-manipulation min-h-[52px] flex-1 sm:flex-none active:scale-95 transition-transform"
+                className="touch-manipulation min-h-[44px] flex-1 sm:flex-none active:scale-95 transition-transform text-sm"
               >
-                <Edit className="h-5 w-5 sm:mr-2" />
+                <Edit className="h-4 w-4 sm:mr-2" />
                 <span>Edit</span>
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setIsDeleteDialogOpen(true)}
-                className="text-destructive hover:bg-destructive/10 touch-manipulation min-h-[52px] flex-1 sm:flex-none active:scale-95 transition-transform"
+                className="text-destructive hover:bg-destructive/10 touch-manipulation min-h-[44px] flex-1 sm:flex-none active:scale-95 transition-transform text-sm"
               >
-                <Trash2 className="h-5 w-5 sm:mr-2" />
+                <Trash2 className="h-4 w-4 sm:mr-2" />
                 <span>Delete</span>
               </Button>
             </div>
@@ -572,50 +572,50 @@ export default function CattleDetailPage() {
         </div>
       </header>
 
-      <main className="w-full px-4 sm:px-6 py-5 sm:py-8 pb-24 md:pb-8">
+      <main className="w-full px-3 sm:px-6 py-3 sm:py-6 pb-20 md:pb-6">
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-6 sm:mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
           <Card>
-            <CardContent className="p-6 sm:p-7">
+            <CardContent className="p-4 sm:p-5">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <p className="text-sm sm:text-base text-muted-foreground mb-2">Current Weight</p>
-                  <p className="text-3xl sm:text-4xl font-bold text-foreground">{currentWeight} lbs</p>
-                  <p className="text-sm text-green-600 mt-2 font-medium">
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-1">Current Weight</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-foreground">{currentWeight} lbs</p>
+                  <p className="text-xs text-green-600 mt-1 font-medium">
                     +{(currentWeight - startWeight).toFixed(0)} lbs total
                   </p>
                 </div>
-                <Activity className="h-6 w-6 sm:h-7 sm:w-7 text-primary flex-shrink-0" />
+                <Activity className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6 sm:p-7">
+            <CardContent className="p-4 sm:p-5">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <p className="text-sm sm:text-base text-muted-foreground mb-2">Daily Gain</p>
-                  <p className="text-3xl sm:text-4xl font-bold text-foreground">{dailyGain.toFixed(2)} lbs</p>
-                  <p className="text-sm text-muted-foreground mt-2">Per day average</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-1">Daily Gain</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-foreground">{dailyGain.toFixed(2)} lbs</p>
+                  <p className="text-xs text-muted-foreground mt-1">Per day average</p>
                 </div>
-                <TrendingUp className="h-6 w-6 sm:h-7 sm:w-7 text-green-600 flex-shrink-0" />
+                <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 flex-shrink-0" />
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-5">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <p className="text-sm text-muted-foreground mb-1">Current Value</p>
-                  <p className="text-2xl font-bold text-foreground">${currentValue.toFixed(0)}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-1">Current Value</p>
+                  <p className="text-xl sm:text-2xl font-bold text-foreground">${currentValue.toFixed(0)}</p>
                   <p className="text-xs text-green-600 mt-1">+${((cattle.purchasePrice || 0) > 0 ? (currentValue - (cattle.purchasePrice || 0)).toFixed(0) : "0")} gain</p>
                   {cattle.currentValue && (
                     <p className="text-xs text-muted-foreground mt-1">Manual value set</p>
                   )}
                 </div>
-                <div className="flex flex-col gap-2 flex-shrink-0">
-                  <DollarSign className="h-5 w-5 text-amber-600" />
+                <div className="flex flex-col gap-1.5 flex-shrink-0">
+                  <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
                   <Button
                     size="sm"
                     variant="outline"
@@ -623,7 +623,7 @@ export default function CattleDetailPage() {
                       setNewValue(currentValue.toString())
                       setIsUpdateValueOpen(true)
                     }}
-                    className="touch-manipulation min-h-[40px] px-3"
+                    className="touch-manipulation min-h-[36px] px-2 text-xs"
                   >
                     Update
                   </Button>
@@ -634,34 +634,34 @@ export default function CattleDetailPage() {
         </div>
 
         {/* Health Status & Disease Tracking */}
-        <Card className="mb-6">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <Card className="mb-3 sm:mb-4">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="min-w-0">
-                <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
-                  <Activity className="h-5 w-5 flex-shrink-0" />
-                  Health & Status Management
+                <h3 className="text-sm sm:text-base font-semibold text-foreground mb-1.5 flex items-center gap-1.5">
+                  <Activity className="h-4 w-4 flex-shrink-0" />
+                  Health & Status
                 </h3>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">Health Status:</span>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 text-xs sm:text-sm">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-muted-foreground">Health:</span>
                     <Badge
                       className={
                         cattle.healthStatus === "Healthy"
-                          ? "bg-green-100 text-green-800 hover:bg-green-100"
+                          ? "bg-green-100 text-green-800 hover:bg-green-100 text-xs"
                           : cattle.healthStatus === "Sick"
-                          ? "bg-red-100 text-red-800 hover:bg-red-100"
+                          ? "bg-red-100 text-red-800 hover:bg-red-100 text-xs"
                           : cattle.healthStatus === "Treatment"
-                          ? "bg-amber-100 text-amber-800 hover:bg-amber-100"
-                          : "bg-orange-100 text-orange-800 hover:bg-orange-100"
+                          ? "bg-amber-100 text-amber-800 hover:bg-amber-100 text-xs"
+                          : "bg-orange-100 text-orange-800 hover:bg-orange-100 text-xs"
                       }
                     >
                       {cattle.healthStatus}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <span className="text-muted-foreground">Status:</span>
-                    <Badge variant="outline">{cattle.status}</Badge>
+                    <Badge variant="outline" className="text-xs">{cattle.status}</Badge>
                   </div>
                 </div>
               </div>
@@ -669,20 +669,20 @@ export default function CattleDetailPage() {
                 <Button
                   variant="outline"
                   onClick={() => setIsDiseaseDialogOpen(true)}
-                  className="touch-manipulation min-h-[44px] flex-1 sm:flex-none"
+                  className="touch-manipulation min-h-[40px] flex-1 sm:flex-none text-xs sm:text-sm"
                   disabled={cattle.status === "Deceased"}
                 >
-                  <AlertTriangle className="h-4 w-4 mr-2" />
-                  Update Health
+                  <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" />
+                  Update
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => setIsMortalityDialogOpen(true)}
-                  className="text-destructive bg-transparent touch-manipulation min-h-[44px] flex-1 sm:flex-none"
+                  className="text-destructive bg-transparent touch-manipulation min-h-[40px] flex-1 sm:flex-none text-xs sm:text-sm"
                   disabled={cattle.status === "Deceased"}
                 >
-                  <Skull className="h-4 w-4 mr-2" />
-                  Record Death
+                  <Skull className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" />
+                  Record
                 </Button>
               </div>
             </div>
@@ -690,39 +690,39 @@ export default function CattleDetailPage() {
         </Card>
 
         {/* Location Assignment */}
-        <Card className="mb-6">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <Card className="mb-3 sm:mb-4">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="min-w-0">
-                <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
-                  <MapPin className="h-5 w-5 flex-shrink-0" />
+                <h3 className="text-sm sm:text-base font-semibold text-foreground mb-1.5 flex items-center gap-1.5">
+                  <MapPin className="h-4 w-4 flex-shrink-0" />
                   Current Location
                 </h3>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 text-xs sm:text-sm">
                   {cattle.barnId && cattle.penId ? (
                     <>
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <div className="flex items-center gap-1.5">
+                        <Building2 className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                         <span className="font-medium truncate">
                           {barns.find(b => b.id === cattle.barnId)?.name || "Unknown Barn"}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                         <span className="font-medium truncate">
                           {pens.find(p => p.id === cattle.penId)?.name || "Unknown Pen"}
                         </span>
                       </div>
                     </>
                   ) : (
-                    <Badge variant="outline" className="text-amber-600">Unassigned</Badge>
+                    <Badge variant="outline" className="text-amber-600 text-xs">Unassigned</Badge>
                   )}
                 </div>
               </div>
               <Button
                 variant="outline"
                 onClick={() => setIsAssignLocationOpen(true)}
-                className="touch-manipulation min-h-[44px] w-full sm:w-auto flex-shrink-0"
+                className="touch-manipulation min-h-[40px] w-full sm:w-auto flex-shrink-0 text-xs sm:text-sm"
               >
                 {cattle.barnId ? "Change Location" : "Assign Location"}
               </Button>
@@ -731,27 +731,27 @@ export default function CattleDetailPage() {
         </Card>
 
         {readyForSale && (
-          <Card className="mb-6 border-blue-200 bg-blue-50">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Sale Readiness</h3>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
+          <Card className="mb-3 sm:mb-4 border-blue-200 bg-blue-50">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex-1">
+                  <h3 className="text-sm sm:text-base font-semibold text-foreground mb-2">Sale Readiness</h3>
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3 text-xs sm:text-sm">
                     <div>
                       <p className="text-muted-foreground">Target Weight</p>
                       <p className="font-semibold text-foreground">{targetWeight} lbs</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Est. Days to Target</p>
+                      <p className="text-muted-foreground">Est. Days</p>
                       <p className="font-semibold text-foreground">{estimatedDaysToTarget} days</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Target Sale Price</p>
+                      <p className="text-muted-foreground">Target Price</p>
                       <p className="font-semibold text-foreground">${targetValue.toFixed(0)}</p>
                     </div>
                   </div>
                 </div>
-                <Button>Mark as Sold</Button>
+                <Button className="w-full sm:w-auto text-xs sm:text-sm">Mark as Sold</Button>
               </div>
             </CardContent>
           </Card>
@@ -759,52 +759,52 @@ export default function CattleDetailPage() {
 
         {/* Detailed Information Tabs - Mobile Optimized */}
         <Tabs defaultValue="growth" className="w-full">
-          <div className="-mx-4 sm:mx-0 px-4 sm:px-0 overflow-x-auto pb-2 sm:pb-0">
-            <TabsList className="inline-flex w-auto min-w-full sm:w-full">
+          <div className="-mx-3 sm:mx-0 px-3 sm:px-0 overflow-x-auto pb-1.5 sm:pb-0">
+            <TabsList className="inline-flex w-auto min-w-full sm:w-full h-9 sm:h-10">
               <TabsTrigger
                 value="growth"
-                className="flex-1 sm:flex-initial whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 touch-manipulation min-h-[44px]"
+                className="flex-1 sm:flex-initial whitespace-nowrap text-[10px] sm:text-xs px-2 sm:px-3 touch-manipulation"
               >
                 <span className="hidden lg:inline">Growth & Performance</span>
                 <span className="lg:hidden">Growth</span>
               </TabsTrigger>
               <TabsTrigger
                 value="details"
-                className="flex-1 sm:flex-initial whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 touch-manipulation min-h-[44px]"
+                className="flex-1 sm:flex-initial whitespace-nowrap text-[10px] sm:text-xs px-2 sm:px-3 touch-manipulation"
               >
                 Details
               </TabsTrigger>
               <TabsTrigger
                 value="weight"
-                className="flex-1 sm:flex-initial whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 touch-manipulation min-h-[44px]"
+                className="flex-1 sm:flex-initial whitespace-nowrap text-[10px] sm:text-xs px-2 sm:px-3 touch-manipulation"
               >
                 <span className="hidden lg:inline">Weight History</span>
                 <span className="lg:hidden">Weight</span>
               </TabsTrigger>
               <TabsTrigger
                 value="feed"
-                className="flex-1 sm:flex-initial whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 touch-manipulation min-h-[44px]"
+                className="flex-1 sm:flex-initial whitespace-nowrap text-[10px] sm:text-xs px-2 sm:px-3 touch-manipulation"
               >
                 <span className="hidden lg:inline">Feed History</span>
                 <span className="lg:hidden">Feed</span>
               </TabsTrigger>
               <TabsTrigger
                 value="medication"
-                className="flex-1 sm:flex-initial whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 touch-manipulation min-h-[44px]"
+                className="flex-1 sm:flex-initial whitespace-nowrap text-[10px] sm:text-xs px-2 sm:px-3 touch-manipulation"
               >
                 <span className="hidden lg:inline">Medications</span>
                 <span className="lg:hidden">Meds</span>
               </TabsTrigger>
               <TabsTrigger
                 value="health"
-                className="flex-1 sm:flex-initial whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 touch-manipulation min-h-[44px]"
+                className="flex-1 sm:flex-initial whitespace-nowrap text-[10px] sm:text-xs px-2 sm:px-3 touch-manipulation"
               >
                 <span className="hidden lg:inline">Health Records</span>
                 <span className="lg:hidden">Health</span>
               </TabsTrigger>
               <TabsTrigger
                 value="financial"
-                className="flex-1 sm:flex-initial whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 touch-manipulation min-h-[44px]"
+                className="flex-1 sm:flex-initial whitespace-nowrap text-[10px] sm:text-xs px-2 sm:px-3 touch-manipulation"
               >
                 Financial
               </TabsTrigger>
@@ -812,7 +812,7 @@ export default function CattleDetailPage() {
           </div>
 
           {/* Growth Tab - NEW */}
-          <TabsContent value="growth" className="mt-6">
+          <TabsContent value="growth" className="mt-3 sm:mt-4">
             <CattleGrowthTimeline
               cattle={cattle}
               weightRecords={weightRecords}
@@ -822,7 +822,7 @@ export default function CattleDetailPage() {
             />
           </TabsContent>
 
-          <TabsContent value="details" className="mt-6">
+          <TabsContent value="details" className="mt-3 sm:mt-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
@@ -939,7 +939,7 @@ export default function CattleDetailPage() {
             )}
           </TabsContent>
 
-          <TabsContent value="weight" className="mt-6">
+          <TabsContent value="weight" className="mt-3 sm:mt-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Weight History</CardTitle>
@@ -1015,7 +1015,7 @@ export default function CattleDetailPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="feed" className="mt-6">
+          <TabsContent value="feed" className="mt-3 sm:mt-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
@@ -1254,7 +1254,7 @@ export default function CattleDetailPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="medication" className="mt-6">
+          <TabsContent value="medication" className="mt-3 sm:mt-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
@@ -1486,7 +1486,7 @@ export default function CattleDetailPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="health" className="mt-6">
+          <TabsContent value="health" className="mt-3 sm:mt-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Health Records</CardTitle>
@@ -1611,7 +1611,7 @@ export default function CattleDetailPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="financial" className="mt-6">
+          <TabsContent value="financial" className="mt-3 sm:mt-4">
             <div className="grid gap-6">
               <Card>
                 <CardHeader>
