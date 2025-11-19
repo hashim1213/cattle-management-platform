@@ -1,14 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     ignoreBuildErrors: true,
   },
   images: {
     unoptimized: true,
   },
+  // Enable Turbopack with custom configuration
+  turbopack: {},
   webpack: (config, { isServer }) => {
     // Fix for pdfjs-dist to work properly in Next.js
     if (!isServer) {
