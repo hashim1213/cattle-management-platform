@@ -165,6 +165,7 @@ export function LandingPage() {
       description: "Start by importing your cattle inventory. Use our bulk upload feature or add animals individually with tags, weights, and purchase details.",
       icon: Upload,
       color: "from-blue-500 to-blue-600",
+      image: "/screen1.png",
       highlights: ["Bulk CSV import", "Individual entry with voice capture", "Auto-generate EID tags"]
     },
     {
@@ -173,6 +174,7 @@ export function LandingPage() {
       description: "Group your cattle into pens based on your operation. Assign feed rations, track pen-level performance, and monitor costs in real-time.",
       icon: Tags,
       color: "from-green-500 to-green-600",
+      image: "/screen2.png",
       highlights: ["Drag-and-drop pen management", "Custom pen configurations", "Automated cost allocation"]
     },
     {
@@ -181,6 +183,7 @@ export function LandingPage() {
       description: "Record treatments, vaccinations, and health observations. Set up automated alerts for withdrawal periods and follow-up care.",
       icon: Activity,
       color: "from-purple-500 to-purple-600",
+      image: "/screen3.png",
       highlights: ["Treatment protocols library", "Withdrawal period tracking", "Health trend analysis"]
     },
     {
@@ -189,6 +192,7 @@ export function LandingPage() {
       description: "View real-time dashboards showing cost of gain, break-even prices, and profitability by pen. Make data-driven decisions with confidence.",
       icon: PieChart,
       color: "from-orange-500 to-orange-600",
+      image: "/screen4.png",
       highlights: ["Live break-even analysis", "Pen performance comparison", "AI-powered recommendations"]
     }
   ]
@@ -508,15 +512,25 @@ export function LandingPage() {
                       </div>
                     </div>
 
-                    {/* Right side - Visual placeholder */}
-                    <div className={`hidden md:flex items-center justify-center bg-gradient-to-br ${walkthroughSteps[currentStep].color} p-12 transition-all duration-500`}>
-                      <div className="text-center">
-                        {(() => {
-                          const StepIcon = walkthroughSteps[currentStep].icon
-                          return <StepIcon className="h-32 w-32 md:h-40 md:w-40 text-white/20 mx-auto mb-6" />
-                        })()}
-                        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
-                          <p className="text-white/90 text-sm font-medium">
+                    {/* Right side - Screenshot */}
+                    <div className={`hidden md:flex items-center justify-center bg-gradient-to-br ${walkthroughSteps[currentStep].color} p-6 transition-all duration-500`}>
+                      <div className="relative w-full h-full flex items-center justify-center">
+                        <div className="relative w-full max-w-lg aspect-[4/3] bg-white rounded-lg shadow-2xl overflow-hidden border-4 border-white/20">
+                          <Image
+                            src={walkthroughSteps[currentStep].image}
+                            alt={walkthroughSteps[currentStep].title}
+                            fill
+                            className="object-cover object-top transition-all duration-500"
+                            sizes="(max-width: 768px) 100vw, 50vw"
+                            onError={(e) => {
+                              // Fallback to icon if image not found
+                              const target = e.target as HTMLImageElement
+                              target.style.display = 'none'
+                            }}
+                          />
+                        </div>
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 border border-white/20">
+                          <p className="text-white text-xs font-medium">
                             Step {walkthroughSteps[currentStep].step} of {walkthroughSteps.length}
                           </p>
                         </div>
