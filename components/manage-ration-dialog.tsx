@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select"
 import { useRationStore } from "@/hooks/use-ration-store"
 import { useToast } from "@/hooks/use-toast"
-import { dataStore } from "@/lib/data-store-firebase"
+import { firebaseDataStore as dataStore } from "@/lib/data-store-firebase"
 import { Plus, Trash2 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import type { Ration, RationIngredient } from "@/lib/ration-store"

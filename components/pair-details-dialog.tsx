@@ -10,7 +10,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { dataStore } from "@/lib/data-store-firebase"
+import { firebaseDataStore as dataStore } from "@/lib/data-store-firebase"
 import { Sprout, Baby, Calendar, TrendingUp, Eye } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type { CattlePair } from "@/lib/pairs-store"

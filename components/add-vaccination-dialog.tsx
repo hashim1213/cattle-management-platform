@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useHealthEnhanced } from "@/hooks/use-health-enhanced"
-import { dataStore } from "@/lib/data-store-firebase"
+import { firebaseDataStore as dataStore } from "@/lib/data-store-firebase"
 import { useToast } from "@/hooks/use-toast"
 
 interface AddVaccinationDialogProps {

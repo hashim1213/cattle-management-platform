@@ -22,7 +22,7 @@ import { useRationStore } from "@/hooks/use-ration-store"
 import { usePenStore } from "@/hooks/use-pen-store"
 import { useToast } from "@/hooks/use-toast"
 import { Badge } from "@/components/ui/badge"
-import { dataStore } from "@/lib/data-store-firebase"
+import { firebaseDataStore as dataStore } from "@/lib/data-store-firebase"
 import { Input } from "@/components/ui/input"
 
 interface AssignRationDialogProps {
