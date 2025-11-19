@@ -149,6 +149,17 @@ export default function AgentPage() {
 
       if (!response.ok) {
         const errorData = await response.json()
+
+        // Show more detailed error messages
+        if (response.status === 500 && errorData.details) {
+          toast.error(errorData.error, {
+            description: errorData.details,
+            duration: 10000,
+          })
+        } else {
+          toast.error(errorData.error || "Failed to send message")
+        }
+
         throw new Error(errorData.error || "Failed to send message")
       }
 
