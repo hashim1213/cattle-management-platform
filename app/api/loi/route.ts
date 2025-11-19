@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/lib/firebase"
-import { collection, addDoc, serverTimestamp } from "firebase/firestore"
+import { initializeApp, getApps } from "firebase/app"
+import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore"
+
+// Firebase configuration (same as client-side config)
+const firebaseConfig = {
+  apiKey: "AIzaSyArBOx-POsmXttlvgDQ1tk0CWwF_GuW-qk",
+  authDomain: "cattleos.firebaseapp.com",
+  projectId: "cattleos",
+  storageBucket: "cattleos.firebasestorage.app",
+  messagingSenderId: "169828733805",
+  appId: "1:169828733805:web:db73550312e9e0ebedc064",
+}
+
+// Initialize Firebase for server-side API route
+if (!getApps().length) {
+  initializeApp(firebaseConfig)
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,7 +37,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Save to Firestore
+    // Save to Firestore using client SDK
+    const db = getFirestore()
     const loiData = {
       fullName: body.fullName,
       farmName: body.farmName,
@@ -50,7 +66,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error submitting LOI:", error)
     return NextResponse.json(
-      { error: "Failed to submit Letter of Intent" },
+      { error: "Failed to submit Letter of Intent", details: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }
     )
   }
