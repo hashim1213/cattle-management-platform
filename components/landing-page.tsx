@@ -30,7 +30,13 @@ import {
   Lock,
   Eye,
   MessageCircle,
-  MapPin
+  MapPin,
+  ChevronLeft,
+  ChevronRight,
+  Upload,
+  Tags,
+  Activity,
+  PieChart
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -38,6 +44,7 @@ import Image from "next/image"
 export function LandingPage() {
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState({
     fullName: "",
     farmName: "",
@@ -148,6 +155,50 @@ export function LandingPage() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  // Walkthrough steps data
+  const walkthroughSteps = [
+    {
+      step: 1,
+      title: "Add Your Cattle",
+      description: "Start by importing your cattle inventory. Use our bulk upload feature or add animals individually with tags, weights, and purchase details.",
+      icon: Upload,
+      color: "from-blue-500 to-blue-600",
+      highlights: ["Bulk CSV import", "Individual entry with voice capture", "Auto-generate EID tags"]
+    },
+    {
+      step: 2,
+      title: "Organize Into Pens",
+      description: "Group your cattle into pens based on your operation. Assign feed rations, track pen-level performance, and monitor costs in real-time.",
+      icon: Tags,
+      color: "from-green-500 to-green-600",
+      highlights: ["Drag-and-drop pen management", "Custom pen configurations", "Automated cost allocation"]
+    },
+    {
+      step: 3,
+      title: "Track Health & Treatments",
+      description: "Record treatments, vaccinations, and health observations. Set up automated alerts for withdrawal periods and follow-up care.",
+      icon: Activity,
+      color: "from-purple-500 to-purple-600",
+      highlights: ["Treatment protocols library", "Withdrawal period tracking", "Health trend analysis"]
+    },
+    {
+      step: 4,
+      title: "Monitor Performance",
+      description: "View real-time dashboards showing cost of gain, break-even prices, and profitability by pen. Make data-driven decisions with confidence.",
+      icon: PieChart,
+      color: "from-orange-500 to-orange-600",
+      highlights: ["Live break-even analysis", "Pen performance comparison", "AI-powered recommendations"]
+    }
+  ]
+
+  const nextStep = () => {
+    setCurrentStep((prev) => (prev + 1) % walkthroughSteps.length)
+  }
+
+  const previousStep = () => {
+    setCurrentStep((prev) => (prev - 1 + walkthroughSteps.length) % walkthroughSteps.length)
   }
 
   const features = [
@@ -354,6 +405,142 @@ export function LandingPage() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works - Interactive Walkthrough */}
+      <section className="py-16 md:py-20 bg-gradient-to-b from-background to-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12 md:mb-16">
+              <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-primary/10 rounded-full">
+                <Zap className="h-5 w-5 text-primary" />
+                <span className="text-sm font-semibold text-primary">Simple 4-Step Process</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
+                How CattleOS Works
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Get up and running in minutes. Our streamlined workflow makes cattle management effortless.
+              </p>
+            </div>
+
+            {/* Interactive Carousel */}
+            <div className="relative">
+              <Card className="border-2 border-primary/20 shadow-2xl overflow-hidden">
+                <CardContent className="p-0">
+                  <div className="grid md:grid-cols-2 gap-0">
+                    {/* Left side - Step content */}
+                    <div className="p-8 md:p-12 bg-card">
+                      <div className="mb-6">
+                        <div className={`inline-flex w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br ${walkthroughSteps[currentStep].color} items-center justify-center mb-4 shadow-lg transition-all duration-300`}>
+                          {(() => {
+                            const StepIcon = walkthroughSteps[currentStep].icon
+                            return <StepIcon className="h-8 w-8 md:h-10 md:w-10 text-white" />
+                          })()}
+                        </div>
+                        <div className="flex items-center gap-3 mb-4">
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold shadow-sm">
+                            {walkthroughSteps[currentStep].step}
+                          </span>
+                          <h3 className="text-2xl md:text-3xl font-bold text-foreground">
+                            {walkthroughSteps[currentStep].title}
+                          </h3>
+                        </div>
+                      </div>
+
+                      <p className="text-base md:text-lg text-muted-foreground mb-6 leading-relaxed">
+                        {walkthroughSteps[currentStep].description}
+                      </p>
+
+                      <div className="space-y-3 mb-8">
+                        <p className="text-sm font-semibold text-foreground uppercase tracking-wide">Key Features:</p>
+                        {walkthroughSteps[currentStep].highlights.map((highlight, idx) => (
+                          <div key={idx} className="flex items-start gap-3">
+                            <div className="flex-shrink-0 mt-0.5">
+                              <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
+                                <Check className="h-3 w-3 text-primary" />
+                              </div>
+                            </div>
+                            <span className="text-sm md:text-base text-muted-foreground">{highlight}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Navigation Controls */}
+                      <div className="flex items-center justify-between pt-6 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={previousStep}
+                          className="gap-2"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                          Previous
+                        </Button>
+
+                        {/* Step Indicators */}
+                        <div className="flex gap-2">
+                          {walkthroughSteps.map((_, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => setCurrentStep(idx)}
+                              className={`h-2 rounded-full transition-all duration-300 ${
+                                idx === currentStep
+                                  ? 'w-8 bg-primary'
+                                  : 'w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                              }`}
+                              aria-label={`Go to step ${idx + 1}`}
+                            />
+                          ))}
+                        </div>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={nextStep}
+                          className="gap-2"
+                        >
+                          Next
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Right side - Visual placeholder */}
+                    <div className={`hidden md:flex items-center justify-center bg-gradient-to-br ${walkthroughSteps[currentStep].color} p-12 transition-all duration-500`}>
+                      <div className="text-center">
+                        {(() => {
+                          const StepIcon = walkthroughSteps[currentStep].icon
+                          return <StepIcon className="h-32 w-32 md:h-40 md:w-40 text-white/20 mx-auto mb-6" />
+                        })()}
+                        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+                          <p className="text-white/90 text-sm font-medium">
+                            Step {walkthroughSteps[currentStep].step} of {walkthroughSteps.length}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Call to Action */}
+              <div className="text-center mt-12">
+                <p className="text-lg text-muted-foreground mb-6">
+                  Ready to streamline your cattle operation?
+                </p>
+                <Button
+                  size="lg"
+                  className="gap-2"
+                  onClick={() => document.getElementById('loi-form')?.scrollIntoView({ behavior: 'smooth' })}
+                >
+                  Start Your Free Trial
+                  <ArrowRight className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
