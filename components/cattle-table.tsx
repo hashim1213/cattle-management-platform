@@ -56,9 +56,12 @@ export function CattleTable({ searchQuery, filters }: CattleTableProps) {
   useEffect(() => {
     loadCattle()
 
-    // Subscribe to real-time updates instead of polling
-    const unsubscribe = firebaseDataStore.subscribe(async () => {
-      await loadCattle()
+    // Subscribe to real-time updates
+    // Use synchronous getter to preserve user state (selections, filters) during updates
+    const unsubscribe = firebaseDataStore.subscribe(() => {
+      // Get the latest data from in-memory cache (already updated by real-time listener)
+      const latestCattle = firebaseDataStore.getCattleSync()
+      setCattle(latestCattle)
     })
 
     return () => unsubscribe()
