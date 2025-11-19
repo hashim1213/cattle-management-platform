@@ -80,7 +80,7 @@ export function exportCattleInventory(status?: "Active" | "Sold" | "Deceased" | 
 
 // Export financial summary
 export function exportFinancialSummary(dateRange?: { start: string; end: string }) {
-  const cattle = dataStore.getCattle().filter((c) => c.status === "Active")
+  const cattle = dataStore.getCattleSync().filter((c) => c.status === "Active")
 
   const financialData = cattle.map((c) => {
     const costs = costCalculator.calculateCattleCosts(c.id, dateRange)

@@ -61,7 +61,7 @@ export function FeedAllocationDialog({ penId, open, onOpenChange }: FeedAllocati
   const selectedPen = formData.penId ? getPen(formData.penId) : null
   const selectedBarn = selectedPen ? barns.find((b) => b.id === selectedPen.barnId) : null
   const headCount = selectedPen
-    ? dataStore.getCattle().filter((c) => c.penId === formData.penId && c.status === "Active").length
+    ? dataStore.getCattleSync().filter((c) => c.penId === formData.penId && c.status === "Active").length
     : 0
 
   const totalBatchWeight = feedItems.reduce((sum, item) => sum + item.quantity, 0)

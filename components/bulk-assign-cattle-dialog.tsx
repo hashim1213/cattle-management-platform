@@ -38,7 +38,7 @@ export function BulkAssignCattleDialog({
   const [selectedBarnId, setSelectedBarnId] = useState("")
   const [selectedCattle, setSelectedCattle] = useState<Set<string>>(new Set())
 
-  const allCattle = dataStore.getCattle().filter((c) => c.status === "Active")
+  const allCattle = dataStore.getCattleSync().filter((c) => c.status === "Active")
   const unassignedCattle = allCattle.filter((c) => !c.penId)
 
   const selectedPen = selectedPenId ? getPen(selectedPenId) : null

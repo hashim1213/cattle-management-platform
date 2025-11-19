@@ -228,7 +228,7 @@ export class CostCalculator {
     if (!pen) return null
 
     // Get all cattle in pen
-    const cattle = dataStore.getCattle().filter((c) => c.penId === penId && c.status === "Active")
+    const cattle = dataStore.getCattleSync().filter((c) => c.penId === penId && c.status === "Active")
 
     if (cattle.length === 0) {
       return {
@@ -328,7 +328,7 @@ export class CostCalculator {
 
   // Calculate costs across all active cattle
   calculateOperationCosts(dateRange?: { start: string; end: string }) {
-    const activeCattle = dataStore.getCattle().filter((c) => c.status === "Active")
+    const activeCattle = dataStore.getCattleSync().filter((c) => c.status === "Active")
 
     const costBreakdowns = activeCattle
       .map((c) => this.calculateCattleCosts(c.id, dateRange))

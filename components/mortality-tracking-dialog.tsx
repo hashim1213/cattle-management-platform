@@ -159,8 +159,8 @@ export function MortalityTrackingDialog({
   }
 
   const availableCattle = formData.penId
-    ? dataStore.getCattle().filter((c) => c.penId === formData.penId && c.status === "Active")
-    : dataStore.getCattle().filter((c) => c.status === "Active")
+    ? dataStore.getCattleSync().filter((c) => c.penId === formData.penId && c.status === "Active")
+    : dataStore.getCattleSync().filter((c) => c.status === "Active")
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

@@ -28,7 +28,7 @@ export function BatchDetailsDialog({ batchId, open, onOpenChange }: BatchDetails
   if (!batch) return null
 
   // Get all cattle in this batch
-  const cattle = dataStore.getCattle().filter((c) => batch.cattleIds.includes(c.id))
+  const cattle = dataStore.getCattleSync().filter((c) => batch.cattleIds.includes(c.id))
 
   // Calculate batch-level costs
   const activeCattle = cattle.filter((c) => c.status === "Active")
