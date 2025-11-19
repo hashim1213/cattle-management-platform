@@ -5,14 +5,15 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { MoreVertical, Edit, Trash2, Eye, Loader2, X, CheckSquare } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { MoreVertical, Edit, Trash2, Eye, Loader2, X, CheckSquare, Skull } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { firebaseDataStore, type Cattle } from "@/lib/data-store-firebase"
 import { usePenStore } from "@/hooks/use-pen-store"
 import { BulkEditDialog } from "@/components/bulk-edit-dialog"
+import { MarkDeceasedDialog } from "@/components/mark-deceased-dialog"
 
 interface CattleTableProps {
   searchQuery: string
@@ -35,6 +36,8 @@ export function CattleTable({ searchQuery, filters }: CattleTableProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [cattleToDelete, setCattleToDelete] = useState<Cattle | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [deceasedDialogOpen, setDeceasedDialogOpen] = useState(false)
+  const [cattleToMarkDeceased, setCattleToMarkDeceased] = useState<Cattle | null>(null)
   const { pens = [] } = usePenStore()
   const router = useRouter()
 
@@ -326,6 +329,23 @@ export function CattleTable({ searchQuery, filters }: CattleTableProps) {
                                 <Edit className="h-4 w-4 mr-2" />
                                 Edit
                               </DropdownMenuItem>
+                              {animal.status !== "Deceased" && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-orange-600"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setCattleToMarkDeceased(animal)
+                                      setDeceasedDialogOpen(true)
+                                    }}
+                                  >
+                                    <Skull className="h-4 w-4 mr-2" />
+                                    Mark as Deceased
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 className="text-destructive"
                                 onClick={(e) => {
@@ -390,6 +410,17 @@ export function CattleTable({ searchQuery, filters }: CattleTableProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Mark as Deceased Dialog */}
+      <MarkDeceasedDialog
+        open={deceasedDialogOpen}
+        onOpenChange={setDeceasedDialogOpen}
+        cattle={cattleToMarkDeceased}
+        onSuccess={() => {
+          loadCattle()
+          setCattleToMarkDeceased(null)
+        }}
+      />
     </>
   )
 }

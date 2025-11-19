@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent } from "@/components/ui/card"
-import { Beef, Activity, TrendingUp, DollarSign, Loader2 } from "lucide-react"
+import { Beef, Activity, TrendingUp, DollarSign, Loader2, Skull } from "lucide-react"
 import { useEffect, useState } from "react"
 import { firebaseDataStore } from "@/lib/data-store-firebase"
 import { useFarmSettings } from "@/hooks/use-farm-settings"
@@ -15,6 +15,8 @@ export function CattleStats() {
     healthyCount: 0,
     avgDailyGain: 0,
     totalValue: 0,
+    deceasedCount: 0,
+    mortalityRate: 0,
   })
 
   useEffect(() => {
@@ -72,6 +74,13 @@ export function CattleStats() {
       color: "text-blue-600",
     },
     {
+      label: "Mortality Rate",
+      value: `${analytics.mortalityRate.toFixed(1)}%`,
+      subtext: `${analytics.deceasedCount} deceased`,
+      icon: Skull,
+      color: analytics.mortalityRate > 5 ? "text-red-600" : "text-orange-600",
+    },
+    {
       label: "Total Value",
       value: `$${analytics.totalValue.toLocaleString()}`,
       subtext: "Current inventory",
@@ -81,7 +90,7 @@ export function CattleStats() {
   ]
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
       {stats.map((stat) => (
         <Card key={stat.label}>
           <CardContent className="p-6">

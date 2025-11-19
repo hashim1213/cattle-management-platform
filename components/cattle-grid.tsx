@@ -4,12 +4,13 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { MoreVertical, Edit, Trash2, Eye } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { MoreVertical, Edit, Trash2, Eye, Skull } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { firebaseDataStore as dataStore, type Cattle } from "@/lib/data-store-firebase"
 import { usePenStore } from "@/hooks/use-pen-store"
+import { MarkDeceasedDialog } from "@/components/mark-deceased-dialog"
 
 interface CattleGridProps {
   searchQuery: string
@@ -26,6 +27,8 @@ interface CattleGridProps {
 export function CattleGrid({ searchQuery, filters }: CattleGridProps) {
   const [cattle, setCattle] = useState<Cattle[]>([])
   const [loading, setLoading] = useState(true)
+  const [deceasedDialogOpen, setDeceasedDialogOpen] = useState(false)
+  const [cattleToMarkDeceased, setCattleToMarkDeceased] = useState<Cattle | null>(null)
   const { pens = [] } = usePenStore()
   const router = useRouter()
 
@@ -141,6 +144,23 @@ export function CattleGrid({ searchQuery, filters }: CattleGridProps) {
                     <Edit className="h-4 w-4 mr-2" />
                     Edit
                   </DropdownMenuItem>
+                  {animal.status !== "Deceased" && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-orange-600"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setCattleToMarkDeceased(animal)
+                          setDeceasedDialogOpen(true)
+                        }}
+                      >
+                        <Skull className="h-4 w-4 mr-2" />
+                        Mark as Deceased
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem className="text-destructive">
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete
@@ -190,6 +210,20 @@ export function CattleGrid({ searchQuery, filters }: CattleGridProps) {
           </CardContent>
         </Card>
       ))}
+
+      {/* Mark as Deceased Dialog */}
+      <MarkDeceasedDialog
+        open={deceasedDialogOpen}
+        onOpenChange={setDeceasedDialogOpen}
+        cattle={cattleToMarkDeceased}
+        onSuccess={async () => {
+          const cattleData = await dataStore.getCattle()
+          if (Array.isArray(cattleData)) {
+            setCattle(cattleData)
+          }
+          setCattleToMarkDeceased(null)
+        }}
+      />
     </div>
   )
 }
