@@ -121,6 +121,8 @@ export default function AgentPage() {
   const sendMessage = async (content: string) => {
     if (!content.trim() || isLoading) return
 
+    console.log('[Agent] Sending message:', content)
+
     const userMessage: Message = {
       role: "user",
       content,
@@ -134,9 +136,11 @@ export default function AgentPage() {
 
     try {
       if (!user?.uid) {
+        console.error('[Agent] User not authenticated')
         throw new Error("You must be logged in to use the Farm Assistant")
       }
 
+      console.log('[Agent] Making API request...')
       const response = await fetch("/api/agent/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -147,23 +151,37 @@ export default function AgentPage() {
         })
       })
 
+      console.log('[Agent] Response status:', response.status)
+
       if (!response.ok) {
         const errorData = await response.json()
+        console.error('[Agent] API error:', errorData)
 
-        // Show more detailed error messages
+        // Add error message to chat for visibility
+        const errorMessage: Message = {
+          role: "assistant",
+          content: `❌ **Error**: ${errorData.error || "Failed to send message"}\n\n${errorData.details || ""}\n\n${errorData.helpUrl ? `Get help: ${errorData.helpUrl}` : ""}`,
+          timestamp: new Date().toISOString()
+        }
+        setCurrentMessages([...updatedMessages, errorMessage])
+
+        // Also show toast for immediate feedback
         if (response.status === 500 && errorData.details) {
           toast.error(errorData.error, {
             description: errorData.details,
             duration: 10000,
           })
         } else {
-          toast.error(errorData.error || "Failed to send message")
+          toast.error(errorData.error || "Failed to send message", {
+            duration: 8000,
+          })
         }
 
-        throw new Error(errorData.error || "Failed to send message")
+        return // Don't throw, just return so the error message stays in chat
       }
 
       const data = await response.json()
+      console.log('[Agent] Response received')
 
       const assistantMessage: Message = {
         role: "assistant",
@@ -176,13 +194,26 @@ export default function AgentPage() {
       await saveConversation(finalMessages)
 
       if (data.actionResult && data.actionResult.success) {
+        console.log('[Agent] Action succeeded:', data.actionResult.message)
         toast.success(data.actionResult.message)
       } else if (data.actionResult && !data.actionResult.success) {
+        console.error('[Agent] Action failed:', data.actionResult.message)
         toast.error(data.actionResult.message || "Action failed")
       }
     } catch (error: any) {
-      console.error("Error sending message:", error)
-      toast.error(error.message || "Failed to send message. Please check your OpenAI API key.")
+      console.error("[Agent] Unexpected error:", error)
+
+      // Add error to chat
+      const errorMessage: Message = {
+        role: "assistant",
+        content: `❌ **Unexpected Error**: ${error.message || "Failed to send message"}\n\nPlease check:\n- Your internet connection\n- Browser console for details\n- That you've configured your OpenAI API key`,
+        timestamp: new Date().toISOString()
+      }
+      setCurrentMessages([...updatedMessages, errorMessage])
+
+      toast.error(error.message || "Failed to send message. Please check your OpenAI API key.", {
+        duration: 8000,
+      })
     } finally {
       setIsLoading(false)
     }

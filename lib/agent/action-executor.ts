@@ -3,8 +3,8 @@
  * Executes structured actions parsed from chat/voice commands
  */
 
-import { db, auth } from "@/lib/firebase"
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where } from "firebase/firestore"
+import { adminDb } from "@/lib/firebase-admin"
+
 import type { InventoryItem, InventoryTransaction } from "@/lib/inventory/inventory-types"
 import type { Cattle } from "@/lib/data-store-firebase"
 import type { Pen } from "@/lib/pen-store-firebase"
@@ -164,8 +164,8 @@ class AgentActionExecutor {
         updatedAt: now
       }
 
-      const docRef = doc(db, `users/${userId}/inventory`, id)
-      await setDoc(docRef, inventoryItem)
+      const docRef = adminDb.collection(`users/${userId}/inventory`).doc(id)
+      await docRef.set(inventoryItem)
 
       // Create transaction log
       const transactionId = `trans_${Date.now()}_${Math.random().toString(36).substring(7)}`
@@ -185,8 +185,8 @@ class AgentActionExecutor {
         timestamp: now
       }
 
-      const transRef = doc(db, `users/${userId}/inventoryTransactions`, transactionId)
-      await setDoc(transRef, transaction)
+      const transRef = adminDb.collection(`users/${userId}/inventoryTransactions`).doc(transactionId)
+      await transRef.set(transaction)
 
       return {
         success: true,
@@ -216,7 +216,7 @@ class AgentActionExecutor {
     }
 
     try {
-      const penRef = doc(db, `users/${userId}/pens`, params.penId)
+      const penRef = adminDb.collection(`users/${userId}/pens`).doc(params.penId)
       const updates: any = {
         updatedAt: new Date().toISOString()
       }
@@ -225,7 +225,7 @@ class AgentActionExecutor {
       if (params.capacity !== undefined) updates.capacity = params.capacity
       if (params.notes !== undefined) updates.notes = params.notes
 
-      await updateDoc(penRef, updates)
+      await penRef.update(updates)
 
       return {
         success: true,
@@ -269,8 +269,8 @@ class AgentActionExecutor {
         createdAt: now
       }
 
-      const docRef = doc(db, `users/${userId}/penActivities`, id)
-      await setDoc(docRef, activity)
+      const docRef = adminDb.collection(`users/${userId}/penActivities`).doc(id)
+      await docRef.set(activity)
 
       return {
         success: true,
@@ -306,18 +306,12 @@ class AgentActionExecutor {
       if (params.cattleId) {
         cattleIds = [params.cattleId]
       } else if (params.tagNumber) {
-        const cattleQuery = query(
-          collection(db, `users/${userId}/cattle`),
-          where("tagNumber", "==", params.tagNumber)
-        )
-        const snapshot = await getDocs(cattleQuery)
+        const cattleQuery = adminDb.collection(`users/${userId}/cattle`).where("tagNumber", "==", params.tagNumber)
+        const snapshot = await cattleQuery.get()
         cattleIds = snapshot.docs.map(doc => doc.id)
       } else if (params.penId) {
-        const cattleQuery = query(
-          collection(db, `users/${userId}/cattle`),
-          where("penId", "==", params.penId)
-        )
-        const snapshot = await getDocs(cattleQuery)
+        const cattleQuery = adminDb.collection(`users/${userId}/cattle`).where("penId", "==", params.penId)
+        const snapshot = await cattleQuery.get()
         cattleIds = snapshot.docs.map(doc => doc.id)
       }
 
@@ -330,11 +324,8 @@ class AgentActionExecutor {
       }
 
       // Find medication in inventory
-      const inventoryQuery = query(
-        collection(db, `users/${userId}/inventory`),
-        where("name", "==", params.medicationName)
-      )
-      const invSnapshot = await getDocs(inventoryQuery)
+      const inventoryQuery = adminDb.collection(`users/${userId}/inventory`).where("name", "==", params.medicationName)
+      const invSnapshot = await inventoryQuery.get()
 
       if (invSnapshot.empty) {
         return {
@@ -371,15 +362,15 @@ class AgentActionExecutor {
           createdAt: now
         }
 
-        const docRef = doc(db, `users/${userId}/cattle/${cattleId}/healthRecords`, recordId)
-        await setDoc(docRef, healthRecord)
+        const docRef = adminDb.collection(`users/${userId}/cattle/${cattleId}/healthRecords`).doc(recordId)
+        await docRef.set(healthRecord)
         healthRecords.push(healthRecord)
       }
 
       // Deduct from inventory
       const newQuantity = medication.quantityOnHand - totalQuantityNeeded
-      const medRef = doc(db, `users/${userId}/inventory`, medication.id)
-      await updateDoc(medRef, {
+      const medRef = adminDb.collection(`users/${userId}/inventory`).doc(medication.id)
+      await medRef.update({
         quantityOnHand: newQuantity,
         totalValue: newQuantity * medication.costPerUnit,
         updatedAt: now
@@ -403,8 +394,8 @@ class AgentActionExecutor {
         timestamp: now
       }
 
-      const transRef = doc(db, `users/${userId}/inventoryTransactions`, transactionId)
-      await setDoc(transRef, transaction)
+      const transRef = adminDb.collection(`users/${userId}/inventoryTransactions`).doc(transactionId)
+      await transRef.set(transaction)
 
       return {
         success: true,
@@ -449,10 +440,10 @@ class AgentActionExecutor {
 
       if (searchParams.cattleId) {
         console.log('[getCattleInfo] Fetching by cattleId:', searchParams.cattleId)
-        const docRef = doc(db, `users/${userId}/cattle`, searchParams.cattleId)
-        const docSnap = await getDoc(docRef)
+        const docRef = adminDb.collection(`users/${userId}/cattle`).doc(searchParams.cattleId)
+        const docSnap = await docRef.get()
 
-        if (!docSnap.exists()) {
+        if (!docSnap.exists) {
           console.log('[getCattleInfo] Cattle not found:', searchParams.cattleId)
           return {
             success: false,
@@ -470,16 +461,10 @@ class AgentActionExecutor {
         }
       } else if (searchParams.tagNumber) {
         console.log('[getCattleInfo] Fetching by tagNumber:', searchParams.tagNumber)
-        cattleQuery = query(
-          collection(db, `users/${userId}/cattle`),
-          where("tagNumber", "==", searchParams.tagNumber)
-        )
+        cattleQuery = adminDb.collection(`users/${userId}/cattle`).where("tagNumber", "==", searchParams.tagNumber)
       } else if (searchParams.penId) {
         console.log('[getCattleInfo] Fetching by penId:', searchParams.penId)
-        cattleQuery = query(
-          collection(db, `users/${userId}/cattle`),
-          where("penId", "==", searchParams.penId)
-        )
+        cattleQuery = adminDb.collection(`users/${userId}/cattle`).where("penId", "==", searchParams.penId)
       } else {
         console.log('[getCattleInfo] No valid search parameter provided')
         return {
@@ -489,7 +474,7 @@ class AgentActionExecutor {
         }
       }
 
-      const snapshot = await getDocs(cattleQuery)
+      const snapshot = await cattleQuery.get()
       const cattle = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 
       console.log(`[getCattleInfo] Successfully retrieved ${cattle.length} cattle`)
@@ -543,10 +528,10 @@ class AgentActionExecutor {
     try {
       if (penId) {
         console.log('[getPenInfo] Fetching specific pen:', penId)
-        const docRef = doc(db, `users/${userId}/pens`, penId)
-        const docSnap = await getDoc(docRef)
+        const docRef = adminDb.collection(`users/${userId}/pens`).doc(penId)
+        const docSnap = await docRef.get()
 
-        if (!docSnap.exists()) {
+        if (!docSnap.exists) {
           console.log('[getPenInfo] Pen not found:', penId)
           return {
             success: false,
@@ -564,8 +549,8 @@ class AgentActionExecutor {
         }
       } else {
         console.log('[getPenInfo] Fetching all pens for user:', userId)
-        const collectionRef = collection(db, `users/${userId}/pens`)
-        const snapshot = await getDocs(collectionRef)
+        const collectionRef = adminDb.collection(`users/${userId}/pens`)
+        const snapshot = await collectionRef.get()
         const pens = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 
         console.log(`[getPenInfo] Successfully retrieved ${pens.length} pens`)
@@ -617,11 +602,8 @@ class AgentActionExecutor {
 
     try {
       if (itemName) {
-        const inventoryQuery = query(
-          collection(db, `users/${userId}/inventory`),
-          where("name", "==", itemName)
-        )
-        const snapshot = await getDocs(inventoryQuery)
+        const inventoryQuery = adminDb.collection(`users/${userId}/inventory`).where("name", "==", itemName)
+        const snapshot = await inventoryQuery.get()
         const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
         return {
           success: true,
@@ -629,7 +611,7 @@ class AgentActionExecutor {
           data: items
         }
       } else {
-        const snapshot = await getDocs(collection(db, `users/${userId}/inventory`))
+        const snapshot = await adminDb.collection(`users/${userId}/inventory`).get()
         const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
         return {
           success: true,
@@ -660,7 +642,7 @@ class AgentActionExecutor {
     }
 
     try {
-      const snapshot = await getDocs(collection(db, `users/${userId}/cattle`))
+      const snapshot = await adminDb.collection(`users/${userId}/cattle`).get()
       const cattle = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 
       // Group by pen
@@ -709,9 +691,9 @@ class AgentActionExecutor {
     try {
       // Get all data in parallel
       const [cattleSnapshot, pensSnapshot, inventorySnapshot] = await Promise.all([
-        getDocs(collection(db, `users/${userId}/cattle`)),
-        getDocs(collection(db, `users/${userId}/pens`)),
-        getDocs(collection(db, `users/${userId}/inventory`))
+        adminDb.collection(`users/${userId}/cattle`).get(),
+        adminDb.collection(`users/${userId}/pens`).get(),
+        adminDb.collection(`users/${userId}/inventory`).get()
       ])
 
       const cattle = cattleSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
@@ -790,8 +772,8 @@ class AgentActionExecutor {
 
     try {
       const [cattleSnapshot, pensSnapshot] = await Promise.all([
-        getDocs(collection(db, `users/${userId}/cattle`)),
-        getDocs(collection(db, `users/${userId}/pens`))
+        adminDb.collection(`users/${userId}/cattle`).get(),
+        adminDb.collection(`users/${userId}/pens`).get()
       ])
 
       const cattle = cattleSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
@@ -879,11 +861,11 @@ class AgentActionExecutor {
         updatedAt: now
       }
 
-      const docRef = doc(db, `users/${userId}/cattle`, id)
+      const docRef = adminDb.collection(`users/${userId}/cattle`).doc(id)
       const cattleData = Object.fromEntries(
         Object.entries(cattle).filter(([_, v]) => v !== undefined)
       )
-      await setDoc(docRef, cattleData)
+      await docRef.set(cattleData)
 
       return {
         success: true,
@@ -917,11 +899,8 @@ class AgentActionExecutor {
 
       // Find by tag number if cattleId not provided
       if (!cattleId && params.tagNumber) {
-        const cattleQuery = query(
-          collection(db, `users/${userId}/cattle`),
-          where("tagNumber", "==", params.tagNumber)
-        )
-        const snapshot = await getDocs(cattleQuery)
+        const cattleQuery = adminDb.collection(`users/${userId}/cattle`).where("tagNumber", "==", params.tagNumber)
+        const snapshot = await cattleQuery.get()
         if (!snapshot.empty) {
           cattleId = snapshot.docs[0].id
         }
@@ -935,7 +914,7 @@ class AgentActionExecutor {
         }
       }
 
-      const docRef = doc(db, `users/${userId}/cattle`, cattleId)
+      const docRef = adminDb.collection(`users/${userId}/cattle`).doc(cattleId)
       const updates = Object.fromEntries(
         Object.entries({
           ...params,
@@ -945,7 +924,7 @@ class AgentActionExecutor {
         }).filter(([_, v]) => v !== undefined)
       )
 
-      await updateDoc(docRef, updates)
+      await docRef.update(updates)
 
       return {
         success: true,
@@ -979,11 +958,8 @@ class AgentActionExecutor {
 
       // Find by tag number if cattleId not provided
       if (!cattleId && params.tagNumber) {
-        const cattleQuery = query(
-          collection(db, `users/${userId}/cattle`),
-          where("tagNumber", "==", params.tagNumber)
-        )
-        const snapshot = await getDocs(cattleQuery)
+        const cattleQuery = adminDb.collection(`users/${userId}/cattle`).where("tagNumber", "==", params.tagNumber)
+        const snapshot = await cattleQuery.get()
         if (!snapshot.empty) {
           cattleId = snapshot.docs[0].id
         }
@@ -997,8 +973,8 @@ class AgentActionExecutor {
         }
       }
 
-      const docRef = doc(db, `users/${userId}/cattle`, cattleId)
-      await deleteDoc(docRef)
+      const docRef = adminDb.collection(`users/${userId}/cattle`).doc(cattleId)
+      await docRef.delete()
 
       return {
         success: true,
@@ -1032,11 +1008,8 @@ class AgentActionExecutor {
 
       // Find by tag number if cattleId not provided
       if (!cattleId && params.tagNumber) {
-        const cattleQuery = query(
-          collection(db, `users/${userId}/cattle`),
-          where("tagNumber", "==", params.tagNumber)
-        )
-        const snapshot = await getDocs(cattleQuery)
+        const cattleQuery = adminDb.collection(`users/${userId}/cattle`).where("tagNumber", "==", params.tagNumber)
+        const snapshot = await cattleQuery.get()
         if (!snapshot.empty) {
           cattleId = snapshot.docs[0].id
         }
@@ -1062,12 +1035,12 @@ class AgentActionExecutor {
         createdAt: now
       }
 
-      const docRef = doc(db, `users/${userId}/cattle/${cattleId}/weightRecords`, recordId)
-      await setDoc(docRef, weightRecord)
+      const docRef = adminDb.collection(`users/${userId}/cattle/${cattleId}/weightRecords`).doc(recordId)
+      await docRef.set(weightRecord)
 
       // Update cattle weight
-      const cattleRef = doc(db, `users/${userId}/cattle`, cattleId)
-      await updateDoc(cattleRef, {
+      const cattleRef = adminDb.collection(`users/${userId}/cattle`).doc(cattleId)
+      await cattleRef.update({
         weight: params.weight,
         updatedAt: now
       })
@@ -1126,11 +1099,11 @@ class AgentActionExecutor {
         updatedAt: now
       }
 
-      const docRef = doc(db, `users/${userId}/barns`, id)
+      const docRef = adminDb.collection(`users/${userId}/barns`).doc(id)
       const barnData = Object.fromEntries(
         Object.entries(barn).filter(([_, v]) => v !== undefined)
       )
-      await setDoc(docRef, barnData)
+      await docRef.set(barnData)
 
       return {
         success: true,
@@ -1186,11 +1159,11 @@ class AgentActionExecutor {
         updatedAt: now
       }
 
-      const docRef = doc(db, `users/${userId}/pens`, id)
+      const docRef = adminDb.collection(`users/${userId}/pens`).doc(id)
       const penData = Object.fromEntries(
         Object.entries(pen).filter(([_, v]) => v !== undefined)
       )
-      await setDoc(docRef, penData)
+      await docRef.set(penData)
 
       return {
         success: true,
@@ -1220,8 +1193,8 @@ class AgentActionExecutor {
     }
 
     try {
-      const docRef = doc(db, `users/${userId}/pens`, params.penId)
-      await deleteDoc(docRef)
+      const docRef = adminDb.collection(`users/${userId}/pens`).doc(params.penId)
+      await docRef.delete()
 
       return {
         success: true,
@@ -1251,8 +1224,8 @@ class AgentActionExecutor {
     }
 
     try {
-      const docRef = doc(db, `users/${userId}/barns`, params.barnId)
-      await deleteDoc(docRef)
+      const docRef = adminDb.collection(`users/${userId}/barns`).doc(params.barnId)
+      await docRef.delete()
 
       return {
         success: true,
