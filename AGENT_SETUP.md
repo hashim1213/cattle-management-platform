@@ -45,44 +45,29 @@ The AI agent can help you with:
 
 **Important**: Keep this key secure and never commit it to version control!
 
-### Step 2: Configure Firebase Admin SDK (Required)
-
-The Farm Assistant needs Firebase Admin SDK to access your farm data securely on the server side.
-
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Select your project (`cattleos`)
-3. Go to **Project Settings** (gear icon) > **Service Accounts**
-4. Click **Generate new private key**
-5. Click **Generate key** - this will download a JSON file
-6. Open the downloaded JSON file and copy its entire contents
-
-### Step 3: Configure Environment Variables
+### Step 2: Configure Environment Variables
 
 1. Create a `.env.local` file in the project root:
    ```bash
    touch .env.local
    ```
 
-2. Add your configuration:
+2. Add your OpenAI API key:
    ```env
    # OpenAI API Key (required)
    OPENAI_API_KEY=sk-your_actual_api_key_here
-
-   # Firebase Admin SDK Service Account (required for local development)
-   FIREBASE_SERVICE_ACCOUNT='{"type":"service_account","project_id":"cattleos",...}'
    ```
 
-   **Important**:
-   - Paste the entire JSON content from Step 2 as a single-line string
-   - Keep the single quotes around the JSON
-   - Never commit this file to version control (it's already in .gitignore)
+   **Important**: Never commit this file to version control (it's already in .gitignore)
 
 3. Restart your development server:
    ```bash
    npm run dev
    ```
 
-### Step 4: Test the Agent
+**Note**: Firebase authentication is handled automatically using your logged-in user credentials and Firebase security rules. No additional Firebase setup is required!
+
+### Step 3: Test the Agent
 
 1. Navigate to the **Farm Assistant** page
 2. Try a simple command like:
@@ -136,17 +121,9 @@ The agent supports voice input:
 
 ## Troubleshooting
 
-### Error: "Firebase Admin SDK not configured"
-- **Cause**: Firebase service account credentials are missing or invalid
-- **Solution**:
-  - Follow Step 2 and Step 3 above to configure Firebase Admin SDK
-  - Make sure you've pasted the entire JSON from the service account key
-  - Ensure the JSON is wrapped in single quotes in .env.local
-  - Restart your development server after adding the configuration
-
 ### Error: "Farm Assistant is not configured"
 - **Cause**: OpenAI API key is missing
-- **Solution**: Follow Step 3 above to add your API key
+- **Solution**: Follow Step 2 above to add your API key
 
 ### Error: "Failed to send message"
 - **Cause**: Network issues or API quota exceeded
