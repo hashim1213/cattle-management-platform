@@ -1379,7 +1379,7 @@ export function LandingPage() {
                   <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="font-medium">Head Office</p>
-                    <p>Calgary, Alberta, Canada</p>
+                    <p>Manitoba, Canada</p>
                   </div>
                 </div>
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-100 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded mt-3">
