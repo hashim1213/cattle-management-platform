@@ -307,12 +307,10 @@ class AgentActionExecutor {
         cattleIds = [params.cattleId]
       } else if (params.tagNumber) {
         const cattleQuery = adminDb.collection(`users/${userId}/cattle`).where("tagNumber", "==", params.tagNumber)
-        )
         const snapshot = await cattleQuery.get()
         cattleIds = snapshot.docs.map(doc => doc.id)
       } else if (params.penId) {
         const cattleQuery = adminDb.collection(`users/${userId}/cattle`).where("penId", "==", params.penId)
-        )
         const snapshot = await cattleQuery.get()
         cattleIds = snapshot.docs.map(doc => doc.id)
       }
@@ -327,7 +325,6 @@ class AgentActionExecutor {
 
       // Find medication in inventory
       const inventoryQuery = adminDb.collection(`users/${userId}/inventory`).where("name", "==", params.medicationName)
-      )
       const invSnapshot = await inventoryQuery.get()
 
       if (invSnapshot.empty) {
@@ -465,11 +462,9 @@ class AgentActionExecutor {
       } else if (searchParams.tagNumber) {
         console.log('[getCattleInfo] Fetching by tagNumber:', searchParams.tagNumber)
         cattleQuery = adminDb.collection(`users/${userId}/cattle`).where("tagNumber", "==", searchParams.tagNumber)
-        )
       } else if (searchParams.penId) {
         console.log('[getCattleInfo] Fetching by penId:', searchParams.penId)
         cattleQuery = adminDb.collection(`users/${userId}/cattle`).where("penId", "==", searchParams.penId)
-        )
       } else {
         console.log('[getCattleInfo] No valid search parameter provided')
         return {
@@ -554,7 +549,7 @@ class AgentActionExecutor {
         }
       } else {
         console.log('[getPenInfo] Fetching all pens for user:', userId)
-        const collectionRef = adminDb.collection(`users/${userId}/pens")
+        const collectionRef = adminDb.collection(`users/${userId}/pens`)
         const snapshot = await collectionRef.get()
         const pens = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 
@@ -608,7 +603,6 @@ class AgentActionExecutor {
     try {
       if (itemName) {
         const inventoryQuery = adminDb.collection(`users/${userId}/inventory`).where("name", "==", itemName)
-        )
         const snapshot = await inventoryQuery.get()
         const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
         return {
@@ -617,7 +611,7 @@ class AgentActionExecutor {
           data: items
         }
       } else {
-        const snapshot = await adminDb.collection(`users/${userId}/inventory".get())
+        const snapshot = await adminDb.collection(`users/${userId}/inventory`).get()
         const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
         return {
           success: true,
@@ -648,7 +642,7 @@ class AgentActionExecutor {
     }
 
     try {
-      const snapshot = await adminDb.collection(`users/${userId}/cattle".get())
+      const snapshot = await adminDb.collection(`users/${userId}/cattle`).get()
       const cattle = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 
       // Group by pen
@@ -697,9 +691,9 @@ class AgentActionExecutor {
     try {
       // Get all data in parallel
       const [cattleSnapshot, pensSnapshot, inventorySnapshot] = await Promise.all([
-        getDocs(adminDb.collection(`users/${userId}/cattle")),
-        getDocs(adminDb.collection(`users/${userId}/pens")),
-        getDocs(adminDb.collection(`users/${userId}/inventory"))
+        adminDb.collection(`users/${userId}/cattle`).get(),
+        adminDb.collection(`users/${userId}/pens`).get(),
+        adminDb.collection(`users/${userId}/inventory`).get()
       ])
 
       const cattle = cattleSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
@@ -778,8 +772,8 @@ class AgentActionExecutor {
 
     try {
       const [cattleSnapshot, pensSnapshot] = await Promise.all([
-        getDocs(adminDb.collection(`users/${userId}/cattle")),
-        getDocs(adminDb.collection(`users/${userId}/pens"))
+        adminDb.collection(`users/${userId}/cattle`).get(),
+        adminDb.collection(`users/${userId}/pens`).get()
       ])
 
       const cattle = cattleSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
@@ -906,7 +900,6 @@ class AgentActionExecutor {
       // Find by tag number if cattleId not provided
       if (!cattleId && params.tagNumber) {
         const cattleQuery = adminDb.collection(`users/${userId}/cattle`).where("tagNumber", "==", params.tagNumber)
-        )
         const snapshot = await cattleQuery.get()
         if (!snapshot.empty) {
           cattleId = snapshot.docs[0].id
@@ -966,7 +959,6 @@ class AgentActionExecutor {
       // Find by tag number if cattleId not provided
       if (!cattleId && params.tagNumber) {
         const cattleQuery = adminDb.collection(`users/${userId}/cattle`).where("tagNumber", "==", params.tagNumber)
-        )
         const snapshot = await cattleQuery.get()
         if (!snapshot.empty) {
           cattleId = snapshot.docs[0].id
@@ -1017,7 +1009,6 @@ class AgentActionExecutor {
       // Find by tag number if cattleId not provided
       if (!cattleId && params.tagNumber) {
         const cattleQuery = adminDb.collection(`users/${userId}/cattle`).where("tagNumber", "==", params.tagNumber)
-        )
         const snapshot = await cattleQuery.get()
         if (!snapshot.empty) {
           cattleId = snapshot.docs[0].id

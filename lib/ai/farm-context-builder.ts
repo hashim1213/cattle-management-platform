@@ -324,7 +324,7 @@ export class FarmContextBuilder {
 
   private async getActivitiesContext() {
     const activitiesRef = adminDb.collection(`users/${this.userId}/penActivities`)
-    const q = activitiesRef.orderBy("date", "desc"), limit(20))
+    const q = activitiesRef.orderBy("date", "desc").limit(20)
     const snapshot = await q.get()
 
     const recent = snapshot.docs.map(doc => doc.data())
