@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import OpenAI from "openai"
 import { actionExecutor } from "@/lib/agent/action-executor"
 import { FarmContextBuilder } from "@/lib/ai/farm-context-builder"
+import { verifyAuthToken } from "@/lib/firebase-server"
 
 const SYSTEM_PROMPT = `You are a proactive, friendly Farm Assistant for a cattle management platform. Your goal is to make farm management as EASY and CONVERSATIONAL as possible. Guide farmers through tasks naturally.
 
@@ -256,15 +257,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!userId) {
-      console.error('[Chat API] No userId provided in request body')
+    // Verify the Firebase ID token from Authorization header
+    const authHeader = request.headers.get('authorization')
+    const verifiedUserId = await verifyAuthToken(authHeader)
+
+    if (!verifiedUserId) {
+      console.error('[Chat API] Token verification failed')
       return NextResponse.json(
-        { error: "User ID is required" },
+        { error: "Authentication required" },
         { status: 401 }
       )
     }
 
-    console.log('[Chat API] User authenticated, userId:', userId)
+    // Ensure the userId in the request body matches the verified token
+    if (userId && userId !== verifiedUserId) {
+      console.error('[Chat API] User ID mismatch')
+      return NextResponse.json(
+        { error: "User ID mismatch" },
+        { status: 403 }
+      )
+    }
+
+    console.log('[Chat API] User authenticated, userId:', verifiedUserId)
 
     if (!process.env.OPENAI_API_KEY) {
       console.error('[Chat API] OpenAI API key not configured')
@@ -280,13 +294,32 @@ export async function POST(request: NextRequest) {
 
     // Build comprehensive farm context for AI intelligence
     console.log('[Chat API] Building farm context...')
-    const contextBuilder = new FarmContextBuilder(userId)
-    const farmContext = await contextBuilder.buildContext()
-    console.log('[Chat API] Farm context built:', {
-      cattle: farmContext.cattle.total,
-      pens: farmContext.pens.total,
-      inventory: farmContext.inventory.total
-    })
+    let farmContext
+    try {
+      const contextBuilder = new FarmContextBuilder(verifiedUserId)
+      farmContext = await contextBuilder.buildContext()
+      console.log('[Chat API] Farm context built:', {
+        cattle: farmContext.cattle.total,
+        pens: farmContext.pens.total,
+        inventory: farmContext.inventory.total
+      })
+    } catch (error: any) {
+      console.error('[Chat API] Error building farm context:', error)
+
+      // Check if it's a Firebase credentials error
+      if (error.message?.includes('default credentials') || error.message?.includes('Could not load')) {
+        return NextResponse.json(
+          {
+            error: "Firebase configuration issue",
+            details: "Unable to connect to Firebase. This may be a temporary issue. Please try again.",
+            helpUrl: "Contact support if the issue persists"
+          },
+          { status: 500 }
+        )
+      }
+
+      throw error
+    }
 
     // Create enhanced system prompt with farm context
     const enhancedSystemPrompt = `${SYSTEM_PROMPT}
@@ -375,70 +408,70 @@ Use this context to provide intelligent, informed responses. You know EVERYTHING
         switch (actionData.action) {
             // Inventory actions
             case "addMedication":
-              actionResult = await actionExecutor.addMedication(userId, actionData.params)
+              actionResult = await actionExecutor.addMedication(verifiedUserId, actionData.params)
               break
             case "getInventoryInfo":
-              actionResult = await actionExecutor.getInventoryInfo(userId, actionData.params?.itemName)
+              actionResult = await actionExecutor.getInventoryInfo(verifiedUserId, actionData.params?.itemName)
               break
 
             // Cattle actions
             case "addCattle":
-              actionResult = await actionExecutor.addCattle(userId, actionData.params)
+              actionResult = await actionExecutor.addCattle(verifiedUserId, actionData.params)
               break
             case "updateCattle":
-              actionResult = await actionExecutor.updateCattle(userId, actionData.params)
+              actionResult = await actionExecutor.updateCattle(verifiedUserId, actionData.params)
               break
             case "deleteCattle":
-              actionResult = await actionExecutor.deleteCattle(userId, actionData.params)
+              actionResult = await actionExecutor.deleteCattle(verifiedUserId, actionData.params)
               break
             case "getCattleInfo":
-              actionResult = await actionExecutor.getCattleInfo(userId, actionData.params)
+              actionResult = await actionExecutor.getCattleInfo(verifiedUserId, actionData.params)
               break
             case "getAllCattle":
-              actionResult = await actionExecutor.getAllCattle(userId)
+              actionResult = await actionExecutor.getAllCattle(verifiedUserId)
               break
             case "addWeightRecord":
-              actionResult = await actionExecutor.addWeightRecord(userId, actionData.params)
+              actionResult = await actionExecutor.addWeightRecord(verifiedUserId, actionData.params)
               break
 
             // Health actions
             case "addHealthRecord":
-              actionResult = await actionExecutor.addHealthRecord(userId, actionData.params)
+              actionResult = await actionExecutor.addHealthRecord(verifiedUserId, actionData.params)
               break
 
             // Pen actions
             case "addPen":
-              actionResult = await actionExecutor.addPen(userId, actionData.params)
+              actionResult = await actionExecutor.addPen(verifiedUserId, actionData.params)
               break
             case "updatePen":
-              actionResult = await actionExecutor.updatePen(userId, actionData.params)
+              actionResult = await actionExecutor.updatePen(verifiedUserId, actionData.params)
               break
             case "deletePen":
-              actionResult = await actionExecutor.deletePen(userId, actionData.params)
+              actionResult = await actionExecutor.deletePen(verifiedUserId, actionData.params)
               break
             case "getPenInfo":
-              actionResult = await actionExecutor.getPenInfo(userId, actionData.params?.penId)
+              actionResult = await actionExecutor.getPenInfo(verifiedUserId, actionData.params?.penId)
               break
             case "getCattleCountByPen":
-              actionResult = await actionExecutor.getCattleCountByPen(userId)
+              actionResult = await actionExecutor.getCattleCountByPen(verifiedUserId)
               break
 
             // Barn actions
             case "addBarn":
-              actionResult = await actionExecutor.addBarn(userId, actionData.params)
+              actionResult = await actionExecutor.addBarn(verifiedUserId, actionData.params)
               break
             case "deleteBarn":
-              actionResult = await actionExecutor.deleteBarn(userId, actionData.params)
+              actionResult = await actionExecutor.deleteBarn(verifiedUserId, actionData.params)
               break
 
             // Activity actions
             case "logActivity":
-              actionResult = await actionExecutor.logActivity(userId, actionData.params)
+              actionResult = await actionExecutor.logActivity(verifiedUserId, actionData.params)
               break
 
             // Summary/Stats actions
             case "getFarmSummary":
-              actionResult = await actionExecutor.getFarmSummary(userId)
+              actionResult = await actionExecutor.getFarmSummary(verifiedUserId)
               break
 
             default:

@@ -62,6 +62,8 @@ The AI agent can help you with:
    npm run dev
    ```
 
+**Note**: Firebase authentication is handled automatically using your logged-in user credentials. No additional Firebase setup is required!
+
 ### Step 3: Test the Agent
 
 1. Navigate to the **Farm Assistant** page
@@ -168,6 +170,8 @@ Edit the SMART DEFAULTS section in `/app/api/agent/chat/route.ts` around line 15
 - Your OpenAI API key is only used server-side
 - Farm data is sent to OpenAI for processing
 - All data remains in your Firebase database
+- Authentication is handled securely using Firebase ID tokens
+- Only you can access and modify your farm data
 - Review [OpenAI's data usage policy](https://openai.com/policies/usage-policies)
 
 ## Support
