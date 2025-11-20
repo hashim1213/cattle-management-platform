@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import OpenAI from "openai"
 import { actionExecutor } from "@/lib/agent/action-executor"
 import { FarmContextBuilder } from "@/lib/ai/farm-context-builder"
-import { verifyAuthToken } from "@/lib/firebase-server"
+import { verifyAuthToken, checkFirebaseInitialization } from "@/lib/firebase-server"
 
 const SYSTEM_PROMPT = `You are a proactive, friendly Farm Assistant for a cattle management platform. Your goal is to make farm management as EASY and CONVERSATIONAL as possible. Guide farmers through tasks naturally.
 
@@ -239,6 +239,21 @@ async function formatQueryResponse(action: string, data: any, aiMessage?: string
 
 export async function POST(request: NextRequest) {
   try {
+    // Check Firebase Admin SDK initialization first
+    try {
+      checkFirebaseInitialization()
+    } catch (initError: any) {
+      console.error('[Chat API] Firebase not initialized:', initError.message)
+      return NextResponse.json(
+        {
+          error: "Firebase Admin SDK not configured",
+          details: "To use the Farm Assistant, you need to configure Firebase Admin SDK. Follow these steps:\n\n1. Go to Firebase Console > Project Settings > Service Accounts\n2. Click 'Generate new private key'\n3. Download the JSON file\n4. Add it to your .env.local file as FIREBASE_SERVICE_ACCOUNT (see .env.example)\n5. Restart your development server",
+          helpUrl: "See .env.example for detailed setup instructions"
+        },
+        { status: 503 }
+      )
+    }
+
     const body: ChatRequest = await request.json()
     const { messages, conversationId, userId } = body
 
@@ -294,32 +309,13 @@ export async function POST(request: NextRequest) {
 
     // Build comprehensive farm context for AI intelligence
     console.log('[Chat API] Building farm context...')
-    let farmContext
-    try {
-      const contextBuilder = new FarmContextBuilder(verifiedUserId)
-      farmContext = await contextBuilder.buildContext()
-      console.log('[Chat API] Farm context built:', {
-        cattle: farmContext.cattle.total,
-        pens: farmContext.pens.total,
-        inventory: farmContext.inventory.total
-      })
-    } catch (error: any) {
-      console.error('[Chat API] Error building farm context:', error)
-
-      // Check if it's a Firebase credentials error
-      if (error.message?.includes('default credentials') || error.message?.includes('Could not load')) {
-        return NextResponse.json(
-          {
-            error: "Firebase configuration issue",
-            details: "Unable to connect to Firebase. This may be a temporary issue. Please try again.",
-            helpUrl: "Contact support if the issue persists"
-          },
-          { status: 500 }
-        )
-      }
-
-      throw error
-    }
+    const contextBuilder = new FarmContextBuilder(verifiedUserId)
+    const farmContext = await contextBuilder.buildContext()
+    console.log('[Chat API] Farm context built:', {
+      cattle: farmContext.cattle.total,
+      pens: farmContext.pens.total,
+      inventory: farmContext.inventory.total
+    })
 
     // Create enhanced system prompt with farm context
     const enhancedSystemPrompt = `${SYSTEM_PROMPT}

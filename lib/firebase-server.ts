@@ -8,6 +8,9 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore'
 import { getAuth } from 'firebase-admin/auth'
 
+let isInitialized = false
+let initializationError: Error | null = null
+
 // Initialize Firebase Admin if not already initialized
 if (getApps().length === 0) {
   try {
@@ -22,28 +25,48 @@ if (getApps().length === 0) {
         projectId: "cattleos",
       })
       console.log('[Firebase Server] Initialized with service account')
+      isInitialized = true
     } else {
-      // Use Application Default Credentials (works in Firebase Hosting, Cloud Run, etc.)
-      initializeApp({
-        projectId: "cattleos",
-      })
-      console.log('[Firebase Server] Initialized with default credentials')
+      // Try Application Default Credentials (works in Firebase Hosting, Cloud Run, etc.)
+      try {
+        initializeApp({
+          projectId: "cattleos",
+        })
+        console.log('[Firebase Server] Initialized with default credentials')
+        isInitialized = true
+      } catch (adcError: any) {
+        // ADC not available - this is expected in local development without service account
+        console.warn('[Firebase Server] Application Default Credentials not available')
+        console.warn('[Firebase Server] To use the Farm Assistant locally, set FIREBASE_SERVICE_ACCOUNT in .env.local')
+        console.warn('[Firebase Server] See .env.example for instructions')
+        initializationError = new Error(
+          'Firebase Admin SDK not configured. Set FIREBASE_SERVICE_ACCOUNT environment variable. See .env.example for setup instructions.'
+        )
+      }
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Firebase Server] Initialization error:', error)
-    // Initialize anyway - will try to use environment credentials
-    try {
-      initializeApp({
-        projectId: "cattleos",
-      })
-    } catch (retryError) {
-      console.error('[Firebase Server] Retry failed:', retryError)
-    }
+    initializationError = error
   }
+} else {
+  // Already initialized from a previous import
+  isInitialized = true
 }
 
-export const serverDb = getFirestore()
-export const serverAuth = getAuth()
+export const serverDb = isInitialized ? getFirestore() : null as any
+export const serverAuth = isInitialized ? getAuth() : null as any
+
+/**
+ * Check if Firebase Admin SDK is properly initialized
+ */
+export function checkFirebaseInitialization(): void {
+  if (!isInitialized || !serverDb || !serverAuth) {
+    throw new Error(
+      initializationError?.message ||
+      'Firebase Admin SDK not configured. Set FIREBASE_SERVICE_ACCOUNT environment variable. See .env.example for setup instructions.'
+    )
+  }
+}
 
 /**
  * Verify Firebase ID token and return the user ID
