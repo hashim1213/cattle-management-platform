@@ -54,15 +54,18 @@ The AI agent can help you with:
 
 2. Add your OpenAI API key:
    ```env
+   # OpenAI API Key (required)
    OPENAI_API_KEY=sk-your_actual_api_key_here
    ```
+
+   **Important**: Never commit this file to version control (it's already in .gitignore)
 
 3. Restart your development server:
    ```bash
    npm run dev
    ```
 
-**Note**: Firebase authentication is handled automatically using your logged-in user credentials. No additional Firebase setup is required!
+**Note**: Firebase authentication is handled automatically using your logged-in user credentials and Firebase security rules. No additional Firebase setup is required!
 
 ### Step 3: Test the Agent
 
