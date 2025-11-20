@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
 import OpenAI from "openai"
-import { actionExecutor } from "@/lib/agent/action-executor"
-import { FarmContextBuilder } from "@/lib/ai/farm-context-builder"
 
 const SYSTEM_PROMPT = `You are a proactive, friendly Farm Assistant for a cattle management platform. Your goal is to make farm management as EASY and CONVERSATIONAL as possible. Guide farmers through tasks naturally.
 
@@ -34,7 +32,7 @@ User: "Add an animal"
 YOU: {
   "action": "addCattle",
   "params": {
-    "tagNumber": "AUTO_${Math.random().toString().slice(2,6)}",
+    "tagNumber": "AUTO_1234",
     "breed": "Mixed",
     "sex": "Unknown",
     "weight": 0
@@ -74,7 +72,7 @@ AVAILABLE ACTIONS:
 - getCattleCountByPen: (no params)
 
 💊 INVENTORY:
-- addMedication: name (category="antibiotic", quantity=1, unit="ml" as defaults)
+- addMedication: name (category="medication", quantity=1, unit="ml" as defaults)
 - getInventoryInfo: itemName (optional)
 
 🏥 HEALTH:
@@ -113,139 +111,20 @@ interface ChatRequest {
   messages: ChatMessage[]
   conversationId?: string
   userId?: string
-}
-
-/**
- * Format query response data into human-readable text
- */
-async function formatQueryResponse(action: string, data: any, aiMessage?: string): Promise<string> {
-  let formatted = aiMessage || "Here's what I found:\n\n"
-
-  switch (action) {
-    case "getAllCattle":
-      if (data.totalCount === 0) {
-        formatted = "You don't have any cattle in your system yet."
-      } else {
-        formatted = `You have **${data.totalCount} cattle** total.\n\n`
-        if (data.penSummary && data.penSummary.length > 0) {
-          formatted += "**Distribution by pen:**\n"
-          data.penSummary.forEach((pen: any) => {
-            const penName = pen.penId === 'unassigned' ? 'Unassigned' : `Pen ${pen.penId}`
-            formatted += `- ${penName}: ${pen.count} cattle\n`
-          })
-        }
-      }
-      break
-
-    case "getFarmSummary":
-      formatted = "**Farm Overview:**\n\n"
-      formatted += `🐄 **Cattle:** ${data.cattle.total} total\n`
-      formatted += `🏠 **Pens:** ${data.pens.total} total\n`
-      formatted += `📦 **Inventory:** ${data.inventory.total} items (Total value: $${data.inventory.totalValue.toFixed(2)})\n`
-
-      if (data.inventory.lowStockCount > 0) {
-        formatted += `\n⚠️ **${data.inventory.lowStockCount} items are low in stock:**\n`
-        data.inventory.lowStockItems.slice(0, 5).forEach((item: any) => {
-          formatted += `- ${item.name}: ${item.quantity} ${item.unit}\n`
-        })
-      }
-
-      if (data.pens.penList && data.pens.penList.length > 0) {
-        formatted += `\n**Your pens:**\n`
-        data.pens.penList.slice(0, 5).forEach((pen: any) => {
-          formatted += `- ${pen.name} (Capacity: ${pen.capacity || 'Not set'})\n`
-        })
-      }
-      break
-
-    case "getCattleCountByPen":
-      if (data && data.length > 0) {
-        formatted = `**Cattle distribution across ${data.length} pens:**\n\n`
-        data.forEach((pen: any) => {
-          const utilization = pen.capacity ? ` (${Math.round((pen.count / pen.capacity) * 100)}% full)` : ''
-          formatted += `- **${pen.name}:** ${pen.count} cattle${utilization}\n`
-        })
-      } else {
-        formatted = "No pens found in your system."
-      }
-      break
-
-    case "getPenInfo":
-      if (Array.isArray(data)) {
-        if (data.length === 0) {
-          formatted = "No pens found."
-        } else if (data.length === 1) {
-          const pen = data[0]
-          formatted = `**${pen.name}**\n`
-          formatted += `- Capacity: ${pen.capacity || 'Not set'}\n`
-          formatted += `- Notes: ${pen.notes || 'None'}\n`
-        } else {
-          formatted = `Found ${data.length} pens:\n`
-          data.slice(0, 10).forEach((pen: any) => {
-            formatted += `- ${pen.name} (Capacity: ${pen.capacity || 'Not set'})\n`
-          })
-        }
-      } else if (data) {
-        formatted = `**${data.name}**\n`
-        formatted += `- Capacity: ${data.capacity || 'Not set'}\n`
-        formatted += `- Notes: ${data.notes || 'None'}\n`
-      }
-      break
-
-    case "getCattleInfo":
-      if (Array.isArray(data)) {
-        if (data.length === 0) {
-          formatted = "No cattle found matching your criteria."
-        } else if (data.length === 1) {
-          const cattle = data[0]
-          formatted = `**Cattle #${cattle.tagNumber || cattle.id}**\n`
-          formatted += `- Tag: ${cattle.tagNumber || 'Not set'}\n`
-          formatted += `- Pen: ${cattle.penId || 'Unassigned'}\n`
-          if (cattle.breed) formatted += `- Breed: ${cattle.breed}\n`
-          if (cattle.weight) formatted += `- Weight: ${cattle.weight} lbs\n`
-        } else {
-          formatted = `Found ${data.length} cattle:\n`
-          data.slice(0, 10).forEach((cattle: any) => {
-            formatted += `- Tag ${cattle.tagNumber || 'N/A'} (Pen: ${cattle.penId || 'Unassigned'})\n`
-          })
-        }
-      }
-      break
-
-    case "getInventoryInfo":
-      if (Array.isArray(data)) {
-        if (data.length === 0) {
-          formatted = "No inventory items found."
-        } else {
-          formatted = `**Inventory (${data.length} items):**\n\n`
-          data.slice(0, 10).forEach((item: any) => {
-            const lowStock = item.quantityOnHand <= item.reorderPoint ? ' ⚠️ LOW' : ''
-            formatted += `- **${item.name}**: ${item.quantityOnHand} ${item.unit}${lowStock}\n`
-            if (item.totalValue) formatted += `  Value: $${item.totalValue.toFixed(2)}\n`
-          })
-        }
-      }
-      break
-
-    default:
-      // Fallback to basic JSON formatting for unknown actions
-      formatted = aiMessage || "Here's what I found:\n\n"
-      formatted += `\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``
-  }
-
-  return formatted
+  farmContext?: any
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body: ChatRequest = await request.json()
-    const { messages, conversationId, userId } = body
+    const { messages, conversationId, userId, farmContext } = body
 
     console.log('[Chat API] Request received:', {
       messageCount: messages?.length,
       conversationId,
       userId,
-      hasUserId: !!userId
+      hasUserId: !!userId,
+      hasFarmContext: !!farmContext
     })
 
     if (!messages || messages.length === 0) {
@@ -264,8 +143,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('[Chat API] User authenticated, userId:', userId)
-
     if (!process.env.OPENAI_API_KEY) {
       console.error('[Chat API] OpenAI API key not configured')
       return NextResponse.json(
@@ -278,40 +155,40 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Build comprehensive farm context for AI intelligence
-    console.log('[Chat API] Building farm context...')
-    const contextBuilder = new FarmContextBuilder(userId)
-    const farmContext = await contextBuilder.buildContext()
-    console.log('[Chat API] Farm context built:', {
-      cattle: farmContext.cattle.total,
-      pens: farmContext.pens.total,
-      inventory: farmContext.inventory.total
-    })
+    // Create enhanced system prompt with farm context if provided
+    let enhancedSystemPrompt = SYSTEM_PROMPT
 
-    // Create enhanced system prompt with farm context
-    const enhancedSystemPrompt = `${SYSTEM_PROMPT}
+    if (farmContext) {
+      console.log('[Chat API] Using provided farm context:', {
+        cattle: farmContext.cattle?.total,
+        pens: farmContext.pens?.total,
+        inventory: farmContext.inventory?.total
+      })
+
+      enhancedSystemPrompt = `${SYSTEM_PROMPT}
 
 CURRENT FARM STATUS & CONTEXT:
-${farmContext.summary}
+${farmContext.summary || ""}
 
 Detailed Farm Data:
-- Cattle: ${farmContext.cattle.total} total (Avg weight: ${farmContext.cattle.avgWeight} lbs)
-  Status breakdown: ${JSON.stringify(farmContext.cattle.byStatus)}
-  Pen distribution: ${JSON.stringify(farmContext.cattle.byPen)}
-  ${farmContext.cattle.healthIssues.length > 0 ? `Health issues: ${farmContext.cattle.healthIssues.map((h: any) => `#${h.tagNumber} (${h.status})`).join(", ")}` : "No health issues"}
+- Cattle: ${farmContext.cattle?.total || 0} total (Avg weight: ${farmContext.cattle?.avgWeight || 0} lbs)
+  Status breakdown: ${JSON.stringify(farmContext.cattle?.byStatus || {})}
+  Pen distribution: ${JSON.stringify(farmContext.cattle?.byPen || {})}
+  ${farmContext.cattle?.healthIssues?.length > 0 ? `Health issues: ${farmContext.cattle.healthIssues.map((h: any) => `#${h.tagNumber} (${h.status})`).join(", ")}` : "No health issues"}
 
-- Pens: ${farmContext.pens.total} total, ${farmContext.pens.utilization}% utilized
-  ${farmContext.pens.overcrowded.length > 0 ? `Overcrowded: ${farmContext.pens.overcrowded.map((p: any) => p.name).join(", ")}` : ""}
-  ${farmContext.pens.empty.length > 0 ? `Empty pens: ${farmContext.pens.empty.map((p: any) => p.name).join(", ")}` : ""}
+- Pens: ${farmContext.pens?.total || 0} total, ${farmContext.pens?.utilization || 0}% utilized
+  ${farmContext.pens?.overcrowded?.length > 0 ? `Overcrowded: ${farmContext.pens.overcrowded.map((p: any) => p.name).join(", ")}` : ""}
+  ${farmContext.pens?.empty?.length > 0 ? `Empty pens: ${farmContext.pens.empty.map((p: any) => p.name).join(", ")}` : ""}
 
-- Inventory: ${farmContext.inventory.total} items (Total value: $${farmContext.inventory.totalValue})
-  ${farmContext.inventory.lowStock.length > 0 ? `LOW STOCK: ${farmContext.inventory.lowStock.map((i: any) => `${i.name} (${i.quantity} ${i.unit})`).join(", ")}` : "All items well-stocked"}
+- Inventory: ${farmContext.inventory?.total || 0} items (Total value: $${farmContext.inventory?.totalValue || 0})
+  ${farmContext.inventory?.lowStock?.length > 0 ? `LOW STOCK: ${farmContext.inventory.lowStock.map((i: any) => `${i.name} (${i.quantity} ${i.unit})`).join(", ")}` : "All items well-stocked"}
 
 - Recent Activity:
-  ${farmContext.cattle.recentAdditions.length > 0 ? `Recent cattle additions: ${farmContext.cattle.recentAdditions.slice(0, 3).map((c: any) => `#${c.tagNumber}`).join(", ")}` : "No recent additions"}
-  ${farmContext.health.recentTreatments.length > 0 ? `Recent treatments: ${farmContext.health.recentTreatments.slice(0, 3).map((t: any) => `#${t.cattleTag} (${t.medication})`).join(", ")}` : ""}
+  ${farmContext.cattle?.recentAdditions?.length > 0 ? `Recent cattle additions: ${farmContext.cattle.recentAdditions.slice(0, 3).map((c: any) => `#${c.tagNumber}`).join(", ")}` : "No recent additions"}
+  ${farmContext.health?.recentTreatments?.length > 0 ? `Recent treatments: ${farmContext.health.recentTreatments.slice(0, 3).map((t: any) => `#${t.cattleTag} (${t.medication})`).join(", ")}` : ""}
 
 Use this context to provide intelligent, informed responses. You know EVERYTHING about this farm!`
+    }
 
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
@@ -331,11 +208,11 @@ Use this context to provide intelligent, informed responses. You know EVERYTHING
     const assistantMessage = completion.choices[0].message.content || ""
 
     // Try to parse if it's a JSON action
-    let actionResult = null
+    let action = null
     let finalMessage = assistantMessage
 
     try {
-      // Look for JSON in the response - improved extraction
+      // Look for JSON in the response
       let actionData = null
 
       // First try to parse the entire message as JSON
@@ -345,7 +222,6 @@ Use this context to provide intelligent, informed responses. You know EVERYTHING
         console.log('[Chat API] Successfully parsed full message as JSON')
       } catch {
         // If that fails, try to extract JSON from the message
-        // Look for JSON block between code fences or inline
         const jsonBlockMatch = assistantMessage.match(/```json\s*(\{[\s\S]*?\})\s*```/)
         if (jsonBlockMatch) {
           try {
@@ -369,122 +245,18 @@ Use this context to provide intelligent, informed responses. You know EVERYTHING
       }
 
       if (actionData && actionData.action) {
-        console.log('[Chat API] Executing action:', actionData.action, 'with params:', actionData.params)
-
-        // Execute the action
-        switch (actionData.action) {
-            // Inventory actions
-            case "addMedication":
-              actionResult = await actionExecutor.addMedication(userId, actionData.params)
-              break
-            case "getInventoryInfo":
-              actionResult = await actionExecutor.getInventoryInfo(userId, actionData.params?.itemName)
-              break
-
-            // Cattle actions
-            case "addCattle":
-              actionResult = await actionExecutor.addCattle(userId, actionData.params)
-              break
-            case "updateCattle":
-              actionResult = await actionExecutor.updateCattle(userId, actionData.params)
-              break
-            case "deleteCattle":
-              actionResult = await actionExecutor.deleteCattle(userId, actionData.params)
-              break
-            case "getCattleInfo":
-              actionResult = await actionExecutor.getCattleInfo(userId, actionData.params)
-              break
-            case "getAllCattle":
-              actionResult = await actionExecutor.getAllCattle(userId)
-              break
-            case "addWeightRecord":
-              actionResult = await actionExecutor.addWeightRecord(userId, actionData.params)
-              break
-
-            // Health actions
-            case "addHealthRecord":
-              actionResult = await actionExecutor.addHealthRecord(userId, actionData.params)
-              break
-
-            // Pen actions
-            case "addPen":
-              actionResult = await actionExecutor.addPen(userId, actionData.params)
-              break
-            case "updatePen":
-              actionResult = await actionExecutor.updatePen(userId, actionData.params)
-              break
-            case "deletePen":
-              actionResult = await actionExecutor.deletePen(userId, actionData.params)
-              break
-            case "getPenInfo":
-              actionResult = await actionExecutor.getPenInfo(userId, actionData.params?.penId)
-              break
-            case "getCattleCountByPen":
-              actionResult = await actionExecutor.getCattleCountByPen(userId)
-              break
-
-            // Barn actions
-            case "addBarn":
-              actionResult = await actionExecutor.addBarn(userId, actionData.params)
-              break
-            case "deleteBarn":
-              actionResult = await actionExecutor.deleteBarn(userId, actionData.params)
-              break
-
-            // Activity actions
-            case "logActivity":
-              actionResult = await actionExecutor.logActivity(userId, actionData.params)
-              break
-
-            // Summary/Stats actions
-            case "getFarmSummary":
-              actionResult = await actionExecutor.getFarmSummary(userId)
-              break
-
-            default:
-              actionResult = {
-                success: false,
-                message: `Unknown action: ${actionData.action}`,
-              }
-        }
-
-        console.log('[Chat API] Action result:', {
-          action: actionData.action,
-          success: actionResult?.success,
-          message: actionResult?.message,
-          error: actionResult?.error
-        })
-
-        // If action was successful, format response based on action type
-        if (actionResult && actionResult.success) {
-          // Use AI-generated message or fallback to action result
-          finalMessage = actionData.message || actionResult.message
-
-          // For query actions, format the data in a user-friendly way
-          if (actionData.action.startsWith("get") && actionResult.data) {
-            finalMessage = await formatQueryResponse(actionData.action, actionResult.data, actionData.message)
-          }
-          console.log('[Chat API] Action successful, formatted message length:', finalMessage.length)
-        } else if (actionResult && !actionResult.success) {
-          finalMessage = `Sorry, I encountered an error: ${actionResult.message || actionResult.error}`
-          console.error('[Chat API] Action failed:', finalMessage)
-        }
+        console.log('[Chat API] Action detected:', actionData.action)
+        action = actionData
+        finalMessage = actionData.message || assistantMessage
       }
     } catch (parseError) {
       // Not a JSON response or parsing failed
-      console.log("[Chat API] JSON parsing failed or not an action response:", parseError)
-      console.log("[Chat API] Using assistant message as-is")
-
-      // If we got a parse error, it means the AI didn't format correctly
-      // Log this for debugging but continue with the message
-      if (parseError instanceof SyntaxError) {
-        console.warn("[Chat API] AI returned invalid JSON format")
-      }
+      console.log("[Chat API] No action detected, treating as conversational response")
     }
 
     return NextResponse.json({
       message: finalMessage,
-      actionResult,
+      action: action, // Return action for client-side execution
       conversationId: conversationId || `conv_${Date.now()}`,
     })
 

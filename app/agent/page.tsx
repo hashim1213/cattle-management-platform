@@ -11,6 +11,8 @@ import { Mic, MicOff, Send, Loader2, MessageSquare, History, Trash2, User, Bot, 
 import { db } from "@/lib/firebase"
 import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, onSnapshot } from "firebase/firestore"
 import { toast } from "sonner"
+import { ClientFarmContextBuilder } from "@/lib/ai/client-farm-context-builder"
+import { ClientActionExecutor } from "@/lib/agent/client-action-executor"
 
 interface Message {
   role: "user" | "assistant"
@@ -140,20 +142,27 @@ export default function AgentPage() {
         throw new Error("You must be logged in to use the Farm Assistant")
       }
 
-      // Get the user's ID token for server-side authentication
-      const idToken = await user.getIdToken()
+      // Build farm context client-side
+      console.log('[Agent] Building farm context...')
+      const contextBuilder = new ClientFarmContextBuilder(user.uid)
+      const farmContext = await contextBuilder.buildContext()
+      console.log('[Agent] Farm context built:', {
+        cattle: farmContext.cattle.total,
+        pens: farmContext.pens.total,
+        inventory: farmContext.inventory.total
+      })
 
       console.log('[Agent] Making API request...')
       const response = await fetch("/api/agent/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${idToken}`
         },
         body: JSON.stringify({
           messages: updatedMessages.map(m => ({ role: m.role, content: m.content })),
           conversationId: currentConversationId,
-          userId: user.uid
+          userId: user.uid,
+          farmContext: farmContext // Send farm context to API
         })
       })
 
@@ -199,12 +208,84 @@ export default function AgentPage() {
       setCurrentMessages(finalMessages)
       await saveConversation(finalMessages)
 
-      if (data.actionResult && data.actionResult.success) {
-        console.log('[Agent] Action succeeded:', data.actionResult.message)
-        toast.success(data.actionResult.message)
-      } else if (data.actionResult && !data.actionResult.success) {
-        console.error('[Agent] Action failed:', data.actionResult.message)
-        toast.error(data.actionResult.message || "Action failed")
+      // Execute action client-side if returned
+      if (data.action && data.action.action) {
+        console.log('[Agent] Executing action client-side:', data.action.action)
+        const actionExecutor = new ClientActionExecutor(user.uid)
+
+        try {
+          let actionResult
+          switch (data.action.action) {
+            case "addCattle":
+              actionResult = await actionExecutor.addCattle(data.action.params)
+              break
+            case "updateCattle":
+              actionResult = await actionExecutor.updateCattle(data.action.params)
+              break
+            case "deleteCattle":
+              actionResult = await actionExecutor.deleteCattle(data.action.params)
+              break
+            case "getCattleInfo":
+              actionResult = await actionExecutor.getCattleInfo(data.action.params)
+              break
+            case "getAllCattle":
+              actionResult = await actionExecutor.getAllCattle()
+              break
+            case "addWeightRecord":
+              actionResult = await actionExecutor.addWeightRecord(data.action.params)
+              break
+            case "addHealthRecord":
+              actionResult = await actionExecutor.addHealthRecord(data.action.params)
+              break
+            case "addPen":
+              actionResult = await actionExecutor.addPen(data.action.params)
+              break
+            case "updatePen":
+              actionResult = await actionExecutor.updatePen(data.action.params)
+              break
+            case "deletePen":
+              actionResult = await actionExecutor.deletePen(data.action.params)
+              break
+            case "getPenInfo":
+              actionResult = await actionExecutor.getPenInfo(data.action.params?.penId)
+              break
+            case "getCattleCountByPen":
+              actionResult = await actionExecutor.getCattleCountByPen()
+              break
+            case "addBarn":
+              actionResult = await actionExecutor.addBarn(data.action.params)
+              break
+            case "deleteBarn":
+              actionResult = await actionExecutor.deleteBarn(data.action.params)
+              break
+            case "addMedication":
+              actionResult = await actionExecutor.addMedication(data.action.params)
+              break
+            case "getInventoryInfo":
+              actionResult = await actionExecutor.getInventoryInfo(data.action.params?.itemName)
+              break
+            case "logActivity":
+              actionResult = await actionExecutor.logActivity(data.action.params)
+              break
+            case "getFarmSummary":
+              actionResult = await actionExecutor.getFarmSummary()
+              break
+            default:
+              console.log('[Agent] Unknown action:', data.action.action)
+              actionResult = { success: false, message: `Unknown action: ${data.action.action}` }
+          }
+
+          if (actionResult.success) {
+            console.log('[Agent] Action succeeded:', actionResult.message)
+            toast.success(actionResult.message)
+          } else {
+            console.error('[Agent] Action failed:', actionResult.message)
+            toast.error(actionResult.message || "Action failed")
+          }
+        } catch (actionError: any) {
+          console.error('[Agent] Action execution error:', actionError)
+          toast.error(actionError.message || "Failed to execute action")
+        }
       }
     } catch (error: any) {
       console.error("[Agent] Unexpected error:", error)
