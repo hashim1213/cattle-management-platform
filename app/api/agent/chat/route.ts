@@ -280,13 +280,32 @@ export async function POST(request: NextRequest) {
 
     // Build comprehensive farm context for AI intelligence
     console.log('[Chat API] Building farm context...')
-    const contextBuilder = new FarmContextBuilder(userId)
-    const farmContext = await contextBuilder.buildContext()
-    console.log('[Chat API] Farm context built:', {
-      cattle: farmContext.cattle.total,
-      pens: farmContext.pens.total,
-      inventory: farmContext.inventory.total
-    })
+    let farmContext
+    try {
+      const contextBuilder = new FarmContextBuilder(userId)
+      farmContext = await contextBuilder.buildContext()
+      console.log('[Chat API] Farm context built:', {
+        cattle: farmContext.cattle.total,
+        pens: farmContext.pens.total,
+        inventory: farmContext.inventory.total
+      })
+    } catch (error: any) {
+      console.error('[Chat API] Error building farm context:', error)
+
+      // Check if it's a Firebase credentials error
+      if (error.message?.includes('default credentials') || error.message?.includes('Could not load')) {
+        return NextResponse.json(
+          {
+            error: "Firebase Admin SDK is not properly configured.",
+            details: "The server needs Firebase service account credentials to access your farm data. Add FIREBASE_SERVICE_ACCOUNT to your .env.local file.",
+            helpUrl: "See AGENT_SETUP.md for setup instructions"
+          },
+          { status: 500 }
+        )
+      }
+
+      throw error
+    }
 
     // Create enhanced system prompt with farm context
     const enhancedSystemPrompt = `${SYSTEM_PROMPT}
