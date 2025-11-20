@@ -295,12 +295,12 @@ export function LandingPage() {
         <div className="relative z-20 container mx-auto px-4 py-28 md:py-36 lg:py-44">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
-              Professional Cattle Management
+              Your Spreadsheets Are So Messy,
               <br />
-              <span className="text-white/90">Built for Modern Operations</span>
+              <span className="text-white/90">Even The Cattle Are Confused.</span>
             </h1>
             <p className="text-lg md:text-xl text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed">
-              Real-time inventory tracking, cost management, and performance analytics
+              Professional cattle management with real-time inventory tracking, cost management, and performance analytics
               for cow-calf operations and feedlots across North America.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -1379,7 +1379,7 @@ export function LandingPage() {
                   <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="font-medium">Head Office</p>
-                    <p>Calgary, Alberta, Canada</p>
+                    <p>Manitoba, Canada</p>
                   </div>
                 </div>
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-100 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded mt-3">
