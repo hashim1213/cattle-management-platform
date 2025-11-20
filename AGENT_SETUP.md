@@ -35,20 +35,7 @@ The AI agent can help you with:
 
 ## Setup Instructions
 
-### Step 1: Get Firebase Service Account Key
-
-The agent needs Firebase Admin SDK credentials to access your farm data server-side.
-
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Select your project (cattleos)
-3. Click the gear icon ⚙️ next to "Project Overview"
-4. Select "Project settings"
-5. Go to the "Service accounts" tab
-6. Click "Generate new private key"
-7. Click "Generate key" to download the JSON file
-8. **Keep this file secure** - it grants full access to your Firebase project
-
-### Step 2: Get an OpenAI API Key
+### Step 1: Get an OpenAI API Key
 
 1. Go to [OpenAI Platform](https://platform.openai.com/api-keys)
 2. Sign up or log in to your account
@@ -58,29 +45,26 @@ The agent needs Firebase Admin SDK credentials to access your farm data server-s
 
 **Important**: Keep this key secure and never commit it to version control!
 
-### Step 3: Configure Environment Variables
+### Step 2: Configure Environment Variables
 
 1. Create a `.env.local` file in the project root:
    ```bash
    touch .env.local
    ```
 
-2. Add your Firebase service account (paste the entire JSON content as a single line):
-   ```env
-   FIREBASE_SERVICE_ACCOUNT='{"type":"service_account","project_id":"cattleos","private_key_id":"...","private_key":"...","client_email":"...","client_id":"...","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs","client_x509_cert_url":"..."}'
-   ```
-
-3. Add your OpenAI API key:
+2. Add your OpenAI API key:
    ```env
    OPENAI_API_KEY=sk-your_actual_api_key_here
    ```
 
-4. Restart your development server:
+3. Restart your development server:
    ```bash
    npm run dev
    ```
 
-### Step 4: Test the Agent
+**Note**: Firebase authentication is handled automatically using your logged-in user credentials. No additional Firebase setup is required!
+
+### Step 3: Test the Agent
 
 1. Navigate to the **Farm Assistant** page
 2. Try a simple command like:
@@ -186,6 +170,8 @@ Edit the SMART DEFAULTS section in `/app/api/agent/chat/route.ts` around line 15
 - Your OpenAI API key is only used server-side
 - Farm data is sent to OpenAI for processing
 - All data remains in your Firebase database
+- Authentication is handled securely using Firebase ID tokens
+- Only you can access and modify your farm data
 - Review [OpenAI's data usage policy](https://openai.com/policies/usage-policies)
 
 ## Support

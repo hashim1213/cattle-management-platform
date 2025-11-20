@@ -140,10 +140,16 @@ export default function AgentPage() {
         throw new Error("You must be logged in to use the Farm Assistant")
       }
 
+      // Get the user's ID token for server-side authentication
+      const idToken = await user.getIdToken()
+
       console.log('[Agent] Making API request...')
       const response = await fetch("/api/agent/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`
+        },
         body: JSON.stringify({
           messages: updatedMessages.map(m => ({ role: m.role, content: m.content })),
           conversationId: currentConversationId,

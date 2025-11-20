@@ -3,7 +3,7 @@
  * Gathers comprehensive farm data to give AI full understanding of operations
  */
 
-import { adminDb } from "@/lib/firebase-admin"
+import { serverDb } from "@/lib/firebase-server"
 
 
 export interface FarmContext {
@@ -127,7 +127,7 @@ export class FarmContextBuilder {
   }
 
   private async getCattleContext() {
-    const cattleRef = adminDb.collection(`users/${this.userId}/cattle`)
+    const cattleRef = serverDb.collection(`users/${this.userId}/cattle`)
     const snapshot = await cattleRef.get()
 
     const all = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
@@ -181,7 +181,7 @@ export class FarmContextBuilder {
   }
 
   private async getPensContext() {
-    const pensRef = adminDb.collection(`users/${this.userId}/pens`)
+    const pensRef = serverDb.collection(`users/${this.userId}/pens`)
     const snapshot = await pensRef.get()
 
     const all = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
@@ -221,7 +221,7 @@ export class FarmContextBuilder {
   }
 
   private async getBarnsContext() {
-    const barnsRef = adminDb.collection(`users/${this.userId}/barns`)
+    const barnsRef = serverDb.collection(`users/${this.userId}/barns`)
     const snapshot = await barnsRef.get()
 
     const list = snapshot.docs.map(doc => ({
@@ -237,7 +237,7 @@ export class FarmContextBuilder {
   }
 
   private async getInventoryContext() {
-    const inventoryRef = adminDb.collection(`users/${this.userId}/inventory`)
+    const inventoryRef = serverDb.collection(`users/${this.userId}/inventory`)
     const snapshot = await inventoryRef.get()
 
     const all = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
@@ -263,7 +263,7 @@ export class FarmContextBuilder {
     // Recent transactions (last 30 days)
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-    const transRef = adminDb.collection(`users/${this.userId}/inventoryTransactions`)
+    const transRef = serverDb.collection(`users/${this.userId}/inventoryTransactions`)
     const transQuery = transRef.orderBy("timestamp", "desc").limit(20)
     const transSnapshot = await transQuery.get()
     const recent = transSnapshot.docs.map(doc => doc.data())
@@ -278,7 +278,7 @@ export class FarmContextBuilder {
   }
 
   private async getHealthContext() {
-    const healthRef = adminDb.collection(`users/${this.userId}/cattle`)
+    const healthRef = serverDb.collection(`users/${this.userId}/cattle`)
     const snapshot = await healthRef.get()
 
     const recent: any[] = []
@@ -288,7 +288,7 @@ export class FarmContextBuilder {
     // Get health records from each cattle's subcollection
     for (const cattleDoc of snapshot.docs.slice(0, 50)) {
       try {
-        const healthRecordsRef = adminDb.collection(`users/${this.userId}/cattle/${cattleDoc.id}/healthRecords`)
+        const healthRecordsRef = serverDb.collection(`users/${this.userId}/cattle/${cattleDoc.id}/healthRecords`)
         const healthQuery = healthRecordsRef.orderBy("date", "desc").limit(5)
         const healthSnapshot = await healthQuery.get()
 
@@ -323,7 +323,7 @@ export class FarmContextBuilder {
   }
 
   private async getActivitiesContext() {
-    const activitiesRef = adminDb.collection(`users/${this.userId}/penActivities`)
+    const activitiesRef = serverDb.collection(`users/${this.userId}/penActivities`)
     const q = activitiesRef.orderBy("date", "desc").limit(20)
     const snapshot = await q.get()
 
