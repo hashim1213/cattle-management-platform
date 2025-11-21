@@ -121,6 +121,12 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
+    // Investor Contacts - allow anyone to submit contact form
+    match /investorContacts/{documentId} {
+      allow create: if true;
+      allow read, update, delete: if false;
+    }
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;
