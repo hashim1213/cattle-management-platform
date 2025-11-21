@@ -289,6 +289,56 @@ export default function InvestorsPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Profitability Pressure */}
+              <Card className="mt-8 border-2 border-amber-500/30 bg-amber-500/5">
+                <CardHeader>
+                  <CardTitle className="text-2xl flex items-center gap-3">
+                    <TrendingUp className="h-8 w-8 text-amber-600" />
+                    The Profitability Challenge
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <p className="text-lg text-muted-foreground">
+                    In 2022, Canada's livestock sector reported <strong className="text-foreground">$47.9 billion</strong> in total operating revenues, up 10.0% from 2021. Yet despite rising revenues, profit margins remain razor-thin:
+                  </p>
+
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div className="bg-background rounded-lg p-4 border-2 border-red-500/20">
+                      <p className="text-sm text-muted-foreground mb-2">Beef Cattle Farms</p>
+                      <p className="text-3xl font-bold text-red-600 mb-1">4.0¢</p>
+                      <p className="text-sm text-muted-foreground">net income per dollar of revenue</p>
+                      <p className="text-xs text-muted-foreground mt-2 pt-2 border-t">Lowest profit margin among all farm types</p>
+                    </div>
+
+                    <div className="bg-background rounded-lg p-4 border-2 border-blue-500/20">
+                      <p className="text-sm text-muted-foreground mb-2">Dairy Cattle Farms</p>
+                      <p className="text-3xl font-bold text-blue-600 mb-1">21.7¢</p>
+                      <p className="text-sm text-muted-foreground">net income per dollar of revenue</p>
+                      <p className="text-xs text-muted-foreground mt-2 pt-2 border-t">$246,264 avg. net operating income</p>
+                    </div>
+
+                    <div className="bg-background rounded-lg p-4 border-2 border-purple-500/20">
+                      <p className="text-sm text-muted-foreground mb-2">Hog Farms</p>
+                      <p className="text-3xl font-bold text-purple-600 mb-1">6.5¢</p>
+                      <p className="text-sm text-muted-foreground">net income per dollar of revenue</p>
+                      <p className="text-xs text-muted-foreground mt-2 pt-2 border-t">$3.4M avg. operating revenues</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-background border-2 border-amber-600/20 rounded-lg p-6">
+                    <p className="text-lg font-semibold text-foreground mb-3">
+                      With beef cattle farms earning just 4 cents per dollar of revenue, there is zero margin for error.
+                    </p>
+                    <p className="text-base text-muted-foreground mb-3">
+                      Average beef cattle farms in Canada report <strong className="text-foreground">$522,735 in operating revenues</strong> against <strong className="text-foreground">$501,661 in operating expenses</strong>.
+                    </p>
+                    <p className="text-lg font-bold text-amber-600">
+                      Every inefficiency, every data gap, every delayed decision directly impacts the bottom line.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
             {/* The CattleOS Opportunity */}
@@ -328,6 +378,157 @@ export default function InvestorsPage() {
                 <p className="text-2xl md:text-3xl font-bold text-primary">
                   It's the operating system for modern livestock production.
                 </p>
+              </div>
+            </div>
+
+            {/* AI-Powered Innovation */}
+            <div className="mb-16 md:mb-20">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">AI-Powered Innovation</h2>
+                <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
+                  CattleOS is built on cutting-edge AI technology that transforms how producers manage their operations—making complex tasks simple and data-driven insights accessible to everyone.
+                </p>
+              </div>
+
+              <div className="grid lg:grid-cols-2 gap-6 mb-8">
+                <Card className="border-2 border-blue-500/30 hover:border-blue-500/50 transition-colors">
+                  <CardHeader>
+                    <div className="w-12 h-12 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-3">
+                      <Brain className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <CardTitle className="text-xl">Natural Language AI Agent</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-muted-foreground">
+                      Our AI agent allows producers to interact with their data using plain English—no technical expertise required.
+                    </p>
+                    <ul className="space-y-2">
+                      <li className="flex items-start gap-2">
+                        <Check className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm">"Show me all cattle that gained less than 2 lbs/day this month"</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm">"Calculate my break-even price for Pen 3"</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm">"Which animals need health treatments this week?"</span>
+                      </li>
+                    </ul>
+                    <p className="text-sm font-medium text-blue-600 pt-2">
+                      Instant answers to complex questions—powered by AI that understands livestock operations.
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-2 border-purple-500/30 hover:border-purple-500/50 transition-colors">
+                  <CardHeader>
+                    <div className="w-12 h-12 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-3">
+                      <Smartphone className="h-6 w-6 text-purple-600" />
+                    </div>
+                    <CardTitle className="text-xl">Voice & Mobile-First AI</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-muted-foreground">
+                      Designed for the field, not the office. Record data hands-free while working with your cattle.
+                    </p>
+                    <ul className="space-y-2">
+                      <li className="flex items-start gap-2">
+                        <Check className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm">Voice-to-text data entry while working</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm">AI transcription for treatment notes and observations</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm">Mobile-optimized workflows for real-time updates</span>
+                      </li>
+                    </ul>
+                    <p className="text-sm font-medium text-purple-600 pt-2">
+                      No more clipboards, no more remembering details until you get back to the office.
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-2 border-green-500/30 hover:border-green-500/50 transition-colors">
+                  <CardHeader>
+                    <div className="w-12 h-12 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-3">
+                      <BarChart3 className="h-6 w-6 text-green-600" />
+                    </div>
+                    <CardTitle className="text-xl">Computer Vision for Weight Estimation</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-muted-foreground">
+                      Reduce the need for frequent weighing sessions with AI-powered weight estimation from photos.
+                    </p>
+                    <ul className="space-y-2">
+                      <li className="flex items-start gap-2">
+                        <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm">Take a photo, get an estimated weight instantly</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm">Track weight trends without the stress of constant handling</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm">Identify underperforming animals early</span>
+                      </li>
+                    </ul>
+                    <p className="text-sm font-medium text-green-600 pt-2">
+                      Less labor, less stress on animals, better data for decision-making.
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-2 border-orange-500/30 hover:border-orange-500/50 transition-colors">
+                  <CardHeader>
+                    <div className="w-12 h-12 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-3">
+                      <FileText className="h-6 w-6 text-orange-600" />
+                    </div>
+                    <CardTitle className="text-xl">Document Intelligence (OCR)</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-muted-foreground">
+                      Snap a photo of any livestock document and let AI extract the data automatically.
+                    </p>
+                    <ul className="space-y-2">
+                      <li className="flex items-start gap-2">
+                        <Check className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm">Scan feed invoices and auto-populate inventory</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm">Digitize veterinary records in seconds</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm">Capture load manifests and bill of lading documents</span>
+                      </li>
+                    </ul>
+                    <p className="text-sm font-medium text-orange-600 pt-2">
+                      Eliminate manual data entry and reduce errors from paper-based workflows.
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-green-500/10 border-2 border-blue-500/30 rounded-lg p-8">
+                <div className="text-center space-y-4">
+                  <Brain className="h-16 w-16 text-primary mx-auto mb-4" />
+                  <h3 className="text-2xl md:text-3xl font-bold text-foreground">
+                    AI That Works in the Real World
+                  </h3>
+                  <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                    While competitors bolt on basic chatbots, CattleOS is built AI-first from the ground up. Our technology adapts to how producers actually work—in the field, on mobile devices, with voice commands, and through simple conversations.
+                  </p>
+                  <p className="text-xl font-bold text-primary pt-4">
+                    This is the future of livestock management, available today.
+                  </p>
+                </div>
               </div>
             </div>
 
