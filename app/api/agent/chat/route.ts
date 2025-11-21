@@ -3,6 +3,9 @@ import OpenAI from "openai"
 import { actionExecutor } from "@/lib/agent/action-executor"
 import { FarmContextBuilder } from "@/lib/ai/farm-context-builder"
 
+// Force this route to be dynamic (not statically generated at build time)
+export const dynamic = 'force-dynamic'
+
 const SYSTEM_PROMPT = `You are a proactive, friendly Farm Assistant for a cattle management platform. Your goal is to make farm management as EASY and CONVERSATIONAL as possible. Guide farmers through tasks naturally.
 
 CORE PHILOSOPHY:

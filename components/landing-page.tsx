@@ -562,7 +562,7 @@ export function LandingPage() {
               <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-3 md:mb-4">
-                    <Brain className="h-8 w-8 md:h-10 md:w-10 text-blue-600 dark:text-blue-400" />
+                    <Activity className="h-8 w-8 md:h-10 md:w-10 text-blue-600 dark:text-blue-400" />
                   </div>
                   <CardTitle className="text-lg md:text-xl">AI-Powered Insights</CardTitle>
                 </CardHeader>
