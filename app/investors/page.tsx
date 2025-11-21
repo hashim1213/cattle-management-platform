@@ -26,7 +26,21 @@ import Image from "next/image"
 
 export default function InvestorsPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      {/* SEO Meta Tags */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": "Investors - CattleOS",
+            "description": "Investment opportunities in CattleOS - Building the digital backbone for the global cattle industry. Market opportunity, timing analysis, and long-term vision.",
+            "url": "https://www.cattleos.com/investors"
+          })
+        }}
+      />
+      <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-white dark:bg-gray-950 shadow-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 md:py-4">
@@ -409,6 +423,7 @@ export default function InvestorsPage() {
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </>
   )
 }
