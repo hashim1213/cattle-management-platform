@@ -293,17 +293,17 @@ export function LandingPage() {
 
         {/* Content */}
         <div className="relative z-20 container mx-auto px-4 py-28 md:py-36 lg:py-44">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
+          <div className="max-w-4xl">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight font-serif">
               Your Spreadsheets Are So Messy,
               <br />
               <span className="text-white/90">Even The Cattle Are Confused.</span>
             </h1>
-            <p className="text-lg md:text-xl text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-xl text-white/90 mb-8 max-w-2xl leading-relaxed">
               Professional cattle management with real-time inventory tracking, cost management, and performance analytics
               for cow-calf operations and feedlots across North America.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-start">
               <Button
                 size="lg"
                 className="text-base px-8 py-6 bg-[#ba2627] hover:bg-[#9a1f20] text-white"
@@ -320,7 +320,7 @@ export function LandingPage() {
                 Learn More
               </Button>
             </div>
-            <p className="text-sm text-white/70 mt-6">Launching Q2 2026 • Early Access Available</p>
+            <p className="text-sm text-white/70 mt-6 text-left">Launching Q2 2026 • Early Access Available</p>
           </div>
         </div>
       </section>
