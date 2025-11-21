@@ -17,7 +17,14 @@ const firebaseConfig = {
 }
 
 // Initialize Firebase (only once) for server-side usage
-const serverApp = getApps().length === 0 ? initializeApp(firebaseConfig, 'server') : getApp('server')
+let serverApp
+try {
+  // Try to get existing 'server' app
+  serverApp = getApp('server')
+} catch (error) {
+  // If app doesn't exist, create it
+  serverApp = initializeApp(firebaseConfig, 'server')
+}
 
 // Initialize Firestore
 export const serverDb = getFirestore(serverApp)
