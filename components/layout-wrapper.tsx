@@ -7,7 +7,7 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { Loader2 } from "lucide-react"
 
 // Public routes that don't require authentication
-const PUBLIC_ROUTES = ["/", "/login", "/signup"]
+const PUBLIC_ROUTES = ["/", "/login", "/signup", "/investors"]
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -52,8 +52,8 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     )
   }
 
-  // For unauthenticated users on "/" (landing page), show without sidebar
-  if (pathname === "/") {
+  // For unauthenticated users on public routes (landing page, investors page, etc.), show without sidebar
+  if (isPublicRoute) {
     return <>{children}</>
   }
 

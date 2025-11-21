@@ -20,7 +20,6 @@ import {
   ArrowRight,
   Users,
   Building2,
-  Sparkles,
   Brain,
   Scale,
   Link as LinkIcon,
@@ -246,9 +245,9 @@ export function LandingPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted">
+      <div className="min-h-screen bg-background">
         {/* Header */}
-        <header className="border-b bg-card/95 backdrop-blur-md sticky top-0 z-50">
+        <header className="border-b bg-white dark:bg-gray-950 shadow-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 md:py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0 flex-shrink">
@@ -262,6 +261,9 @@ export function LandingPage() {
               />
             </div>
             <div className="flex gap-2 flex-shrink-0">
+              <Link href="/investors">
+                <Button variant="ghost" size="sm" className="text-xs md:text-sm px-2 md:px-4">Investors</Button>
+              </Link>
               <Link href="/login">
                 <Button variant="ghost" size="sm" className="text-xs md:text-sm px-2 md:px-4">Sign In</Button>
               </Link>
@@ -277,7 +279,7 @@ export function LandingPage() {
       <section className="relative overflow-hidden">
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/70 z-10" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/60 z-10" />
           <Image
             src="/cow_moo.webp"
             alt="Cattle farm"
@@ -293,49 +295,45 @@ export function LandingPage() {
         </div>
 
         {/* Content */}
-        <div className="relative z-20 container mx-auto px-4 py-24 md:py-32 lg:py-40">
-          <div className="max-w-5xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 mb-6 px-5 py-2.5 bg-primary rounded-full shadow-lg">
-              <Sparkles className="h-4 w-4 text-primary-foreground" />
-              <p className="text-sm font-semibold text-primary-foreground">AI-Powered & Launching Q2 2026</p>
-            </div>
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-8 leading-tight drop-shadow-2xl">
+        <div className="relative z-20 container mx-auto px-4 py-28 md:py-36 lg:py-44">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
               Your Spreadsheets Are So Messy,
               <br />
-              <span className="text-green-400 drop-shadow-2xl">Even The Cattle Are Confused.</span>
+              <span className="text-white/90">Even The Cattle Are Confused.</span>
             </h1>
-            <p className="text-xl md:text-2xl text-white mb-10 max-w-3xl mx-auto drop-shadow-lg font-medium">
-              The <strong className="text-green-300">AI-native</strong> inventory management system built for cattle operations.
-              Get real-time cost tracking, eliminate manual paperwork, and finally know
-              your break-even point with confidence.
+            <p className="text-lg md:text-xl text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed">
+              Professional cattle management with real-time inventory tracking, cost management, and performance analytics
+              for cow-calf operations and feedlots across North America.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
                 size="lg"
-                className="text-lg px-8 py-6 shadow-xl hover:shadow-2xl transition-all"
-                onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+                className="text-base px-8 py-6 bg-[#ba2627] hover:bg-[#9a1f20] text-white"
+                onClick={() => document.getElementById('loi-form')?.scrollIntoView({ behavior: 'smooth' })}
               >
-                View Pricing <ArrowRight className="ml-2 h-5 w-5" />
+                Get Started <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                className="text-lg px-8 py-6 bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20 hover:text-white shadow-xl"
+                className="text-base px-8 py-6 bg-white text-gray-900 border-white hover:bg-gray-100"
                 onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 Learn More
               </Button>
             </div>
+            <p className="text-sm text-white/70 mt-6">Launching Q2 2026 • Early Access Available</p>
           </div>
         </div>
       </section>
 
       {/* Problem Statement */}
-      <section className="bg-muted/50 py-12 md:py-16">
+      <section className="bg-gray-50 dark:bg-gray-900 py-16 md:py-20">
         <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-center mb-6 md:mb-8">
-              Tired of These Problems?
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+              Common Challenges We Solve
             </h2>
             <div className="grid sm:grid-cols-2 gap-4 md:gap-6">
               <Card>
@@ -388,12 +386,12 @@ export function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="container mx-auto px-4 py-12 md:py-16">
+      <section id="features" className="container mx-auto px-4 py-16 md:py-20">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-center mb-3 md:mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
             One Platform. Complete Control.
           </h2>
-          <p className="text-base md:text-xl text-muted-foreground text-center mb-8 md:mb-12 max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
             CattleOS brings all your cattle operation data together in one powerful,
             easy-to-use platform designed specifically for feedlot and cattle operations.
           </p>
@@ -414,18 +412,14 @@ export function LandingPage() {
       </section>
 
       {/* How It Works - Interactive Walkthrough */}
-      <section className="py-16 md:py-20 bg-gradient-to-b from-background to-muted/30">
+      <section className="py-16 md:py-20 bg-white dark:bg-gray-950">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12 md:mb-16">
-              <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-primary/10 rounded-full">
-                <Zap className="h-5 w-5 text-primary" />
-                <span className="text-sm font-semibold text-primary">Simple 4-Step Process</span>
-              </div>
-              <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
                 How CattleOS Works
               </h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                 Get up and running in minutes. Our streamlined workflow makes cattle management effortless.
               </p>
             </div>
@@ -438,10 +432,10 @@ export function LandingPage() {
                     {/* Left side - Step content */}
                     <div className="p-8 md:p-12 bg-card">
                       <div className="mb-6">
-                        <div className={`inline-flex w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br ${walkthroughSteps[currentStep].color} items-center justify-center mb-4 shadow-lg transition-all duration-300`}>
+                        <div className="inline-flex w-16 h-16 md:w-20 md:h-20 rounded-lg bg-primary/10 items-center justify-center mb-4 transition-all duration-300">
                           {(() => {
                             const StepIcon = walkthroughSteps[currentStep].icon
-                            return <StepIcon className="h-8 w-8 md:h-10 md:w-10 text-white" />
+                            return <StepIcon className="h-8 w-8 md:h-10 md:w-10 text-primary" />
                           })()}
                         </div>
                         <div className="flex items-center gap-3 mb-4">
@@ -513,9 +507,9 @@ export function LandingPage() {
                     </div>
 
                     {/* Right side - Screenshot */}
-                    <div className={`hidden md:flex items-center justify-center bg-gradient-to-br ${walkthroughSteps[currentStep].color} p-6 transition-all duration-500`}>
+                    <div className="hidden md:flex items-center justify-center bg-gray-100 dark:bg-gray-800 p-6 transition-all duration-500">
                       <div className="relative w-full h-full flex items-center justify-center">
-                        <div className="relative w-full max-w-lg aspect-[4/3] bg-white rounded-lg shadow-2xl overflow-hidden border-4 border-white/20">
+                        <div className="relative w-full max-w-lg aspect-[4/3] bg-white rounded-lg shadow-xl overflow-hidden border">
                           <Image
                             src={walkthroughSteps[currentStep].image}
                             alt={walkthroughSteps[currentStep].title}
@@ -528,11 +522,6 @@ export function LandingPage() {
                               target.style.display = 'none'
                             }}
                           />
-                        </div>
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 border border-white/20">
-                          <p className="text-white text-xs font-medium">
-                            Step {walkthroughSteps[currentStep].step} of {walkthroughSteps.length}
-                          </p>
                         </div>
                       </div>
                     </div>
@@ -560,27 +549,23 @@ export function LandingPage() {
       </section>
 
       {/* AI-First Section */}
-      <section className="py-16 md:py-20 bg-muted/30">
+      <section className="py-16 md:py-20 bg-gray-50 dark:bg-gray-900">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12 md:mb-16">
-              <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-primary/10 rounded-full">
-                <Brain className="h-5 w-5 text-primary" />
-                <span className="text-sm font-semibold text-primary">AI-Native Platform</span>
-              </div>
-              <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
-                Built AI-First, AI-Native
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
+                AI-Powered Intelligence
               </h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Intelligence at every layer, designed for the future of cattle management
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                Advanced analytics and insights to help you make better decisions
               </p>
             </div>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
               <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader>
-                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-3 md:mb-4 shadow-lg">
-                    <Brain className="h-8 w-8 md:h-10 md:w-10 text-white" />
+                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-3 md:mb-4">
+                    <Activity className="h-8 w-8 md:h-10 md:w-10 text-blue-600 dark:text-blue-400" />
                   </div>
                   <CardTitle className="text-lg md:text-xl">AI-Powered Insights</CardTitle>
                 </CardHeader>
@@ -608,8 +593,8 @@ export function LandingPage() {
 
               <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader>
-                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mb-3 md:mb-4 shadow-lg">
-                    <MessageCircle className="h-8 w-8 md:h-10 md:w-10 text-white" />
+                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-3 md:mb-4">
+                    <MessageCircle className="h-8 w-8 md:h-10 md:w-10 text-purple-600 dark:text-purple-400" />
                   </div>
                   <CardTitle className="text-lg md:text-xl">Natural Language Interface</CardTitle>
                 </CardHeader>
@@ -637,8 +622,8 @@ export function LandingPage() {
 
               <Card className="hover:shadow-lg transition-shadow sm:col-span-2 lg:col-span-1">
                 <CardHeader>
-                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center mb-3 md:mb-4 shadow-lg">
-                    <BarChart3 className="h-8 w-8 md:h-10 md:w-10 text-white" />
+                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-3 md:mb-4">
+                    <BarChart3 className="h-8 w-8 md:h-10 md:w-10 text-green-600 dark:text-green-400" />
                   </div>
                   <CardTitle className="text-lg md:text-xl">Continuous Learning</CardTitle>
                 </CardHeader>
@@ -669,18 +654,14 @@ export function LandingPage() {
       </section>
 
       {/* Integrations Section */}
-      <section className="py-16 md:py-20 bg-background">
+      <section className="py-16 md:py-20 bg-white dark:bg-gray-950">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12 md:mb-16">
-              <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-primary/10 rounded-full">
-                <LinkIcon className="h-5 w-5 text-primary" />
-                <span className="text-sm font-semibold text-primary">Seamless Integration</span>
-              </div>
-              <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
                 Works With Your Existing Tools
               </h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                 CattleOS integrates seamlessly with the hardware and software you already use
               </p>
             </div>
@@ -746,18 +727,14 @@ export function LandingPage() {
       </section>
 
       {/* Data Privacy & Security Section */}
-      <section className="py-16 md:py-20 bg-primary/5">
+      <section className="py-16 md:py-20 bg-gray-50 dark:bg-gray-900">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12 md:mb-16">
-              <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-primary/10 rounded-full">
-                <Shield className="h-5 w-5 text-primary" />
-                <span className="text-sm font-semibold text-primary">Security & Privacy First</span>
-              </div>
-              <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
                 Your Data Stays Yours. Always.
               </h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                 We know your operation data is sensitive business information. That's why we built CattleOS with privacy at its core.
               </p>
             </div>
@@ -854,18 +831,14 @@ export function LandingPage() {
       </section>
 
       {/* Product Roadmap */}
-      <section className="py-16 md:py-20 bg-muted/30">
+      <section className="py-16 md:py-20 bg-white dark:bg-gray-950">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12 md:mb-16">
-              <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-primary/10 rounded-full">
-                <Rocket className="h-5 w-5 text-primary" />
-                <span className="text-sm font-semibold text-primary">Product Roadmap</span>
-              </div>
-              <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
                 Building The Future of Cattle Management
               </h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                 Our vision extends far beyond launch. Here's what's coming.
               </p>
             </div>
@@ -1034,24 +1007,24 @@ export function LandingPage() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-16 md:py-20 bg-background">
+      <section id="pricing" className="py-16 md:py-20 bg-gray-50 dark:bg-gray-900">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12 md:mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
                 Simple, Transparent Pricing
               </h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                 Choose the plan that fits your operation size
               </p>
             </div>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
               {/* Cow/Calf Plan */}
-              <Card className="relative hover:shadow-2xl transition-all duration-300 border-2 flex flex-col">
+              <Card className="relative hover:shadow-lg transition-all duration-300 border-2 flex flex-col">
                 <CardHeader className="text-center pb-8">
-                  <div className="mx-auto w-16 h-16 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center mb-4 shadow-lg">
-                    <span className="text-3xl font-bold text-white">C/C</span>
+                  <div className="mx-auto w-16 h-16 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-4">
+                    <span className="text-3xl font-bold text-green-700 dark:text-green-400">C/C</span>
                   </div>
                   <CardTitle className="text-2xl mb-2">Cow/Calf</CardTitle>
                   <CardDescription>Perfect for cow-calf operations</CardDescription>
@@ -1103,15 +1076,15 @@ export function LandingPage() {
               </Card>
 
               {/* Feedlot Plan - Featured */}
-              <Card className="relative hover:shadow-2xl transition-all duration-300 border-2 border-primary shadow-xl sm:col-span-2 lg:col-span-1 lg:scale-105 flex flex-col">
+              <Card className="relative hover:shadow-lg transition-all duration-300 border-2 border-[#ba2627] shadow-lg sm:col-span-2 lg:col-span-1 flex flex-col">
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <div className="bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-semibold">
+                  <div className="bg-[#ba2627] text-white px-4 py-1 rounded-full text-sm font-semibold">
                     Most Popular
                   </div>
                 </div>
                 <CardHeader className="text-center pb-8 pt-8">
-                  <div className="mx-auto w-16 h-16 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center mb-4 shadow-lg">
-                    <span className="text-3xl font-bold text-primary-foreground">FL</span>
+                  <div className="mx-auto w-16 h-16 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
+                    <span className="text-3xl font-bold text-[#ba2627] dark:text-red-400">FL</span>
                   </div>
                   <CardTitle className="text-2xl mb-2">Feedlot</CardTitle>
                   <CardDescription>Built for commercial feedlot operations</CardDescription>
@@ -1169,10 +1142,10 @@ export function LandingPage() {
               </Card>
 
               {/* Enterprise Plan */}
-              <Card className="relative hover:shadow-2xl transition-all duration-300 border-2 sm:col-span-2 lg:col-span-1 flex flex-col">
+              <Card className="relative hover:shadow-lg transition-all duration-300 border-2 sm:col-span-2 lg:col-span-1 flex flex-col">
                 <CardHeader className="text-center pb-8">
-                  <div className="mx-auto w-16 h-16 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mb-4 shadow-lg">
-                    <span className="text-3xl font-bold text-white">ENT</span>
+                  <div className="mx-auto w-16 h-16 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-4">
+                    <span className="text-3xl font-bold text-purple-700 dark:text-purple-400">ENT</span>
                   </div>
                   <CardTitle className="text-2xl mb-2">Enterprise</CardTitle>
                   <CardDescription>Custom solutions for large operations</CardDescription>
@@ -1386,41 +1359,72 @@ export function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t bg-card py-12">
+      <footer className="border-t bg-gray-50 dark:bg-gray-900 py-12 md:py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
-            <div className="grid md:grid-cols-3 gap-8">
-              <div>
+            <div className="grid md:grid-cols-4 gap-8 mb-12">
+              {/* Company Info */}
+              <div className="md:col-span-2">
                 <div className="mb-4">
                   <Image
                     src="/cattleos_logo_full.png"
                     alt="CattleOS"
-                    width={140}
-                    height={40}
-                    className="h-10 w-auto object-contain"
+                    width={160}
+                    height={45}
+                    className="h-12 w-auto object-contain"
                   />
                 </div>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Professional inventory management for modern cattle operations.
+                <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+                  Professional cattle management software built for cow-calf operations and feedlots.
+                  Helping ranchers make data-driven decisions with confidence.
                 </p>
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-full">
-                  <MapPin className="h-4 w-4 text-red-600 dark:text-red-400" />
-                  <span className="text-xs font-semibold text-red-600 dark:text-red-400">Built in Canada</span>
+                <div className="flex items-start gap-2 text-sm text-muted-foreground mb-2">
+                  <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Head Office</p>
+                    <p>Manitoba, Canada</p>
+                  </div>
+                </div>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-100 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded mt-3">
+                  <MapPin className="h-3.5 w-3.5 text-red-700 dark:text-red-400" />
+                  <span className="text-xs font-semibold text-red-700 dark:text-red-400">Proudly Built in Canada</span>
                 </div>
               </div>
+
+              {/* Product Links */}
               <div>
-                <h4 className="font-semibold mb-4">Product</h4>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li><a href="#features" className="hover:text-foreground transition-colors">Features</a></li>
-                  <li><a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a></li>
-                  <li><a href="#loi-form" className="hover:text-foreground transition-colors">Get Started</a></li>
+                <h4 className="font-semibold mb-4 text-foreground">Product</h4>
+                <ul className="space-y-2.5 text-sm">
+                  <li><a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a></li>
+                  <li><a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</a></li>
+                  <li><a href="#loi-form" className="text-muted-foreground hover:text-foreground transition-colors">Get Started</a></li>
+                  <li><Link href="/login" className="text-muted-foreground hover:text-foreground transition-colors">Sign In</Link></li>
                 </ul>
               </div>
+
+              {/* Support & Resources */}
               <div>
-                <h4 className="font-semibold mb-4">Legal</h4>
-                <p className="text-sm text-muted-foreground">
-                  © 2025 CattleOS. All rights reserved.
-                </p>
+                <h4 className="font-semibold mb-4 text-foreground">Support</h4>
+                <ul className="space-y-2.5 text-sm">
+                  <li><a href="#loi-form" className="text-muted-foreground hover:text-foreground transition-colors">Contact Us</a></li>
+                  <li><a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Documentation</a></li>
+                  <li><a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">FAQs</a></li>
+                  <li><a href="#loi-form" className="text-muted-foreground hover:text-foreground transition-colors">Early Access</a></li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Bottom Bar */}
+            <div className="pt-8 border-t border-border">
+              <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="text-sm text-muted-foreground">
+                  © 2025 CattleOS Inc. All rights reserved.
+                </div>
+                <div className="flex gap-6 text-sm">
+                  <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</a>
+                  <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Terms of Service</a>
+                  <a href="#loi-form" className="text-muted-foreground hover:text-foreground transition-colors">Contact</a>
+                </div>
               </div>
             </div>
           </div>
