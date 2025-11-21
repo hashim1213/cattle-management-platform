@@ -16,13 +16,13 @@ import {
   TrendingUp,
   Lightbulb,
   Rocket,
-  Mail,
   Target
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import type { Metadata } from "next"
 import Script from "next/script"
+import { InvestorContactForm } from "@/components/investor-contact-form"
 
 export const metadata: Metadata = {
   title: "Investors - CattleOS",
@@ -618,15 +618,7 @@ export default function InvestorsPage() {
                   <p className="text-base text-muted-foreground mb-8 max-w-2xl mx-auto">
                     If you're interested in learning more about investment opportunities, strategic partnerships, or being part of the next phase of agricultural innovation, we'd love to talk.
                   </p>
-                  <Link href="mailto:contact@cattleos.com?subject=Investor Inquiry">
-                    <Button
-                      size="lg"
-                      className="gap-2 bg-[#ba2627] hover:bg-[#9a1f20] text-white text-lg px-8 py-6"
-                    >
-                      <Mail className="h-5 w-5" />
-                      Contact the CattleOS Team
-                    </Button>
-                  </Link>
+                  <InvestorContactForm />
                 </CardContent>
               </Card>
             </div>
