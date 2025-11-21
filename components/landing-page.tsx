@@ -294,7 +294,7 @@ export function LandingPage() {
         {/* Content */}
         <div className="relative z-20 container mx-auto px-4 py-28 md:py-36 lg:py-44">
           <div className="max-w-4xl">
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight font-serif">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
               Your Spreadsheets Are So Messy,
               <br />
               <span className="text-white/90">Even The Cattle Are Confused.</span>

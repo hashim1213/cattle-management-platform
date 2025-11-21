@@ -76,7 +76,6 @@
 
 @theme inline {
   --font-sans: "Inter", system-ui, sans-serif;
-  --font-serif: var(--font-playfair), Georgia, "Times New Roman", serif;
 
   --color-background: #F9F5F0;
   --color-foreground: #1a1a1a;
