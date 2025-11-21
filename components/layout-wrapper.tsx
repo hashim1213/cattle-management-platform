@@ -52,8 +52,8 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     )
   }
 
-  // For unauthenticated users on "/" (landing page), show without sidebar
-  if (pathname === "/") {
+  // For unauthenticated users on public routes (landing page, investors page, etc.), show without sidebar
+  if (isPublicRoute) {
     return <>{children}</>
   }
 
