@@ -1,5 +1,3 @@
-"use client"
-
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -23,12 +21,24 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import type { Metadata } from "next"
+import Script from "next/script"
+
+export const metadata: Metadata = {
+  title: "Investors - CattleOS",
+  description: "Investment opportunities in CattleOS - Building the digital backbone for the global cattle industry. Market opportunity, timing analysis, and long-term vision.",
+  openGraph: {
+    title: "Investors - CattleOS",
+    description: "Investment opportunities in CattleOS - Building the digital backbone for the global cattle industry.",
+    url: "/investors",
+  },
+}
 
 export default function InvestorsPage() {
   return (
     <>
-      {/* SEO Meta Tags */}
-      <script
+      <Script
+        id="investors-structured-data"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
@@ -407,16 +417,15 @@ export default function InvestorsPage() {
                   <p className="text-base text-muted-foreground mb-8 max-w-2xl mx-auto">
                     If you're interested in learning more about investment opportunities, strategic partnerships, or being part of the next phase of agricultural innovation, we'd love to talk.
                   </p>
-                  <Button
-                    size="lg"
-                    className="gap-2 bg-[#ba2627] hover:bg-[#9a1f20] text-white text-lg px-8 py-6"
-                    onClick={() => {
-                      window.location.href = 'mailto:contact@cattleos.com?subject=Investor Inquiry'
-                    }}
-                  >
-                    <Mail className="h-5 w-5" />
-                    Contact the CattleOS Team
-                  </Button>
+                  <Link href="mailto:contact@cattleos.com?subject=Investor Inquiry">
+                    <Button
+                      size="lg"
+                      className="gap-2 bg-[#ba2627] hover:bg-[#9a1f20] text-white text-lg px-8 py-6"
+                    >
+                      <Mail className="h-5 w-5" />
+                      Contact the CattleOS Team
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
             </div>
