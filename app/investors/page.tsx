@@ -103,7 +103,7 @@ export default function InvestorsPage() {
             <div className="mb-16 md:mb-20">
               <h2 className="text-3xl md:text-4xl font-bold mb-4 text-center text-foreground">The Market Landscape</h2>
               <p className="text-lg text-muted-foreground text-center max-w-3xl mx-auto mb-12">
-                The cattle industry is one of the world's most powerful agricultural sectors. Global meat demand is expected to increase <strong className="text-foreground">70% by 2050</strong>, driven by population growth and rising middle-class consumption. Yet despite its importance, day-to-day operations remain remarkably manual, fragmented, and underserved by modern software.
+                The cattle industry is one of the world's most powerful agricultural sectors. In 2022, Canada's livestock sector alone reported <strong className="text-foreground">$47.9 billion</strong> in total operating revenues, up 10.0% from 2021. Global meat demand is expected to increase <strong className="text-foreground">70% by 2050</strong>, driven by population growth and rising middle-class consumption. Yet despite its importance, day-to-day operations remain remarkably manual, fragmented, and underserved by modern software.
               </p>
 
               {/* Beef Prices Callout */}
@@ -285,56 +285,6 @@ export default function InvestorsPage() {
                     </p>
                     <p className="text-base text-foreground font-medium">
                       The industry is hungry for the same digital transformation that crop farms, supply chains, and grain marketing have already experienced.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Profitability Pressure */}
-              <Card className="mt-8 border-2 border-amber-500/30 bg-amber-500/5">
-                <CardHeader>
-                  <CardTitle className="text-2xl flex items-center gap-3">
-                    <TrendingUp className="h-8 w-8 text-amber-600" />
-                    The Profitability Challenge
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <p className="text-lg text-muted-foreground">
-                    In 2022, Canada's livestock sector reported <strong className="text-foreground">$47.9 billion</strong> in total operating revenues, up 10.0% from 2021. Yet despite rising revenues, profit margins remain razor-thin:
-                  </p>
-
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div className="bg-background rounded-lg p-4 border-2 border-red-500/20">
-                      <p className="text-sm text-muted-foreground mb-2">Beef Cattle Farms</p>
-                      <p className="text-3xl font-bold text-red-600 mb-1">4.0¢</p>
-                      <p className="text-sm text-muted-foreground">net income per dollar of revenue</p>
-                      <p className="text-xs text-muted-foreground mt-2 pt-2 border-t">Lowest profit margin among all farm types</p>
-                    </div>
-
-                    <div className="bg-background rounded-lg p-4 border-2 border-blue-500/20">
-                      <p className="text-sm text-muted-foreground mb-2">Dairy Cattle Farms</p>
-                      <p className="text-3xl font-bold text-blue-600 mb-1">21.7¢</p>
-                      <p className="text-sm text-muted-foreground">net income per dollar of revenue</p>
-                      <p className="text-xs text-muted-foreground mt-2 pt-2 border-t">$246,264 avg. net operating income</p>
-                    </div>
-
-                    <div className="bg-background rounded-lg p-4 border-2 border-purple-500/20">
-                      <p className="text-sm text-muted-foreground mb-2">Hog Farms</p>
-                      <p className="text-3xl font-bold text-purple-600 mb-1">6.5¢</p>
-                      <p className="text-sm text-muted-foreground">net income per dollar of revenue</p>
-                      <p className="text-xs text-muted-foreground mt-2 pt-2 border-t">$3.4M avg. operating revenues</p>
-                    </div>
-                  </div>
-
-                  <div className="bg-background border-2 border-amber-600/20 rounded-lg p-6">
-                    <p className="text-lg font-semibold text-foreground mb-3">
-                      With beef cattle farms earning just 4 cents per dollar of revenue, there is zero margin for error.
-                    </p>
-                    <p className="text-base text-muted-foreground mb-3">
-                      Average beef cattle farms in Canada report <strong className="text-foreground">$522,735 in operating revenues</strong> against <strong className="text-foreground">$501,661 in operating expenses</strong>.
-                    </p>
-                    <p className="text-lg font-bold text-amber-600">
-                      Every inefficiency, every data gap, every delayed decision directly impacts the bottom line.
                     </p>
                   </div>
                 </CardContent>
